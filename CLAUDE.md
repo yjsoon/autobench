@@ -58,7 +58,7 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   (sketchy/unofficial repo, unclear license, can't confirm the format fits), set
   **`status: blocked`** instead of running it; the user reviews blocked items later.
 - **Status values:** `pending` → `blocked` (needs human review) / `done`. Listing sorts
-  done (newest first) → blocked → pending.
+  done (newest first) → pending → blocked (last).
 - **Benchmark used:** llama.cpp `llama-bench` — pure throughput (prefill `pp` + decode `tg` tok/s on
   synthetic tokens), NOT an accuracy/quality eval. For vLLM/TRT-LLM use their serving benchmarks
   (`vllm bench serve` / `benchmark_serving.py`) and note concurrency.
@@ -96,7 +96,7 @@ Structure:
   support). Engine is a field/column, NOT a tag. `scripts/seed-stubs.sh` applies this when
   generating stub pages — keep new pages consistent.
 - Done configs carry `completed_at` (date+time); shown as "Completed" on the page and in the listing.
-  The homepage sorts by completion (newest first), pending after done.
+  The homepage sorts done (newest first) → pending → blocked (last).
 - `scripts/new-config.sh` — generates a config page from CLI flags (the harness should call this).
 
 ### Deploy
