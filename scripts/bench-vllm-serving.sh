@@ -31,11 +31,13 @@ gib_kb() { awk '{printf "%.2f", $1/1024/1024}'; }
 base_avail=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
+# NB: this image's ENTRYPOINT is ["vllm","serve"], so the command is just <MODEL> <flags>
+# (do NOT prepend `vllm serve` — that doubles it and argparse rejects it).
 echo "==> launch vLLM $MODEL (ctx=$CTX, max-num-seqs=$CONC) extra=[${EXTRA[*]:-}]"
 docker run -d --name "$NAME" --gpus all --ipc=host -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
   --env "HF_TOKEN=${HF_TOKEN:-}" \
-  "$IMAGE" vllm serve "$MODEL" \
+  "$IMAGE" "$MODEL" \
   --host 0.0.0.0 --port "$PORT" \
   --max-model-len "$CTX" --gpu-memory-utilization 0.85 --max-num-seqs "$CONC" \
   "${EXTRA[@]}" >/dev/null
