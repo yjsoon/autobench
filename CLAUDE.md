@@ -50,6 +50,11 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 
 ## Benchmarking policy
 
+- **Record anything interesting in the per-config Notes** (the markdown body of the `_configs/*.md`
+  page, rendered as the "Notes" section). When a run surprises you — a context length that fits or
+  OOMs, the memory cliff where it stops fitting, an unusually good/bad quant, throughput that defies
+  the bandwidth estimate, a format/dispatcher gotcha, multimodal quirks — write it there. The user
+  reviews these manually, so prefer over-noting to losing the observation.
 - **Extra quants welcome.** Beyond the one stub config per model, add more quants whenever useful —
   but only from a **trusted HF repo** (the model's own org, or a well-known quantizer like
   ggml-org / unsloth / the lab's official quant). For every config record **`quant_rationale`**
