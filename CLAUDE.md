@@ -68,6 +68,16 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   Nemotron-3-Super-120B-A12B-NVFP4 fine (an *older* NGC vLLM container rejected its
   `quant_algo: MIXED_PRECISION` against a hardcoded whitelist — use cu130-nightly, not NGC, for the
   NVFP4 Nemotrons).
+- **Mistral native-format + MLA gotcha (Mistral-Small-4-119B-NVFP4):** the official NVFP4 repo
+  (`mistralai/Mistral-Small-4-119B-2603-NVFP4`) ships **Mistral native format** (`params.json`,
+  `consolidated-*.safetensors`, `tekken.json` — no `config.json`), so vLLM needs
+  `--tokenizer-mode mistral --config-format mistral --load-format mistral`. The model is an **MLA**
+  (DeepSeek-V2-style) + Pixtral-vision arch, and vLLM's **Triton MLA decode kernel fails to compile
+  on GB10** (`triton_decode_attention` → `Cannot make_shape_compatible: incompatible dimensions
+  256 and 512`) — every request kills EngineCore. Fix: **`VLLM_MLA_DISABLE=1`** (use standard
+  attention, bypassing the broken kernel) **+ `--gpu-memory-utilization 0.90`** (MLA-disabled
+  materializes full KV, so 0.85 under-sizes the pool for 65536 ctx). `FLASHINFER_MLA` override is
+  *ignored* (falls back to Triton MLA) — disabling MLA is the only path that works on this build.
 - **gpt-oss + llama.cpp = blocked (harmony):** llama-server's OpenAI chat endpoint can't parse
   gpt-oss's **harmony** channel output on build `b9744` — every `/v1/chat/completions` request 500s
   with "does not match the expected peg-native format" (raw `/completion` works, `--jinja` /
