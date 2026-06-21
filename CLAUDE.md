@@ -58,6 +58,16 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   against ShareGPT — the current path). `bench-serving.py` is engine-agnostic (any OpenAI
   `/v1/chat/completions` endpoint: llama-server, vLLM, SGLang, TRT-LLM) and counts a streamed
   `{"error":...}` chunk as a failed request (not a 0-token success).
+- **Engine wrappers (all drive `bench-serving.py`):** `scripts/bench-sglang-serving.sh`
+  (`lmsysorg/sglang:spark`, port 30000) and `scripts/bench-vllm-serving.sh`
+  (**`vllm/vllm-openai:cu130-nightly`** — the image NVIDIA/vLLM document for DGX Spark, port 8000,
+  `--gpu-memory-utilization 0.85 --max-num-seqs=<conc>`). Both pre-reserve a static KV fraction, so
+  their `mem_gb` is a reservation, not the model footprint — dig the resident breakdown out of the
+  engine logs for the Notes. **vLLM is the documented path for the Nemotron NVFP4 headliners**
+  (`--trust-remote-code --reasoning-parser nemotron_v3`); the cu130-nightly serves
+  Nemotron-3-Super-120B-A12B-NVFP4 fine (an *older* NGC vLLM container rejected its
+  `quant_algo: MIXED_PRECISION` against a hardcoded whitelist — use cu130-nightly, not NGC, for the
+  NVFP4 Nemotrons).
 - **gpt-oss + llama.cpp = blocked (harmony):** llama-server's OpenAI chat endpoint can't parse
   gpt-oss's **harmony** channel output on build `b9744` — every `/v1/chat/completions` request 500s
   with "does not match the expected peg-native format" (raw `/completion` works, `--jinja` /
