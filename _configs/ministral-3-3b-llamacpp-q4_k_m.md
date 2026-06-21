@@ -20,7 +20,7 @@ decode_toks: 523.73
 mem_gb: 19.12
 mem_source: system MemAvailable delta (10s sampling)
 measured_on: 2026-06-22
-completed_at: 2026-06-22 03:24 +08
+completed_at: 2026-06-22 03:35 +08
 run_command: |
   # ghcr.io/ggml-org/llama.cpp:full-cuda (dispatcher → --server). GGUF under /home/gauravmm/models.
   docker run --gpus all -p 8081:8081 -v /home/gauravmm/models:/models:ro \

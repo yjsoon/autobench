@@ -195,6 +195,10 @@ Structure:
 
 ## Working style notes
 - The user moves fast and issues rapid directives; keep momentum, validate before pushing.
+- **Check the system time immediately before writing any timestamp into a document.** Run
+  `date "+%Y-%m-%d %H:%M %z"` as part of the same step that writes a config's `completed_at` (or any
+  dated field) — never reuse a timestamp captured earlier in the pipeline. Results land minutes after
+  the last `date` read (downloads, model load, the up-to-15-min run), so a stale value drifts.
 - `run.sh` launches Claude with `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=20` — an aggressive
   autocompact threshold that **compacts context earlier** to keep the working context small
   during long benchmarking sessions. Expect frequent compaction; rely on this file + the
