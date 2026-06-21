@@ -64,6 +64,17 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   **`status: blocked`** instead of running it; the user reviews blocked items later.
 - **Status values:** `pending` → `blocked` (needs human review) / `done`. Listing sorts
   done (newest first) → pending → blocked (last).
+- **Engine selection per model.** When loading a new model to benchmark, first check current
+  sources (NVIDIA Dev Forums, `build.nvidia.com/spark`, the engine repos/discussions) for which
+  serving stack is claimed **highest-performance for THAT model on GB10/Spark**. If one is the
+  obvious winner, use it; if it's close, **benchmark the top two**. Briefly note the decision + why
+  (with a source) on the config page. The stub's engine/quant is only a starting guess — override it
+  per this check. (This is what surfaces SGLang where it actually wins, rather than defaulting to vLLM.)
+- **TensorRT-LLM build time.** TRT-LLM compiles a per-model engine before it can serve — **record
+  that compilation / engine-build time on the model page.** It's a real cost of the path (often the
+  reason to prefer SGLang/vLLM) and belongs in the comparison.
+- **NIM: blocked for now.** Create NIM configs as `status: blocked` — the NGC NIM containers are
+  gated and no API key is available yet. Revisit when access is provided.
 - **Workload dataset:** benchmark against the real dataset in **`./benchmark_data/`** —
   `ShareGPT_V3_unfiltered_cleaned_split.json` (ShareGPT V3, 94k conversations, ~642 MB,
   **gitignored — never commit it**), not synthetic fixed-length tokens. Feed it to each engine's
