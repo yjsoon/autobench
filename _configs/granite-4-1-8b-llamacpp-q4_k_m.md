@@ -3,29 +3,48 @@ title: Granite 4.1 8B · llama.cpp · Q4_K_M
 model: ibm-granite/granite-4.1-8b
 company: IBM
 family: Granite
-params: 8B (dense)
+params: 8B (hybrid Mamba-2)
 engine: llama.cpp
 quant: Q4_K_M
-quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
-source_repo: ibm-granite/granite-4.1-8b
-download_url: https://huggingface.co/ibm-granite/granite-4.1-8b
-context: 131072
+quant_rationale: GGUF Q4_K_M from IBM's own GGUF repo (ibm-granite/granite-4.1-8b-GGUF) — official, widest llama.cpp coverage.
+source_repo: ibm-granite/granite-4.1-8b-GGUF
+download_url: https://huggingface.co/ibm-granite/granite-4.1-8b-GGUF
+context: 65536
 modalities: [text]
 mm_served: true
 tags: [IBM, Granite, Q4_K_M, 5-15B]
 
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-measured_on:
-completed_at:
+status: done
+prefill_toks: 271.57
+decode_toks: 323.81
+mem_gb: 25.41
+mem_source: system MemAvailable delta (10s sampling)
+measured_on: 2026-06-22
+completed_at: 2026-06-22 03:48 +08
 run_command: |
-  # planned configuration — filled in by the run when benchmarked
+  # ghcr.io/ggml-org/llama.cpp:full-cuda (dispatcher → --server). GGUF under /home/gauravmm/models.
+  docker run --gpus all -p 8081:8081 -v /home/gauravmm/models:/models:ro \
+    ghcr.io/ggml-org/llama.cpp:full-cuda \
+    --server -m /models/granite-4.1-8b-Q4_K_M.gguf -ngl 99 -c 65536 \
+    --parallel 32 -cb --host 0.0.0.0 --port 8081
+  python3 scripts/bench-serving.py --base-url http://localhost:8081 \
+    --model granite-4.1-8b-Q4_K_M.gguf \
+    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
+    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-GGUF + FP8 official.
+**The 8B sibling of the record-setting Granite-4.1-3B — same hybrid Mamba-2 architecture, scaled up.**
+IBM's Granite 4.1 8B, Q4_K_M from IBM's own GGUF repo.
 
-Stub — not yet benchmarked. Verify the exact HF repo ID, license, and quant availability at
-download time (some mid-2026 names from `notes/MODELLIST.md` are still being confirmed).
+- **Workload:** ShareGPT V3, concurrency 32. **985/1000, 15 errors** (slot-split) in **658 s** —
+  **did not hit the time cap**. Loaded in **18 s**.
+- **Throughput (aggregate, conc 32):** prefill **271.6 tok/s**, decode **323.8 tok/s**. TTFT median
+  **290 ms**, TPOT median **85.3 ms** (≈11.7 tok/s/stream), req throughput 1.50/s.
+- **The hybrid advantage holds, scaled by size.** Granite-4.1-3B (hybrid) hit 617 decode; this 8B —
+  ~2.7× the parameters — lands at **324**, roughly the per-parameter scaling you'd expect, with no
+  concurrency cliff. The standout is **memory: just 25.4 GB** for an 8B at 64K context — the Mamba-2
+  hybrid keeps a tiny recurrent state instead of a quadratically-growing KV cache, so the footprint
+  stays low as size climbs. The dense Llama-3.1-8B on the identical engine/quant/ctx is the clean
+  head-to-head for both decode and memory (running next).
+- **Slot-split errors (15):** `-c 65536 --parallel 32` → 2048 tok/slot; longer ShareGPT prompts 400.
+  Engine-config artifact, consistent across all llama.cpp runs.
