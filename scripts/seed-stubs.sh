@@ -15,7 +15,7 @@ nemotron-3-nano-omni-30b-a3b-vllm-nvfp4^Nemotron-3 Nano-Omni 30B-A3B^nvidia/Nemo
 nemotron-3-elastic-30b-a3b-vllm-nvfp4^Nemotron-3 Elastic 30B-A3B^nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4^NVIDIA^Nemotron^30B / 3B (MoE)^vLLM^NVFP4^131072^text^1^16-40B^Elastic-width MoE; NVFP4-native.
 nemotron-3-nano-4b-llamacpp-q4_k_m^Nemotron-3 Nano-4B^nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF^NVIDIA^Nemotron^4B (dense)^llama.cpp^Q4_K_M^131072^text^1^≤4B^NVIDIA-native tiny; NVFP4/FP8/GGUF published.
 nemotron-terminal-32b-vllm-fp8^Nemotron-Terminal-32B^nvidia/Nemotron-Terminal-32B^NVIDIA^Nemotron^33B (dense)^vLLM^FP8^131072^text^0^16-40B^NVIDIA agentic/terminal-tuned (Feb 2026).
-deepseek-v4-flash-vllm-awq^DeepSeek V4-Flash^deepseek-ai/DeepSeek-V4-Flash^DeepSeek^DeepSeek^158B (MoE)^vLLM^AWQ-Int4^131072^text^0^>130B^~79 GB @4-bit — the 128 GB ceiling stress test.
+deepseek-v4-flash-vllm-awq^DeepSeek V4-Flash^deepseek-ai/DeepSeek-V4-Flash^DeepSeek^DeepSeek^158B (MoE)^vLLM^AWQ-Int4^131072^text^0^130B+^~79 GB @4-bit — the 128 GB ceiling stress test.
 qwen3-5-122b-a10b-vllm-gptq^Qwen3.5-122B-A10B^Qwen/Qwen3.5-122B-A10B-GPTQ-Int4^Alibaba^Qwen^122B / 10B (MoE)^vLLM^GPTQ-Int4^131072^text^0^41-130B^~61 GB; A10B active → fast decode. Int4 published by Qwen.
 mistral-small-4-119b-vllm-nvfp4^Mistral Small 4 119B^mistralai/Mistral-Small-4-119B-2603^Mistral AI^Mistral^119B (dense-ish)^vLLM^NVFP4^131072^text^0^41-130B^NVFP4 variant exists; dense → slower decode.
 devstral-2-123b-vllm-awq^Devstral-2 123B^mistralai/Devstral-2-123B-Instruct-2512^Mistral AI^Devstral^123B (MoE)^vLLM^AWQ-Int4^131072^text^0^41-130B^Mistral flagship coder; replaces Codestral.
