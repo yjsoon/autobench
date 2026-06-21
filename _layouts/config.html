@@ -1,0 +1,47 @@
+---
+layout: default
+---
+{%- assign p = page -%}
+<article class="config">
+  <h1>{{ p.title }}</h1>
+  {% if p.status %}<p class="status status-{{ p.status }}">status: {{ p.status }}</p>{% endif %}
+
+  <h2>Configuration</h2>
+  <table class="spec">
+    <tbody>
+      {% if p.model %}<tr><th>Model</th><td><code>{{ p.model }}</code></td></tr>{% endif %}
+      {% if p.company %}<tr><th>Company</th><td>{{ p.company }}</td></tr>{% endif %}
+      {% if p.family %}<tr><th>Family</th><td>{{ p.family }}</td></tr>{% endif %}
+      {% if p.params %}<tr><th>Parameters</th><td>{{ p.params }}</td></tr>{% endif %}
+      {% if p.engine %}<tr><th>Engine</th><td>{{ p.engine }}</td></tr>{% endif %}
+      {% if p.quant %}<tr><th>Quant / precision</th><td>{{ p.quant }}</td></tr>{% endif %}
+      {% if p.context %}<tr><th>Context window</th><td>{{ p.context }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  <h2>Measured results</h2>
+  <table class="spec">
+    <tbody>
+      <tr><th>Prefill tok/s</th><td>{{ p.prefill_toks | default: "—" }}</td></tr>
+      <tr><th>Decode tok/s</th><td>{{ p.decode_toks | default: "—" }}</td></tr>
+      <tr><th>Peak memory (GB)</th><td>{{ p.mem_gb | default: "—" }}</td></tr>
+      {% if p.measured_on %}<tr><th>Measured on</th><td>{{ p.measured_on }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  {% if p.run_command %}
+  <h2>Full run command</h2>
+  <pre class="run-command"><code>{{ p.run_command }}</code></pre>
+  {% endif %}
+
+  {% if p.tags and p.tags.size > 0 %}
+  <p class="tags">
+    {% for tag in p.tags %}{% assign anchor = tag | slugify %}<a class="tag" href="{{ '/tags/' | relative_url }}#{{ anchor }}">{{ tag }}</a>{% endfor %}
+  </p>
+  {% endif %}
+
+  {% if content != "" %}
+  <h2>Notes</h2>
+  <div class="notes">{{ content }}</div>
+  {% endif %}
+</article>

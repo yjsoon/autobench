@@ -1,0 +1,41 @@
+title: DGX Spark Autobench
+description: >-
+  Benchmark results for LLMs run on an NVIDIA DGX Spark — one page per
+  model/engine/quant configuration, with full run commands and tok/s.
+# GitHub Pages target (project site for gauravmm/autobench).
+url: "https://gauravmm.github.io"
+baseurl: "/autobench"
+
+# One markdown file per benchmark configuration lives in _configs/.
+collections:
+  configs:
+    output: true
+    permalink: /configs/:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: configs
+    values:
+      layout: config
+
+markdown: kramdown
+permalink: pretty
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Keep working files out of the built site.
+# NOTES.md is intentionally NOT excluded — it renders as the /journal/ page.
+exclude:
+  - notes/
+  - scripts/
+  - run.sh
+  - serve.sh
+  - Dockerfile.site
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - README.md
+  - .github/
