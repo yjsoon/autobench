@@ -40,11 +40,14 @@ IBM's Granite 4.1 8B, Q4_K_M from IBM's own GGUF repo.
   **did not hit the time cap**. Loaded in **18 s**.
 - **Throughput (aggregate, conc 32):** prefill **271.6 tok/s**, decode **323.8 tok/s**. TTFT median
   **290 ms**, TPOT median **85.3 ms** (≈11.7 tok/s/stream), req throughput 1.50/s.
-- **The hybrid advantage holds, scaled by size.** Granite-4.1-3B (hybrid) hit 617 decode; this 8B —
-  ~2.7× the parameters — lands at **324**, roughly the per-parameter scaling you'd expect, with no
-  concurrency cliff. The standout is **memory: just 25.4 GB** for an 8B at 64K context — the Mamba-2
-  hybrid keeps a tiny recurrent state instead of a quadratically-growing KV cache, so the footprint
-  stays low as size climbs. The dense Llama-3.1-8B on the identical engine/quant/ctx is the clean
-  head-to-head for both decode and memory (running next).
+- **Decode scales down with size as expected** — Granite-4.1-3B (hybrid) hit 617; this 8B, ~2.7× the
+  parameters, lands at **324**, with no concurrency cliff. Memory **25.4 GB** at 64K context.
+- **But the hybrid did NOT win the 8B head-to-head — the dense Llama-3.1-8B beat it on both axes.**
+  On the identical engine/quant/ctx, Llama-3.1-8B decoded **365 tok/s at 22.66 GB** vs this model's
+  **324 tok/s at 25.41 GB**. The Mamba-2 hybrid's cheap-KV advantage only pays off at *long* per-slot
+  context; under this `-c 65536 --parallel 32` split, each slot holds just **2048 tokens**, so there's
+  almost no KV to save and the SSM scan's own overhead dominates. The hybrid's edge is real but
+  **context-length dependent** — it led at 3B but lost to a well-optimized dense kernel at 8B under
+  this short-per-slot 32-way workload. See the Llama-3.1-8B page for the full comparison.
 - **Slot-split errors (15):** `-c 65536 --parallel 32` → 2048 tok/slot; longer ShareGPT prompts 400.
   Engine-config artifact, consistent across all llama.cpp runs.
