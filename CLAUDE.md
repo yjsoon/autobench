@@ -53,7 +53,16 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 
 - **llama.cpp image gotcha:** `ghcr.io/ggml-org/llama.cpp:full-cuda` (ARM64) uses a dispatcher
   entrypoint — run llama-bench via `--bench`, the server via `--server` (not the bare binary names).
-  Reusable wrapper: `scripts/bench-llamacpp.sh` (runs `--bench`, samples memory at 10 s, parses tok/s).
+  Reusable wrappers: `scripts/bench-llamacpp.sh` (synthetic `--bench`, superseded) and
+  `scripts/bench-llamacpp-serving.sh` (launches `--server` + drives `scripts/bench-serving.py`
+  against ShareGPT — the current path). `bench-serving.py` is engine-agnostic (any OpenAI
+  `/v1/chat/completions` endpoint: llama-server, vLLM, SGLang, TRT-LLM) and counts a streamed
+  `{"error":...}` chunk as a failed request (not a 0-token success).
+- **gpt-oss + llama.cpp = blocked (harmony):** llama-server's OpenAI chat endpoint can't parse
+  gpt-oss's **harmony** channel output on build `b9744` — every `/v1/chat/completions` request 500s
+  with "does not match the expected peg-native format" (raw `/completion` works, `--jinja` /
+  `--reasoning-format none` don't help). Benchmark gpt-oss on **vLLM/SGLang** (its recommended
+  Spark engines) instead. Other (non-harmony) models serve fine on llama.cpp.
 
 ## Benchmarking policy
 

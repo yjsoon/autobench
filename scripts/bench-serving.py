@@ -61,6 +61,11 @@ def one_request(base_url, model, prompt, max_tokens, timeout):
             if payload == "[DONE]":
                 break
             chunk = json.loads(payload)
+            if chunk.get("error"):
+                # Server streamed an error mid-response (e.g. llama.cpp's harmony
+                # parser rejecting gpt-oss). Count as a failed request, not a 0-token
+                # success — otherwise throughput silently reads as 0.
+                raise RuntimeError(f"server error chunk: {str(chunk['error'])[:120]}")
             choices = chunk.get("choices") or []
             if choices:
                 delta = choices[0].get("delta", {}) or {}
