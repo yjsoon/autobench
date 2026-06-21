@@ -50,6 +50,9 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 
 ## Benchmarking policy
 
+- **Run order:** generally do the **headliners first** (the `Spark recipe` / best-documented
+  showcases — gpt-oss, the Nemotron NVFP4 models), then work through the rest **small → big**, so
+  cheap fast runs validate each engine/path before the heavy giants.
 - **Record anything interesting in the per-config Notes** (the markdown body of the `_configs/*.md`
   page, rendered as the "Notes" section). When a run surprises you — a context length that fits or
   OOMs, the memory cliff where it stops fitting, an unusually good/bad quant, throughput that defies
