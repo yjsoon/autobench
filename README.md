@@ -10,7 +10,7 @@ as a Jekyll site — one page per configuration, tagged by model family, company
 
 | Path | Purpose |
 |---|---|
-| `notes/JOURNAL.md` | Running journal: system inventory, decisions, per-run results table. Renders at `/journal/`. |
+| `CLAUDE.md` | Durable notes: environment, decisions, measurement methodology, gotchas. |
 | `notes/MODELLIST.md` | Candidate models to benchmark. |
 | `index.md` | Project explainer + live configuration listing (site homepage). |
 | `_configs/` | One markdown page per benchmark configuration (the site collection). |

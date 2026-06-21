@@ -26,9 +26,7 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
 
-# Keep working files out of the built site, but force-render the journal at /journal/.
-include:
-  - notes/JOURNAL.md
+# Keep working files out of the built site.
 exclude:
   - notes/
   - scripts/

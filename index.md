@@ -20,8 +20,7 @@ and tok/s (prefill + decode)**, plus peak memory.
   [browse by tag]({{ '/tags/' | relative_url }}).
 - Three inference engines are benchmarked, all as NVIDIA NGC containers:
   **llama.cpp**, **vLLM**, and **TensorRT-LLM**.
-- The [Journal]({{ '/journal/' | relative_url }}) is the running log — system inventory,
-  decisions, and the raw results table as runs complete.
+- Completed runs sort to the top by completion time; pending configurations follow.
 
 ## Configurations
 

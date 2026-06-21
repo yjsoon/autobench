@@ -1,7 +1,8 @@
 # CLAUDE.md — orientation for a future agent
 
 This repo is **autobench**: a harness + results website for benchmarking open-weight LLMs
-on a single **NVIDIA DGX Spark**. Read this first, then `notes/JOURNAL.md` for live state.
+on a single **NVIDIA DGX Spark**. Read this first; live state lives in the `_configs/` pages
+(per-run results) and the homepage listing — there is no separate journal.
 
 ## The mission
 
@@ -22,12 +23,16 @@ Take notes the entire time. The notes ARE the deliverable.
   hand the user the exact command. (Driver fix + docker-group add were both done this way.)
 - The GPU driver once broke on a **kernel/module version mismatch** (running kernel newer
   than the installed `linux-modules-nvidia-580-open`). If `nvidia-smi` fails again, check
-  `uname -r` vs the installed `linux-modules-nvidia-580-open-*` package — see JOURNAL blocker #1.
+  `uname -r` vs the installed `linux-modules-nvidia-580-open-*` package; fix with
+  `sudo apt-get install -y linux-modules-nvidia-580-open-$(uname -r)` then `sudo modprobe nvidia`
+  (or reboot). Docker-group fix was `sudo usermod -aG docker $USER`.
 - The user is in the `docker` group; **docker works without sudo**. All engines run as
   **NVIDIA NGC containers** (the decided runtime). Use `nvidia-ctk` / `--gpus all`.
 - ARM64 matters: many images/wheels are x86-only. Pick `arm64`/`sbsa` image tags.
-- **`nvidia-smi` reports N/A for all GPU memory** (unified with system RAM). Measure peak via the
-  container's cgroup-v2 `memory.peak` + system `MemAvailable` delta — NOT nvidia-smi. Sampler: 10 s.
+- **`nvidia-smi` reports N/A for all GPU memory** (unified with system RAM), and cgroup/`docker stats`
+  *undercounts* it — CUDA's unified allocations skip the memory cgroup (saw 0.6 GiB cgroup vs 2.9 GiB
+  real for a 1.78 GiB model). Headline memory = **system `MemAvailable` delta** from an idle baseline,
+  10 s sampling. NOT nvidia-smi, NOT cgroup.
 
 ## Engines to benchmark (decided)
 
@@ -35,15 +40,19 @@ Take notes the entire time. The notes ARE the deliverable.
 quant/precision (e.g. GGUF Q4_K_M/Q8; FP8/AWQ/MXFP4/NVFP4/BF16), context length, and
 concurrency. Verify exact HF repo IDs at download time — the model list has unverified 2026 names.
 
+- **llama.cpp image gotcha:** `ghcr.io/ggml-org/llama.cpp:full-cuda` (ARM64) uses a dispatcher
+  entrypoint — run llama-bench via `--bench`, the server via `--server` (not the bare binary names).
+  Reusable wrapper: `scripts/bench-llamacpp.sh` (runs `--bench`, samples memory at 10 s, parses tok/s).
+
 ## What exists vs. what's left
 
 - ✅ **Website** (this repo) — see below. Builds clean; deploys via CI.
 - ✅ `notes/MODELLIST.md` — ~42 candidate models, tiered by Spark fit, smoke-test-first order.
 - ❌ **The actual run-and-measure harness is NOT built yet.** Next big task: per model,
   pull it, launch each engine container, run a fixed prompt, parse prefill/decode tok/s +
-  ctx + peak mem, write a `_configs/*.md` page (use `scripts/new-config.sh`), append a row
-  to the JOURNAL results table, tear down, move on. Smoke-test on a tiny model first
-  (SmolLM3-3B / Phi-4-mini) before the big runs.
+  ctx + peak mem, write a `_configs/*.md` page (use `scripts/new-config.sh`) and set
+  `status: done` + `completed_at`, tear down, move on. Smoke-test on a tiny model first
+  (SmolLM3-3B / Phi-4-mini) before the big runs. SmolLM3-3B is already done (Q4_K_M + Q8_0).
 
 ## The website (Jekyll)
 
@@ -67,8 +76,7 @@ Structure:
   support). Engine is a field/column, NOT a tag. `scripts/seed-stubs.sh` applies this when
   generating stub pages — keep new pages consistent.
 - Done configs carry `completed_at` (date+time); shown as "Completed" on the page and in the listing.
-- `notes/JOURNAL.md` — the journal; force-included via `_config.yml` `include:` and rendered
-  at **`/journal/`** even though `notes/` is otherwise excluded.
+  The homepage sorts by completion (newest first), pending after done.
 - `scripts/new-config.sh` — generates a config page from CLI flags (the harness should call this).
 
 ### Deploy
@@ -89,6 +97,7 @@ Structure:
 - The user moves fast and issues rapid directives; keep momentum, validate before pushing.
 - `run.sh` launches Claude with `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=20` — an aggressive
   autocompact threshold that **compacts context earlier** to keep the working context small
-  during long benchmarking sessions. Expect frequent compaction; rely on JOURNAL.md +
-  this file as durable memory rather than in-context history.
-- Keep `notes/JOURNAL.md` updated as you go — it's the single source of truth for state.
+  during long benchmarking sessions. Expect frequent compaction; rely on this file + the
+  `_configs/` pages as durable memory rather than in-context history.
+- No separate journal/narrative (dropped by request): results live in the per-config pages,
+  decisions/environment/methodology live here. Update those, not a chronological log.
