@@ -42,6 +42,12 @@ ministral-3-3b-llamacpp-q4_k_m^Ministral-3-3B^mistralai/Ministral-3-3B-Instruct-
 ministral-3-14b-reasoning-llamacpp-q4_k_m^Ministral-3-14B-Reasoning^mistralai/Ministral-3-14B-Reasoning-2512^Mistral AI^Ministral^14B (dense)^llama.cpp^Q4_K_M^131072^text^0^5-15B^Small reasoner; GGUF published.
 llama-3-3-70b-llamacpp-q4_k_m^Llama 3.3 70B^meta-llama/Llama-3.3-70B-Instruct^Meta^Llama^70B (dense)^llama.cpp^Q4_K_M^131072^text^0^41-130B^Dense baseline; ~5–8 tok/s on Spark — capability test only.
 llama-3-1-8b-llamacpp-q4_k_m^Llama 3.1 8B^meta-llama/Llama-3.1-8B-Instruct^Meta^Llama^8B (dense)^llama.cpp^Q4_K_M^131072^text^0^5-15B^Ubiquitous small baseline.
+deepseek-v2-lite-chat-llamacpp-q4_k_m^DeepSeek-V2-Lite-Chat^deepseek-ai/DeepSeek-V2-Lite-Chat^DeepSeek^DeepSeek^15.7B / 2.4B (MoE)^llama.cpp^Q4_K_M^163840^text^0^16-40B^Small DeepSeek MoE (2.4B active) — fast, comfortable fit. GGUF quant from a trusted repo at run time.
+deepseek-coder-v2-lite-instruct-llamacpp-q4_k_m^DeepSeek-Coder-V2-Lite-Instruct^deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct^DeepSeek^DeepSeek^15.7B / 2.4B (MoE)^llama.cpp^Q4_K_M^163840^text^0^16-40B^DeepSeek coding MoE; 2.4B active → very fast. Classic local coder.
+deepseek-r1-distill-qwen-32b-llamacpp-q4_k_m^DeepSeek-R1-Distill-Qwen-32B^deepseek-ai/DeepSeek-R1-Distill-Qwen-32B^DeepSeek^DeepSeek^32B (dense)^llama.cpp^Q4_K_M^131072^text^0^16-40B^Popular R1 reasoning distill (Qwen2.5-32B base).
+deepseek-r1-distill-qwen-14b-llamacpp-q4_k_m^DeepSeek-R1-Distill-Qwen-14B^deepseek-ai/DeepSeek-R1-Distill-Qwen-14B^DeepSeek^DeepSeek^14B (dense)^llama.cpp^Q4_K_M^131072^text^0^5-15B^R1 reasoning distill, mid-small.
+deepseek-r1-distill-llama-70b-llamacpp-q4_k_m^DeepSeek-R1-Distill-Llama-70B^deepseek-ai/DeepSeek-R1-Distill-Llama-70B^DeepSeek^DeepSeek^70B (dense)^llama.cpp^Q4_K_M^131072^text^0^41-130B^R1 distill on Llama-70B; dense 70B → ~5–8 tok/s, capability test.
+deepseek-r1-0528-qwen3-8b-llamacpp-q4_k_m^DeepSeek-R1-0528-Qwen3-8B^deepseek-ai/DeepSeek-R1-0528-Qwen3-8B^DeepSeek^DeepSeek^8B (dense)^llama.cpp^Q4_K_M^131072^text^0^5-15B^Newer R1-0528 distill on a Qwen3-8B base.
 '
 
 created=0; skipped=0
