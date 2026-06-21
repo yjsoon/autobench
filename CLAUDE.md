@@ -4,6 +4,10 @@ This repo is **autobench**: a harness + results website for benchmarking open-we
 on a single **NVIDIA DGX Spark**. Read this first; live state lives in the `_configs/` pages
 (per-run results) and the homepage listing — there is no separate journal.
 
+**The model list IS the `_configs/` collection.** One stub page per model × engine × quant is
+the source of truth for what to benchmark — there is no separate model-list file. (The old
+`notes/MODELLIST.md` was removed; don't recreate or rely on it.)
+
 ## The mission
 
 Given a list of models, **one at a time**: download → run across engine / quant / context
@@ -98,11 +102,16 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   is **folded into the Engine display** (e.g. `SGLang + EAGLE3`) on the page and listing — it is NOT
   a separate table column.
 - **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
+- **Per-run runtime cap:** target **~1000 entries or 15 minutes of wall-clock, whichever is
+  shorter**, for each config's serving benchmark. Cap the ShareGPT prompt count (`--num-prompts`
+  / equivalent) at ~1000 and stop a run that crosses 15 min — enough to get a stable tok/s without
+  letting any single config dominate the session. Note in the config if a run hit the time cap
+  before the entry cap (signals a slow path worth flagging).
 
 ## What exists vs. what's left
 
 - ✅ **Website** (this repo) — see below. Builds clean; deploys via CI.
-- ✅ `notes/MODELLIST.md` — ~42 candidate models, tiered by Spark fit, smoke-test-first order.
+- ✅ **The candidate models** live as stub `_configs/*.md` pages (the model list — see top of file).
 - ❌ **The actual run-and-measure harness is NOT built yet.** Next big task: per model,
   pull it, launch each engine container, run a fixed prompt, parse prefill/decode tok/s +
   ctx + peak mem, write a `_configs/*.md` page (use `scripts/new-config.sh`) and set
