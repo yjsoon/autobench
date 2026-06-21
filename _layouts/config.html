@@ -13,7 +13,7 @@ layout: default
       {% if p.company %}<tr><th>Company</th><td>{{ p.company }}</td></tr>{% endif %}
       {% if p.family %}<tr><th>Family</th><td>{{ p.family }}</td></tr>{% endif %}
       {% if p.params %}<tr><th>Parameters</th><td>{{ p.params }}</td></tr>{% endif %}
-      {% if p.engine %}<tr><th>Engine</th><td>{{ p.engine }}</td></tr>{% endif %}
+      {% if p.engine %}<tr><th>Engine</th><td>{{ p.engine }}{% if p.speculative %} + {{ p.speculative }} <span class="muted">(speculative decoding)</span>{% endif %}</td></tr>{% endif %}
       {% if p.quant %}<tr><th>Quant / precision</th><td>{{ p.quant }}</td></tr>{% endif %}
       {% if p.quant_rationale %}<tr><th>Why this quant</th><td>{{ p.quant_rationale }}</td></tr>{% endif %}
       {% if p.download_url %}<tr><th>Download</th><td><a href="{{ p.download_url }}">{{ p.source_repo | default: p.download_url }}</a></td></tr>{% endif %}

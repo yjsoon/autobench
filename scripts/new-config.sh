@@ -12,7 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 model="" company="" family="" params="" engine="" quant="" context="" tags="" modalities="text"
-rationale="" source_repo="" download_url=""
+rationale="" source_repo="" download_url="" speculative=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --model) model="$2"; shift 2;;
@@ -24,6 +24,7 @@ while [ $# -gt 0 ]; do
     --context) context="$2"; shift 2;;
     --tags) tags="$2"; shift 2;;
     --modalities) modalities="$2"; shift 2;;   # comma-separated: text,image,audio,video
+    --speculative) speculative="$2"; shift 2;; # spec-decode method: EAGLE3 / MTP / Medusa
     --rationale) rationale="$2"; shift 2;;     # why this quant was chosen
     --source-repo) source_repo="$2"; shift 2;; # HF repo the quant is downloaded from
     --download-url) download_url="$2"; shift 2;;
@@ -49,6 +50,7 @@ company: ${company}
 family: ${family}
 params: ${params}
 engine: ${engine}
+speculative: ${speculative}      # spec-decode method (EAGLE3/MTP/...), blank for base; folds into Engine display
 quant: ${quant}
 quant_rationale: ${rationale}    # why THIS quant was chosen
 source_repo: ${source_repo}      # HF repo the quant comes from (trusted)

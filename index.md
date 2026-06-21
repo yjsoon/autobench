@@ -47,7 +47,7 @@ and tok/s (prefill + decode)**, plus peak memory.
   {% for c in configs %}
     <tr>
       <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a></td>
-      <td>{{ c.engine | default: "—" }}</td>
+      <td>{{ c.engine | default: "—" }}{% if c.speculative %} + {{ c.speculative }}{% endif %}</td>
       <td>{{ c.quant | default: "—" }}</td>
       <td>{{ c.context | default: "—" }}</td>
       <td>{{ c.decode_toks | default: "—" }}</td>

@@ -91,7 +91,9 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   **EAGLE/EAGLE3/Medusa** draft is available for the engine, benchmark a **separate config with
   speculation enabled IN ADDITION to the base (non-spec) config** — never replace it. Record the
   method in a `speculative:` field (e.g. `EAGLE3`, `MTP`) and the decode-tok/s speedup vs the base
-  run in Notes. SGLang (EAGLE3) and vLLM/TRT-LLM (MTP) are the usual paths.
+  run in Notes. SGLang (EAGLE3) and vLLM/TRT-LLM (MTP) are the usual paths. The `speculative:` value
+  is **folded into the Engine display** (e.g. `SGLang + EAGLE3`) on the page and listing — it is NOT
+  a separate table column.
 - **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
 
 ## What exists vs. what's left
@@ -115,9 +117,10 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 
 Structure:
 - `_configs/` — the collection; **one markdown page per configuration** (model × engine ×
-  quant). Front matter: `model/company/family/params/engine/quant/quant_rationale/source_repo/
-  download_url/context/modalities/tags` plus results (`prefill_toks/decode_toks/mem_gb/mem_source/
-  run_command/completed_at`) and `status: pending | blocked | done`. Layout: `_layouts/config.html`.
+  quant). Front matter: `model/company/family/params/engine/speculative/quant/quant_rationale/
+  source_repo/download_url/context/modalities/tags` plus results (`prefill_toks/decode_toks/mem_gb/
+  mem_source/run_command/completed_at`) and `status: pending | blocked | done`.
+  Layout: `_layouts/config.html`.
 - `index.md` — project explainer + live config listing (homepage).
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
