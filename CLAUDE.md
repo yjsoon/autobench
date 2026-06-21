@@ -64,9 +64,20 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   **`status: blocked`** instead of running it; the user reviews blocked items later.
 - **Status values:** `pending` → `blocked` (needs human review) / `done`. Listing sorts
   done (newest first) → pending → blocked (last).
-- **Benchmark used:** llama.cpp `llama-bench` — pure throughput (prefill `pp` + decode `tg` tok/s on
-  synthetic tokens), NOT an accuracy/quality eval. For vLLM/TRT-LLM use their serving benchmarks
-  (`vllm bench serve` / `benchmark_serving.py`) and note concurrency.
+- **Workload dataset:** benchmark against the real dataset in **`./benchmark_data/`** —
+  `ShareGPT_V3_unfiltered_cleaned_split.json` (ShareGPT V3, 94k conversations, ~642 MB,
+  **gitignored — never commit it**), not synthetic fixed-length tokens. Feed it to each engine's
+  serving benchmark: vLLM `benchmark_serving.py --dataset-path …`, SGLang
+  `bench_serving --dataset-name sharegpt --dataset-path …`, TRT-LLM `trtllm-bench --dataset …`.
+  llama.cpp's `llama-bench` takes no dataset, so for llama.cpp run `llama-server` + a serving
+  benchmark against it (or derive representative input/output lengths from ShareGPT). Always record
+  concurrency. (This supersedes the synthetic pp512/tg128 used for the SmolLM3 smoke test.)
+- **Speculative decoding:** where a model ships an **MTP** module (e.g. DeepSeek) or an
+  **EAGLE/EAGLE3/Medusa** draft is available for the engine, benchmark a **separate config with
+  speculation enabled IN ADDITION to the base (non-spec) config** — never replace it. Record the
+  method in a `speculative:` field (e.g. `EAGLE3`, `MTP`) and the decode-tok/s speedup vs the base
+  run in Notes. SGLang (EAGLE3) and vLLM/TRT-LLM (MTP) are the usual paths.
+- **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
 
 ## What exists vs. what's left
 
