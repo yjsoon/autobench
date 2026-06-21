@@ -15,21 +15,35 @@ mm_served: true
 tags: [Hugging Face, SmolLM, Q8_0, ≤4B]
 
 status: done
-prefill_toks: 6391.07
-decode_toks: 70.61
-mem_gb: 4.18
+prefill_toks: 914.23
+decode_toks: 570.60
+mem_gb: 17.67
 mem_source: system MemAvailable delta (10s sampling)
 measured_on: 2026-06-21
-completed_at: 2026-06-21 19:59 +08
+completed_at: 2026-06-21 21:20 +08
 run_command: |
-  docker run --rm --gpus all -v /home/gauravmm/models:/models:ro \
+  # llama-server (NGC dispatcher image) + ShareGPT serving benchmark, conc=32
+  docker run --rm --gpus all -p 8081:8081 -v /home/gauravmm/models:/models:ro \
     ghcr.io/ggml-org/llama.cpp:full-cuda \
-    --bench -m /models/SmolLM3-Q8_0.gguf -p 512 -n 128 -ngl 99
+    --server -m /models/SmolLM3-Q8_0.gguf -ngl 99 -c 65536 --parallel 32 -cb \
+    --host 0.0.0.0 --port 8081
+  python3 scripts/bench-serving.py --base-url http://localhost:8081 \
+    --model SmolLM3-Q8_0.gguf \
+    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
+    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-Q8_0 companion to the Q4_K_M smoke test — the quant axis of the sweep.
+Q8_0 companion to the Q4_K_M shakedown — the quant axis, re-run under the **ShareGPT
+serving-benchmark** methodology (synthetic llama-bench numbers superseded).
 
-- GGUF: `ggml-org/SmolLM3-3B-GGUF` → `SmolLM3-Q8_0.gguf` (3.04 GiB).
-- vs Q4_K_M: decode is slower (70.6 vs 105.7 tok/s — Q8 moves ~2× the bytes per weight, and
-  decode is memory-bandwidth bound) while prefill stays high (compute bound). Memory: 4.18 vs 2.94 GiB.
-- Backend: CUDA on the GB10, `-ngl 99`. llama.cpp build `063d9c156 (9744)`.
+- **Workload:** real ShareGPT V3 prompts, 1000-entry / 15-min cap. Completed **974/1000** in
+  **428 s** at **concurrency 32** (same 26 long prompts exceeded the 2048-tok/slot context).
+- **Throughput (aggregate, under load):** prefill **914.2 tok/s**, decode **570.6 tok/s**.
+  Per-stream: TTFT median **342 ms**, TPOT median **49.1 ms**.
+- **vs Q4_K_M** (same load): decode **570.6 vs 653.6 tok/s** — Q8 moves ~2× the bytes per
+  weight and decode is bandwidth-bound, so it's slower; the gap (≈13%) is much smaller than the
+  single-stream llama-bench gap (70.6 vs 105.7) because at conc 32 the KV-cache traffic, not the
+  weights, dominates bandwidth. Memory **17.67 vs 16.19 GB** (≈1.3 GB heavier weights; the 64k KV
+  cache is the bulk of both).
+- GGUF: `ggml-org/SmolLM3-3B-GGUF` → `SmolLM3-Q8_0.gguf` (3.04 GiB weights). CUDA on the GB10,
+  `-ngl 99`, continuous batching. llama.cpp build `b9744-063d9c156`.

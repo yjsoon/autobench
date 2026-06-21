@@ -36,6 +36,9 @@ gated models, ambiguous sizes) all require judgment — do not downgrade this ru
   (or reboot). Docker-group fix was `sudo usermod -aG docker $USER`.
 - The user is in the `docker` group; **docker works without sudo**. All engines run as
   **NVIDIA NGC containers** (the decided runtime). Use `nvidia-ctk` / `--gpus all`.
+- **Credentials live in `.env`** (gitignored): `NIM_KEY` (NGC `nvapi-…`, for `nvcr.io` + NIM)
+  and `HF_TOKEN` (for gated HF downloads). Load with `set -a; source .env; set +a`. Never echo or
+  commit the values. `docker login nvcr.io` was run with `NIM_KEY` (succeeds).
 - ARM64 matters: many images/wheels are x86-only. Pick `arm64`/`sbsa` image tags.
 - **`nvidia-smi` reports N/A for all GPU memory** (unified with system RAM), and cgroup/`docker stats`
   *undercounts* it — CUDA's unified allocations skip the memory cgroup (saw 0.6 GiB cgroup vs 2.9 GiB
@@ -84,8 +87,10 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 - **TensorRT-LLM build time.** TRT-LLM compiles a per-model engine before it can serve — **record
   that compilation / engine-build time on the model page.** It's a real cost of the path (often the
   reason to prefer SGLang/vLLM) and belongs in the comparison.
-- **NIM: blocked for now.** Create NIM configs as `status: blocked` — the NGC NIM containers are
-  gated and no API key is available yet. Revisit when access is provided.
+- **NIM: now available.** An NGC key is in `.env` as `NIM_KEY` (verified 2026-06-21: `nvapi-…`,
+  `docker login nvcr.io -u '$oauthtoken' --password-stdin` → Login Succeeded). NIM configs may now
+  be **run** (not auto-blocked) — pull `nvcr.io/nim/...` images and pass the key as `NGC_API_KEY`.
+  Only block a specific NIM config if that model isn't in the NIM catalog / can't be served.
 - **Workload dataset:** benchmark against the real dataset in **`./benchmark_data/`** —
   `ShareGPT_V3_unfiltered_cleaned_split.json` (ShareGPT V3, 94k conversations, ~642 MB,
   **gitignored — never commit it**), not synthetic fixed-length tokens. Feed it to each engine's
