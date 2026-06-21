@@ -16,11 +16,15 @@ and tok/s (prefill + decode)**, plus peak memory.
 ## How it's organized
 
 - **Each page in the listing below is one configuration** — a specific model × engine ×
-  quantization. Pages are tagged by model family, company, engine, and quant, so you can
-  [browse by tag]({{ '/tags/' | relative_url }}).
-- Three inference engines are benchmarked, all as NVIDIA NGC containers:
-  **llama.cpp**, **vLLM**, and **TensorRT-LLM**.
-- Completed runs sort to the top by completion time; pending configurations follow.
+  quantization. Pages are tagged by lab, model family, quant, size bucket, and a `Spark recipe`
+  flag, so you can [browse by tag]({{ '/tags/' | relative_url }}).
+- Engines are run as NVIDIA NGC / official containers: **llama.cpp**, **vLLM**, **SGLang**,
+  **TensorRT-LLM** (and **NIM** where available). The engine shown on a *pending* row is a
+  starting guess — the actual server is chosen per model at benchmark time (whichever is fastest
+  for that model on the Spark), so a model often ends up with **several configs that compound
+  across engines, quants, and speculative-decoding variants**.
+- Completed runs sort to the top by completion time; pending configurations follow, with
+  blocked (needs-review) ones last.
 
 ## Configurations
 

@@ -64,6 +64,10 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   **`status: blocked`** instead of running it; the user reviews blocked items later.
 - **Status values:** `pending` → `blocked` (needs human review) / `done`. Listing sorts
   done (newest first) → pending → blocked (last).
+- **Compound dimensions — that's the point.** Wherever a model supports it, benchmark the
+  cross-product as separate configs: engine × quant × speculative-decoding (e.g. gpt-oss-20b →
+  vLLM, SGLang, SGLang+EAGLE3, TRT-LLM). More comparable data points is the goal, not one config
+  per model.
 - **Engine selection per model.** When loading a new model to benchmark, first check current
   sources (NVIDIA Dev Forums, `build.nvidia.com/spark`, the engine repos/discussions) for which
   serving stack is claimed **highest-performance for THAT model on GB10/Spark**. If one is the
