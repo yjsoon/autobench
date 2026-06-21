@@ -88,14 +88,29 @@ Until both are cleared, no GPU-accelerated run is possible.
   once in the docker group to confirm the Liquid compiles before first push.
 - Before first deploy: set `url`/`baseurl` in `_config.yml`, enable Pages → Source: GitHub Actions.
 
+### 2026-06-21 — first real runs: SmolLM3-3B smoke test (llama.cpp) ✅
+- Engine image: `ghcr.io/ggml-org/llama.cpp:full-cuda` (ARM64). **Gotcha:** dispatcher entrypoint —
+  invoke llama-bench as `--bench` (not `llama-bench`). All 99 layers offload to the GB10 (CUDA).
+- GGUFs from `ggml-org/SmolLM3-3B-GGUF`. Wrapper: `scripts/bench-llamacpp.sh`.
+- Numbers (pp512/tg128): **Q4_K_M 7214/105.7 tok/s @ 2.94 GiB**; **Q8_0 6391/70.6 tok/s @ 4.18 GiB**.
+  Decode tracks bytes-per-weight (bandwidth bound); prefill stays high (compute bound).
+- **Memory-measurement learnings** (see methodology): nvidia-smi = N/A on GB10; cgroup/docker-stats
+  undercounts unified GPU memory; system `MemAvailable` delta is the trustworthy number.
+- Workflow validated end-to-end. Next: scale up (gpt-oss-20b/Nemotron-Nano) and bring up vLLM/TRT-LLM.
+
 ---
 
 ## Measurement methodology
 
-- **Peak memory** (`mem_gb`, `mem_source`): unified LPDDR5X is shared CPU/GPU, so sample at
-  ~0.5 s during each run and take the **max** of `nvidia-smi memory.used` and the container's
-  cgroup-v2 `memory.peak`; also note engine self-reports (vLLM KV-cache size, llama.cpp
-  model+KV buffers). Record which source the headline number came from.
+- **Peak memory** (`mem_gb`, `mem_source`): ⚠️ Two gotchas on the GB10, both found by measuring:
+  1. `nvidia-smi` reports **N/A** for all GPU memory (unified with system RAM).
+  2. The container's cgroup / `docker stats` **undercounts** GPU memory — CUDA's unified
+     allocations don't all land in the memory cgroup (observed: `docker stats` ~0.6 GiB while
+     the system actually consumed ~2.9 GiB for a 1.78 GiB Q4 model).
+  → **Primary metric = system `MemAvailable` delta from an idle baseline**, sampled every **10 s**
+  (take the max drop). The box is dedicated, so whole-system delta ≈ the model's footprint.
+  Keep `docker stats` as a CPU-side secondary; also note engine self-reports (vLLM KV-cache size,
+  llama.cpp model+KV buffers). Record which source the headline number used.
 - **Input modalities** (`modalities`, `mm_served`): detect what the *model* accepts from the HF
   repo — `pipeline_tag`, `vision_config`/`audio_config`, `preprocessor_config.json` / AutoProcessor —
   mapped to {text, image, audio, video}. `mm_served: false` flags runs where the engine serves a
@@ -103,7 +118,10 @@ Until both are cleared, no GPU-accelerated run is possible.
 
 ## Results
 
-_(per-run rows land here once benchmarking starts)_
+Engine: llama.cpp `full-cuda` build `063d9c156 (9744)`, `-ngl 99`, llama-bench `-p 512 -n 128`.
+Mem = system `MemAvailable` delta (cgroup/nvidia-smi unusable — see methodology).
 
 | Date | Model | Quant/Precision | Engine | Ctx | Prefill tok/s | Decode tok/s | Mem | Full command | Notes |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-06-21 | SmolLM3-3B | Q4_K_M | llama.cpp | pp512/tg128 | 7214.5 | 105.7 | 2.94 GiB | `--bench -m SmolLM3-Q4_K_M.gguf -p 512 -n 128 -ngl 99` | smoke test ✅ |
+| 2026-06-21 | SmolLM3-3B | Q8_0 | llama.cpp | pp512/tg128 | 6391.1 | 70.6 | 4.18 GiB | `--bench -m SmolLM3-Q8_0.gguf -p 512 -n 128 -ngl 99` | decode bw-bound vs Q4 |

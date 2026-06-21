@@ -26,6 +26,8 @@ Take notes the entire time. The notes ARE the deliverable.
 - The user is in the `docker` group; **docker works without sudo**. All engines run as
   **NVIDIA NGC containers** (the decided runtime). Use `nvidia-ctk` / `--gpus all`.
 - ARM64 matters: many images/wheels are x86-only. Pick `arm64`/`sbsa` image tags.
+- **`nvidia-smi` reports N/A for all GPU memory** (unified with system RAM). Measure peak via the
+  container's cgroup-v2 `memory.peak` + system `MemAvailable` delta — NOT nvidia-smi. Sampler: 10 s.
 
 ## Engines to benchmark (decided)
 
