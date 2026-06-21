@@ -48,7 +48,8 @@ where the dense Nemotron-Nano-4B managed only 141 tok/s decode, this one hits **
   21.6 GB for the smaller-on-paper dense 4B that pre-allocates a full 64K transformer KV) and in the
   flat, fast per-token decode. This is the standout finding of the small-model sweep: at 32-way
   serving on GB10, architecture (hybrid SSM) beats both parameter count and quant format for decode
-  throughput. llama.cpp's otherwise-weak concurrency scaling (see Nemotron-Nano-4B) is far less of a
-  bottleneck when the KV cost is gone.
+  throughput. (Note: llama.cpp parallelizes 32-way serving fine here — Phi-4-mini-reasoning, a dense
+  3.8B on the same engine, hit 552 tok/s; the Nemotron-Nano-4B's 141 tok/s is a model-specific
+  anomaly, not an engine limit. The hybrid just removes the KV cost on top of that.)
 - **Slot-split errors (15):** `-c 65536 --parallel 32` → 2048 tok/slot; longer ShareGPT prompts 400.
   Engine-config artifact, consistent across the llama.cpp runs.

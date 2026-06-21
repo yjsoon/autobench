@@ -34,19 +34,21 @@ run_command: |
     --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**First of the small→big llama.cpp sweep — and a clean demonstration of llama.cpp's weak
-high-concurrency scaling on GB10.** NVIDIA's own Q4_K_M GGUF (2.7 GB file).
+**First of the small→big llama.cpp sweep — and, in hindsight, the slow outlier of the ≤4B set.**
+NVIDIA's own Q4_K_M GGUF (2.7 GB file).
 
 - **Workload:** ShareGPT V3, concurrency 32. **Hit the 15-min cap** at **545/1000 prompts** with
   **11 errors** (the long-prompt slot-split artifact below). Loaded in **16 s**.
 - **Throughput (aggregate, conc 32):** prefill **112.4 tok/s**, decode **141.3 tok/s**, TPOT median
-  **211 ms** (≈4.7 tok/s/stream). **A 4B model hitting the time cap is the headline finding:** on the
-  FP4/FP8 MoE path, vLLM/SGLang pushed 280–390 tok/s decode; here a *much smaller* 4B dense on
-  llama.cpp musters only 141 tok/s aggregate at 32-way concurrency. llama.cpp's continuous batching
-  doesn't parallelize across many slots on the GB10 the way the paged-attention engines do — its
-  strength is single/low-concurrency, not 32-way serving. (This is a property of the engine at this
-  concurrency, not the model.) It's also a reasoning model, so completions ran long (132 k output
-  tokens over 545 reqs ≈ 243 each), compounding the time-cap.
+  **211 ms** (≈4.7 tok/s/stream).
+- **This is anomalously slow for the size — and it's the model, NOT llama.cpp.** My first read was
+  "llama.cpp scales poorly at conc 32," but the *very next two* ≤4B runs on the identical engine /
+  quant / ctx disproved that: **Granite-4.1-3B hit 617 tok/s and Phi-4-mini-reasoning 552 tok/s**
+  decode (both finished without the time-cap). So llama.cpp parallelizes fine here — Nemotron-Nano-4B
+  specifically decodes ~4× slower per token (TPOT 211 ms vs Phi's 50 ms). The cause is this model's
+  architecture/GGUF on llama.cpp, not the engine's concurrency. Worth a follow-up: re-run it on
+  vLLM/SGLang to see whether the slowness is llama.cpp-specific or intrinsic to the model. It's also
+  a reasoning model (132 k output tokens over 545 reqs ≈ 243 each), which compounds the time-cap.
 - **Slot-split errors (11):** `-c 65536 --parallel 32` gives each slot only **2048 tokens** of
   context; ShareGPT prompts longer than that return HTTP 400. Same artifact seen on the SmolLM3
   shakedown — an engine-config consequence, not a model failure. Kept ctx 65536 for comparability
