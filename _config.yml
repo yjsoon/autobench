@@ -26,8 +26,9 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
 
-# Keep working files out of the built site.
-# NOTES.md is intentionally NOT excluded — it renders as the /journal/ page.
+# Keep working files out of the built site, but force-render the journal at /journal/.
+include:
+  - notes/JOURNAL.md
 exclude:
   - notes/
   - scripts/
@@ -38,4 +39,5 @@ exclude:
   - Gemfile.lock
   - vendor/
   - README.md
+  - CLAUDE.md
   - .github/

@@ -33,7 +33,10 @@ record essential attributes. We especially capture, for every run:
 
 ---
 
-## 🚧 BLOCKERS (must be cleared by the user — sudo is password-gated)
+## 🚧 BLOCKERS — ✅ both CLEARED 2026-06-21
+
+GPU driver now loads (`nvidia-smi` shows **GPU 0: NVIDIA GB10**) and the user is in the
+`docker` group. The fixes that were applied are kept below for reference.
 
 ### 1. GPU driver not loaded — kernel/module version mismatch
 `nvidia-smi` fails ("couldn't communicate with the NVIDIA driver"); no `/dev/nvidia*` nodes.

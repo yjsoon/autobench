@@ -10,8 +10,9 @@ as a Jekyll site — one page per configuration, tagged by model family, company
 
 | Path | Purpose |
 |---|---|
-| `NOTES.md` | Running journal: system inventory, blockers, per-run results table. |
+| `notes/JOURNAL.md` | Running journal: system inventory, decisions, per-run results table. Renders at `/journal/`. |
 | `notes/MODELLIST.md` | Candidate models to benchmark. |
+| `index.md` | Project explainer + live configuration listing (site homepage). |
 | `_configs/` | One markdown page per benchmark configuration (the site collection). |
 | `_layouts/`, `index.md`, `tags.md`, `assets/` | Jekyll site (config spec sheets + tag browser). |
 | `scripts/new-config.sh` | Scaffold a new config page (used by the harness). |

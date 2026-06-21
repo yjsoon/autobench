@@ -1,12 +1,29 @@
 ---
 layout: default
-title: Configurations
+title: About
 ---
 
-# Benchmark configurations
+# DGX Spark Autobench
 
-One page per model × engine × quant configuration run on the DGX Spark.
-Each records the **full run command, context window, and tok/s**.
+Benchmarks of open-weight LLMs running on a single **NVIDIA DGX Spark** (GB10
+Grace-Blackwell, 121 GB unified memory, ARM64, CUDA 13).
+
+The goal: take a list of models and, **one at a time**, download each, run it across
+several engine / quantization / context configurations, and record the attributes that
+actually matter for local inference — above all the **full run command, context window,
+and tok/s (prefill + decode)**, plus peak memory.
+
+## How it's organized
+
+- **Each page in the listing below is one configuration** — a specific model × engine ×
+  quantization. Pages are tagged by model family, company, engine, and quant, so you can
+  [browse by tag]({{ '/tags/' | relative_url }}).
+- Three inference engines are benchmarked, all as NVIDIA NGC containers:
+  **llama.cpp**, **vLLM**, and **TensorRT-LLM**.
+- The [Journal]({{ '/journal/' | relative_url }}) is the running log — system inventory,
+  decisions, and the raw results table as runs complete.
+
+## Configurations
 
 {% assign configs = site.configs | sort: "title" %}
 {% if configs.size == 0 %}
