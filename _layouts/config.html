@@ -26,7 +26,7 @@ layout: default
       <tr><th>Prefill tok/s</th><td>{{ p.prefill_toks | default: "—" }}</td></tr>
       <tr><th>Decode tok/s</th><td>{{ p.decode_toks | default: "—" }}</td></tr>
       <tr><th>Peak memory (GB)</th><td>{{ p.mem_gb | default: "—" }}{% if p.mem_source %} <span class="muted">({{ p.mem_source }})</span>{% endif %}</td></tr>
-      {% if p.measured_on %}<tr><th>Measured on</th><td>{{ p.measured_on }}</td></tr>{% endif %}
+      {% if p.completed_at %}<tr><th>Completed</th><td>{{ p.completed_at }}</td></tr>{% elsif p.measured_on %}<tr><th>Completed</th><td>{{ p.measured_on }}</td></tr>{% endif %}
     </tbody>
   </table>
 

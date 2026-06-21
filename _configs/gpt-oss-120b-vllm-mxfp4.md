@@ -9,7 +9,7 @@ quant: MXFP4
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [gpt-oss, OpenAI, vLLM, MXFP4, MoE, 120B, flagship]
+tags: [OpenAI, gpt-oss, MXFP4, 41-130B, Spark recipe]
 
 status: pending
 prefill_toks:
@@ -17,6 +17,7 @@ decode_toks:
 mem_gb:
 mem_source:
 measured_on:
+completed_at:
 run_command: |
   # filled in by the harness once the run completes
 ---

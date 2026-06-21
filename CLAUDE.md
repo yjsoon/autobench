@@ -62,6 +62,11 @@ Structure:
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
   any plugin is fine; just keep tags.md plugin-free as-is).
+- **Tag taxonomy = exactly 5 categories**, nothing else: lab · family · quant · size-bucket
+  (`≤4B`/`5-15B`/`16-40B`/`41-130B`/`>130B`, by total params) · `Spark recipe` (native DGX Spark
+  support). Engine is a field/column, NOT a tag. `scripts/seed-stubs.sh` applies this when
+  generating stub pages — keep new pages consistent.
+- Done configs carry `completed_at` (date+time); shown as "Completed" on the page and in the listing.
 - `notes/JOURNAL.md` — the journal; force-included via `_config.yml` `include:` and rendered
   at **`/journal/`** even though `notes/` is otherwise excluded.
 - `scripts/new-config.sh` — generates a config page from CLI flags (the harness should call this).

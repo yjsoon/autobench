@@ -9,7 +9,7 @@ quant: Q4_K_M
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [SmolLM, Hugging Face, llama.cpp, Q4_K_M, 3B, smoke-test]
+tags: [Hugging Face, SmolLM, Q4_K_M, ≤4B]
 
 status: done
 prefill_toks: 7214.50
@@ -17,6 +17,7 @@ decode_toks: 105.67
 mem_gb: 2.94
 mem_source: system MemAvailable delta (10s sampling)
 measured_on: 2026-06-21
+completed_at: 2026-06-21 19:58 +08
 run_command: |
   docker run --rm --gpus all -v /home/gauravmm/models:/models:ro \
     ghcr.io/ggml-org/llama.cpp:full-cuda \

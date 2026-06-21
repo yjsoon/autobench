@@ -16,6 +16,8 @@ as a Jekyll site — one page per configuration, tagged by model family, company
 | `_configs/` | One markdown page per benchmark configuration (the site collection). |
 | `_layouts/`, `index.md`, `tags.md`, `assets/` | Jekyll site (config spec sheets + tag browser). |
 | `scripts/new-config.sh` | Scaffold a new config page (used by the harness). |
+| `scripts/seed-stubs.sh` | Seed pending stub pages for all runnable models in `MODELLIST.md`. |
+| `scripts/bench-llamacpp.sh` | Run llama-bench + 10s memory sampling for one GGUF. |
 | `Dockerfile.site`, `serve.sh`, `build.sh` | Dockerized Ruby/Jekyll — **no Ruby on the host**. |
 | `.github/workflows/jekyll.yml` | Builds & deploys the site to GitHub Pages on push to `main`. |
 

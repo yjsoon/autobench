@@ -98,6 +98,16 @@ Until both are cleared, no GPU-accelerated run is possible.
   undercounts unified GPU memory; system `MemAvailable` delta is the trustworthy number.
 - Workflow validated end-to-end. Next: scale up (gpt-oss-20b/Nemotron-Nano) and bring up vLLM/TRT-LLM.
 
+### 2026-06-21 — tag taxonomy + seeded the full backlog
+- **Tags restricted to 5 categories**: lab · family · quant · size-bucket
+  (`≤4B`/`5-15B`/`16-40B`/`41-130B`/`>130B`) · `Spark recipe` (native DGX Spark support).
+  Removed engine/MoE/flagship/smoke-test tags (engine stays a field/column).
+- **Seeded 33 pending stub pages** for every non-🔴 model in MODELLIST via `scripts/seed-stubs.sh`
+  (one canonical engine+quant config each). Total config pages now 36.
+- Done configs now carry `completed_at` (date+time), shown on the page and in the listing.
+- Stub quants/engines are *planned* (NVFP4→vLLM, MXFP4→vLLM, GGUF→llama.cpp, FP8 where published);
+  verify HF repo IDs + quant availability at download time.
+
 ---
 
 ## Measurement methodology

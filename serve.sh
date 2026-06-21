@@ -11,8 +11,13 @@ IMAGE="autobench-site"
 echo "==> Building Jekyll toolchain image ($IMAGE)…"
 docker build -f Dockerfile.site -t "$IMAGE" .
 
-echo "==> Serving on http://localhost:4000  (Ctrl-C to stop)"
+# Bind explicitly on all host interfaces so the preview is reachable from the LAN.
+# Safe: the site is a read-only static preview.
+lan_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+echo "==> Serving on all interfaces (Ctrl-C to stop):"
+echo "      http://localhost:4000/autobench/"
+[ -n "$lan_ip" ] && echo "      http://$lan_ip:4000/autobench/   (LAN)"
 exec docker run --rm -it \
   -v "$PWD":/site \
-  -p 4000:4000 -p 35729:35729 \
+  -p 0.0.0.0:4000:4000 -p 0.0.0.0:35729:35729 \
   "$IMAGE"

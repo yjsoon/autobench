@@ -25,13 +25,19 @@ and tok/s (prefill + decode)**, plus peak memory.
 
 ## Configurations
 
-{% assign configs = site.configs | sort: "title" %}
+{%- comment -%}
+  Order: completed configs first, newest completion at the top; then all pending.
+  completed_at format "YYYY-MM-DD HH:MM +TZ" sorts chronologically as a string.
+{%- endcomment -%}
+{% assign done = site.configs | where_exp: "c", "c.completed_at" | sort: "completed_at" | reverse %}
+{% assign pending = site.configs | where_exp: "c", "c.completed_at == nil" | sort: "title" %}
+{% assign configs = done | concat: pending %}
 {% if configs.size == 0 %}
 *No configurations recorded yet.*
 {% else %}
 <table class="listing">
   <thead>
-    <tr><th>Configuration</th><th>Engine</th><th>Quant</th><th>Ctx</th><th>Decode tok/s</th><th>Status</th></tr>
+    <tr><th>Configuration</th><th>Engine</th><th>Quant</th><th>Ctx</th><th>Decode tok/s</th><th>Status</th><th>Completed</th></tr>
   </thead>
   <tbody>
   {% for c in configs %}
@@ -42,6 +48,7 @@ and tok/s (prefill + decode)**, plus peak memory.
       <td>{{ c.context | default: "—" }}</td>
       <td>{{ c.decode_toks | default: "—" }}</td>
       <td><span class="status status-{{ c.status | default: 'pending' }}">{{ c.status | default: "pending" }}</span></td>
+      <td>{{ c.completed_at | default: c.measured_on | default: "—" }}</td>
     </tr>
   {% endfor %}
   </tbody>

@@ -6,6 +6,11 @@ permalink: /tags/
 
 # Browse by tag
 
+Every configuration is tagged in exactly five categories: **lab** (e.g. NVIDIA, OpenAI),
+**model family** (e.g. Nemotron, Llama), **quant / precision** (e.g. NVFP4, Q4_K_M),
+**size bucket** by total params (`≤4B`, `5-15B`, `16-40B`, `41-130B`, `>130B`), and
+**`Spark recipe`** — models with native DGX Spark recipe/support.
+
 {%- comment -%} Collect every tag across all configs (pure Liquid, no plugins). {%- endcomment -%}
 {% assign rawtags = "" %}
 {% for c in site.configs %}
