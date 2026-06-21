@@ -83,6 +83,16 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   with "does not match the expected peg-native format" (raw `/completion` works, `--jinja` /
   `--reasoning-format none` don't help). Benchmark gpt-oss on **vLLM/SGLang** (its recommended
   Spark engines) instead. Other (non-harmony) models serve fine on llama.cpp.
+- **gpt-oss + vLLM = harmony tiktoken-vocab egress gotcha:** at startup vLLM's `OpenAIServingResponses`
+  loads the **harmony** encoding, whose rust `openai_harmony` lib downloads `o200k_base.tiktoken`
+  (sha256 `446a9538…`) from `$TIKTOKEN_ENCODINGS_BASE` (default = openaipublic blob). The HF *model*
+  download already used the run's **one** allowed external connection, so this **second** fetch is
+  egress-capped → `HarmonyError: failed to download or load vocab file` and the server never comes up.
+  Fix (baked into `scripts/bench-vllm-serving.sh`): pre-seed the vocab at
+  `~/models/tiktoken_cache/o200k_base.tiktoken`, mount it `-v …:/vocab:ro`, and set
+  **`TIKTOKEN_ENCODINGS_BASE=/vocab`** (a **plain path**, NOT `file:///vocab` — the rust file:// parser
+  fails with "No such file or directory"). No second egress then needed. Same applies to any
+  harmony/gpt-oss model on SGLang.
 
 ## Benchmarking policy
 

@@ -34,9 +34,16 @@ docker rm -f "$NAME" >/dev/null 2>&1 || true
 # NB: this image's ENTRYPOINT is ["vllm","serve"], so the command is just <MODEL> <flags>
 # (do NOT prepend `vllm serve` — that doubles it and argparse rejects it).
 echo "==> launch vLLM $MODEL (ctx=$CTX, max-num-seqs=$CONC) extra=[${EXTRA[*]:-}]"
+# gpt-oss / harmony models need the o200k_base tiktoken vocab. The rust openai_harmony
+# lib fetches it from $TIKTOKEN_ENCODINGS_BASE (default = openaipublic blob). Pre-seed it
+# from a local mount so the load needs NO second egress (the sandbox caps outbound after
+# the first connection, which the HF model download already used). Plain path, not file://.
+VOCAB_DIR="$HOME/models/tiktoken_cache"
 docker run -d --name "$NAME" --gpus all --ipc=host -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -v "$VOCAB_DIR:/vocab:ro" \
   --env "HF_TOKEN=${HF_TOKEN:-}" \
+  --env "TIKTOKEN_ENCODINGS_BASE=/vocab" \
   "$IMAGE" "$MODEL" \
   --host 0.0.0.0 --port "$PORT" \
   --max-model-len "$CTX" --gpu-memory-utilization 0.85 --max-num-seqs "$CONC" \
