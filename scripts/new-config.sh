@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-model="" company="" family="" params="" engine="" quant="" context="" tags=""
+model="" company="" family="" params="" engine="" quant="" context="" tags="" modalities="text"
 while [ $# -gt 0 ]; do
   case "$1" in
     --model) model="$2"; shift 2;;
@@ -22,6 +22,7 @@ while [ $# -gt 0 ]; do
     --quant) quant="$2"; shift 2;;
     --context) context="$2"; shift 2;;
     --tags) tags="$2"; shift 2;;
+    --modalities) modalities="$2"; shift 2;;   # comma-separated: text,image,audio,video
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
@@ -32,8 +33,9 @@ slugify() { echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s
 slug="$(slugify "${model##*/}-${engine}-${quant}")"
 file="_configs/${slug}.md"
 
-# Build YAML tags list from comma-separated input.
+# Build YAML lists from comma-separated input.
 tags_yaml="[$(echo "$tags" | sed 's/, */, /g')]"
+modalities_yaml="[$(echo "$modalities" | sed 's/, */, /g')]"
 
 cat > "$file" <<EOF
 ---
@@ -45,12 +47,15 @@ params: ${params}
 engine: ${engine}
 quant: ${quant}
 context: ${context}
+modalities: ${modalities_yaml}   # input modalities the MODEL accepts (detected from HF repo)
+mm_served: true                  # set false if this run serves the model text-only
 tags: ${tags_yaml}
 
 status: pending
 prefill_toks:
 decode_toks:
-mem_gb:
+mem_gb:                          # peak; see mem_source
+mem_source:                      # e.g. "nvidia-smi max" / "cgroup memory.peak"
 measured_on:
 run_command: |
   # filled in by the harness once the run completes

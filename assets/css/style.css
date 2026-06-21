@@ -38,6 +38,7 @@ pre code { background: none; padding: 0; }
 }
 .tag:hover { border-color: var(--accent); }
 .tag-cloud { line-height: 2.2; }
+.muted { color: var(--muted); font-size: .85em; }
 
 .status { font-size: .8rem; padding: .05rem .5rem; border-radius: 4px; text-transform: uppercase; letter-spacing: .03em; }
 .status-pending { background: #fff3cd; color: #856404; }

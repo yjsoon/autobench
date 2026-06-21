@@ -7,12 +7,15 @@ params: 3B
 engine: llama.cpp
 quant: Q4_K_M
 context: 65536
+modalities: [text]
+mm_served: true
 tags: [SmolLM, Hugging Face, llama.cpp, Q4_K_M, 3B, smoke-test]
 
 status: pending
 prefill_toks:
 decode_toks:
 mem_gb:
+mem_source:
 measured_on:
 run_command: |
   # filled in by the harness once the run completes

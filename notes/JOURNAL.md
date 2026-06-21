@@ -90,6 +90,17 @@ Until both are cleared, no GPU-accelerated run is possible.
 
 ---
 
+## Measurement methodology
+
+- **Peak memory** (`mem_gb`, `mem_source`): unified LPDDR5X is shared CPU/GPU, so sample at
+  ~0.5 s during each run and take the **max** of `nvidia-smi memory.used` and the container's
+  cgroup-v2 `memory.peak`; also note engine self-reports (vLLM KV-cache size, llama.cpp
+  model+KV buffers). Record which source the headline number came from.
+- **Input modalities** (`modalities`, `mm_served`): detect what the *model* accepts from the HF
+  repo — `pipeline_tag`, `vision_config`/`audio_config`, `preprocessor_config.json` / AutoProcessor —
+  mapped to {text, image, audio, video}. `mm_served: false` flags runs where the engine serves a
+  multimodal model text-only (e.g. no `mmproj` for llama.cpp, no `--limit-mm-per-prompt` for vLLM).
+
 ## Results
 
 _(per-run rows land here once benchmarking starts)_
