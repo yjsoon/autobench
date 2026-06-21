@@ -6,6 +6,9 @@ family: DeepSeek
 params: 158B (MoE)
 engine: vLLM
 quant: AWQ-Int4
+quant_rationale: 4-bit to fit one Spark; AWQ preserves quality well at Int4.
+source_repo: deepseek-ai/DeepSeek-V4-Flash
+download_url: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash
 context: 131072
 modalities: [text]
 mm_served: true

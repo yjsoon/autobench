@@ -6,6 +6,9 @@ family: gpt-oss
 params: 116.8B (5.1B active, MoE)
 engine: vLLM
 quant: MXFP4
+quant_rationale: gpt-oss's native MXFP4 (~63 GB); FP4-accelerated on Blackwell with the CUTLASS kernels.
+source_repo: openai/gpt-oss-120b
+download_url: https://huggingface.co/openai/gpt-oss-120b
 context: 131072
 modalities: [text]
 mm_served: true

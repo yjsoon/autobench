@@ -6,6 +6,9 @@ family: Qwen
 params: 30.5B / 3B (MoE)
 engine: vLLM
 quant: FP8
+quant_rationale: Near-BF16 quality at half the bytes; official FP8 weights published.
+source_repo: Qwen/Qwen3-Coder-30B-A3B-Instruct
+download_url: https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct
 context: 262144
 modalities: [text]
 mm_served: true

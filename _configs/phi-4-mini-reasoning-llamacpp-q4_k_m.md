@@ -6,6 +6,9 @@ family: Phi
 params: 3.8B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: microsoft/Phi-4-mini-reasoning
+download_url: https://huggingface.co/microsoft/Phi-4-mini-reasoning
 context: 131072
 modalities: [text]
 mm_served: true

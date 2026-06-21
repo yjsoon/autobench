@@ -15,6 +15,8 @@ layout: default
       {% if p.params %}<tr><th>Parameters</th><td>{{ p.params }}</td></tr>{% endif %}
       {% if p.engine %}<tr><th>Engine</th><td>{{ p.engine }}</td></tr>{% endif %}
       {% if p.quant %}<tr><th>Quant / precision</th><td>{{ p.quant }}</td></tr>{% endif %}
+      {% if p.quant_rationale %}<tr><th>Why this quant</th><td>{{ p.quant_rationale }}</td></tr>{% endif %}
+      {% if p.download_url %}<tr><th>Download</th><td><a href="{{ p.download_url }}">{{ p.source_repo | default: p.download_url }}</a></td></tr>{% endif %}
       {% if p.context %}<tr><th>Context window</th><td>{{ p.context }}</td></tr>{% endif %}
       {% if p.modalities %}<tr><th>Input modalities</th><td>{{ p.modalities | join: ", " }}{% if p.mm_served == false %} <em>(served text-only here)</em>{% endif %}</td></tr>{% endif %}
     </tbody>

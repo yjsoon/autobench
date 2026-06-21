@@ -6,6 +6,9 @@ family: Gemma
 params: ~4B (edge)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: google/gemma-4-E4B-it-qat-w4a16-ct
+download_url: https://huggingface.co/google/gemma-4-E4B-it-qat-w4a16-ct
 context: 131072
 modalities: [text, image]
 mm_served: true

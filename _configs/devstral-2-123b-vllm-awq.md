@@ -6,6 +6,9 @@ family: Devstral
 params: 123B (MoE)
 engine: vLLM
 quant: AWQ-Int4
+quant_rationale: 4-bit to fit one Spark; AWQ preserves quality well at Int4.
+source_repo: mistralai/Devstral-2-123B-Instruct-2512
+download_url: https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512
 context: 131072
 modalities: [text]
 mm_served: true

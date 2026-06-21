@@ -6,6 +6,9 @@ family: Llama
 params: 109B / 17B (MoE)
 engine: vLLM
 quant: AWQ-Int4
+quant_rationale: 4-bit to fit one Spark; AWQ preserves quality well at Int4.
+source_repo: meta-llama/Llama-4-Scout-17B-16E-Instruct
+download_url: https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct
 context: 1048576
 modalities: [text]
 mm_served: true

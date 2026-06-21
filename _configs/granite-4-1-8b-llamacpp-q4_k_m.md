@@ -6,6 +6,9 @@ family: Granite
 params: 8B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: ibm-granite/granite-4.1-8b
+download_url: https://huggingface.co/ibm-granite/granite-4.1-8b
 context: 131072
 modalities: [text]
 mm_served: true

@@ -6,6 +6,9 @@ family: SmolLM
 params: 3B
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: Q4_K_M — best size/speed/quality balance and the default 4-bit for the smoke test.
+source_repo: ggml-org/SmolLM3-3B-GGUF
+download_url: https://huggingface.co/ggml-org/SmolLM3-3B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true

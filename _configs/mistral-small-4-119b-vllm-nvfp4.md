@@ -6,6 +6,9 @@ family: Mistral
 params: 119B (dense-ish)
 engine: vLLM
 quant: NVFP4
+quant_rationale: Blackwell-native FP4 — hardware-accelerated on the GB10; first choice for NVIDIA models.
+source_repo: mistralai/Mistral-Small-4-119B-2603
+download_url: https://huggingface.co/mistralai/Mistral-Small-4-119B-2603
 context: 131072
 modalities: [text]
 mm_served: true

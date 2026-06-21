@@ -6,6 +6,9 @@ family: Qwen
 params: 122B / 10B (MoE)
 engine: vLLM
 quant: GPTQ-Int4
+quant_rationale: 4-bit to fit one Spark; official GPTQ-Int4 weights published by the lab.
+source_repo: Qwen/Qwen3.5-122B-A10B-GPTQ-Int4
+download_url: https://huggingface.co/Qwen/Qwen3.5-122B-A10B-GPTQ-Int4
 context: 131072
 modalities: [text]
 mm_served: true

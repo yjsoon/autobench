@@ -6,6 +6,9 @@ family: Granite
 params: 28.9B (MoE)
 engine: vLLM
 quant: FP8
+quant_rationale: Near-BF16 quality at half the bytes; official FP8 weights published.
+source_repo: ibm-granite/granite-4.1-30b
+download_url: https://huggingface.co/ibm-granite/granite-4.1-30b
 context: 131072
 modalities: [text]
 mm_served: true

@@ -6,6 +6,9 @@ family: Nemotron
 params: 33B / 3B (MoE)
 engine: vLLM
 quant: NVFP4
+quant_rationale: Blackwell-native FP4 — hardware-accelerated on the GB10; first choice for NVIDIA models.
+source_repo: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4
+download_url: https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4
 context: 131072
 modalities: [text, image]
 mm_served: true

@@ -6,6 +6,9 @@ family: Llama
 params: 8B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: meta-llama/Llama-3.1-8B-Instruct
+download_url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
 context: 131072
 modalities: [text]
 mm_served: true

@@ -12,6 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 model="" company="" family="" params="" engine="" quant="" context="" tags="" modalities="text"
+rationale="" source_repo="" download_url=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --model) model="$2"; shift 2;;
@@ -23,6 +24,9 @@ while [ $# -gt 0 ]; do
     --context) context="$2"; shift 2;;
     --tags) tags="$2"; shift 2;;
     --modalities) modalities="$2"; shift 2;;   # comma-separated: text,image,audio,video
+    --rationale) rationale="$2"; shift 2;;     # why this quant was chosen
+    --source-repo) source_repo="$2"; shift 2;; # HF repo the quant is downloaded from
+    --download-url) download_url="$2"; shift 2;;
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
@@ -46,19 +50,22 @@ family: ${family}
 params: ${params}
 engine: ${engine}
 quant: ${quant}
+quant_rationale: ${rationale}    # why THIS quant was chosen
+source_repo: ${source_repo}      # HF repo the quant comes from (trusted)
+download_url: ${download_url}    # link to its HF download page
 context: ${context}
 modalities: ${modalities_yaml}   # input modalities the MODEL accepts (detected from HF repo)
 mm_served: true                  # set false if this run serves the model text-only
 tags: ${tags_yaml}
 
-status: pending
+status: pending                  # pending | blocked (needs human review) | done
 prefill_toks:
 decode_toks:
 mem_gb:                          # peak; see mem_source
-mem_source:                      # e.g. "nvidia-smi max" / "cgroup memory.peak"
-measured_on:
+mem_source:                      # system MemAvailable delta (nvidia-smi/cgroup unusable on GB10)
+completed_at:                    # date+time when status -> done
 run_command: |
-  # filled in by the harness once the run completes
+  # filled in by the run once it completes
 ---
 
 EOF

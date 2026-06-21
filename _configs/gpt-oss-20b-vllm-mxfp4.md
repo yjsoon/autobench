@@ -6,6 +6,9 @@ family: gpt-oss
 params: 21B / 3.6B (MoE)
 engine: vLLM
 quant: MXFP4
+quant_rationale: gpt-oss's native FP4 format; FP4-accelerated with the CUTLASS kernels.
+source_repo: openai/gpt-oss-20b
+download_url: https://huggingface.co/openai/gpt-oss-20b
 context: 131072
 modalities: [text]
 mm_served: true

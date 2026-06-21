@@ -42,6 +42,7 @@ pre code { background: none; padding: 0; }
 
 .status { font-size: .8rem; padding: .05rem .5rem; border-radius: 4px; text-transform: uppercase; letter-spacing: .03em; }
 .status-pending { background: #fff3cd; color: #856404; }
+.status-blocked { background: #ffe0b2; color: #663c00; }
 .status-running { background: #cce5ff; color: #004085; }
 .status-done, .status-ok { background: #d4edda; color: #155724; }
 .status-fail, .status-oom { background: #f8d7da; color: #721c24; }

@@ -25,12 +25,13 @@ and tok/s (prefill + decode)**, plus peak memory.
 ## Configurations
 
 {%- comment -%}
-  Order: completed configs first, newest completion at the top; then all pending.
+  Order: done first (newest completion on top) → blocked (needs review) → pending.
   completed_at format "YYYY-MM-DD HH:MM +TZ" sorts chronologically as a string.
 {%- endcomment -%}
 {% assign done = site.configs | where_exp: "c", "c.completed_at" | sort: "completed_at" | reverse %}
-{% assign pending = site.configs | where_exp: "c", "c.completed_at == nil" | sort: "title" %}
-{% assign configs = done | concat: pending %}
+{% assign blocked = site.configs | where_exp: "c", "c.status == 'blocked'" | sort: "title" %}
+{% assign pending = site.configs | where_exp: "c", "c.completed_at == nil" | where_exp: "c", "c.status != 'blocked'" | sort: "title" %}
+{% assign configs = done | concat: blocked | concat: pending %}
 {% if configs.size == 0 %}
 *No configurations recorded yet.*
 {% else %}

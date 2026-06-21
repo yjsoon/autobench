@@ -6,6 +6,9 @@ family: Nemotron
 params: 33B (dense)
 engine: vLLM
 quant: FP8
+quant_rationale: Near-BF16 quality at half the bytes; official FP8 weights published.
+source_repo: nvidia/Nemotron-Terminal-32B
+download_url: https://huggingface.co/nvidia/Nemotron-Terminal-32B
 context: 131072
 modalities: [text]
 mm_served: true

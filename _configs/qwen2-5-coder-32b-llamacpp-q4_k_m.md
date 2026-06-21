@@ -6,6 +6,9 @@ family: Qwen
 params: 32B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: Qwen/Qwen2.5-Coder-32B-Instruct
+download_url: https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct
 context: 131072
 modalities: [text]
 mm_served: true

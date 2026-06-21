@@ -6,6 +6,9 @@ family: Nemotron
 params: 4B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF
+download_url: https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF
 context: 131072
 modalities: [text]
 mm_served: true

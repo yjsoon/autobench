@@ -6,6 +6,9 @@ family: Ministral
 params: 14B (dense)
 engine: llama.cpp
 quant: Q4_K_M
+quant_rationale: GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance.
+source_repo: mistralai/Ministral-3-14B-Reasoning-2512
+download_url: https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512
 context: 131072
 modalities: [text]
 mm_served: true

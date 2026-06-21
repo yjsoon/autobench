@@ -53,6 +53,20 @@ while IFS='^' read -r slug name model lab family params engine quant context mod
   tags="$lab, $family, $quant, $bucket"
   [ "$spark" = "1" ] && tags="$tags, Spark recipe"
 
+  # Why this quant (generic per-format rationale; the running Opus agent refines + may add quants).
+  case "$quant" in
+    NVFP4)     why="Blackwell-native FP4 — hardware-accelerated on the GB10; first choice for NVIDIA models." ;;
+    MXFP4)     why="gpt-oss's native FP4 format; FP4-accelerated with the CUTLASS kernels." ;;
+    GPTQ-Int4) why="4-bit to fit one Spark; official GPTQ-Int4 weights published by the lab." ;;
+    AWQ-Int4)  why="4-bit to fit one Spark; AWQ preserves quality well at Int4." ;;
+    FP8)       why="Near-BF16 quality at half the bytes; official FP8 weights published." ;;
+    W4A16)     why="Official QAT w4a16 — quality-preserving 4-bit weights." ;;
+    Q4_K_M)    why="GGUF Q4_K_M — widest llama.cpp coverage, strong size/quality balance." ;;
+    Q8_0)      why="GGUF Q8_0 — near-lossless reference point." ;;
+    *)         why="Planned quant; rationale to confirm at download time." ;;
+  esac
+  url="https://huggingface.co/${model}"
+
   cat > "$file" <<EOF
 ---
 title: ${name} · ${engine} · ${quant}
@@ -62,6 +76,9 @@ family: ${family}
 params: ${params}
 engine: ${engine}
 quant: ${quant}
+quant_rationale: ${why}
+source_repo: ${model}
+download_url: ${url}
 context: ${context}
 modalities: [${modalities}]
 mm_served: true

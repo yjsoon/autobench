@@ -6,6 +6,9 @@ family: Gemma
 params: 26B / 4B (MoE)
 engine: vLLM
 quant: W4A16
+quant_rationale: Official QAT w4a16 — quality-preserving 4-bit weights.
+source_repo: google/gemma-4-26B-A4B-it
+download_url: https://huggingface.co/google/gemma-4-26B-A4B-it
 context: 131072
 modalities: [text, image]
 mm_served: true

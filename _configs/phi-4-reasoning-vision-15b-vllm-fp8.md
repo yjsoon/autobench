@@ -6,6 +6,9 @@ family: Phi
 params: 15B (dense)
 engine: vLLM
 quant: FP8
+quant_rationale: Near-BF16 quality at half the bytes; official FP8 weights published.
+source_repo: microsoft/Phi-4-reasoning-vision-15B
+download_url: https://huggingface.co/microsoft/Phi-4-reasoning-vision-15B
 context: 131072
 modalities: [text, image]
 mm_served: true

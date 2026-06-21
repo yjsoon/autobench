@@ -6,6 +6,9 @@ family: SmolLM
 params: 3B
 engine: llama.cpp
 quant: Q8_0
+quant_rationale: Q8_0 — near-lossless reference point to quantify Q4_K_M's quality/speed tradeoff.
+source_repo: ggml-org/SmolLM3-3B-GGUF
+download_url: https://huggingface.co/ggml-org/SmolLM3-3B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true

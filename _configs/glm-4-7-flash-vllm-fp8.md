@@ -6,6 +6,9 @@ family: GLM
 params: 31B (MoE)
 engine: vLLM
 quant: FP8
+quant_rationale: Near-BF16 quality at half the bytes; official FP8 weights published.
+source_repo: zai-org/GLM-4.7-Flash
+download_url: https://huggingface.co/zai-org/GLM-4.7-Flash
 context: 131072
 modalities: [text]
 mm_served: true

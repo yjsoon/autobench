@@ -6,6 +6,9 @@ family: Nemotron
 params: 30B / 3B (MoE)
 engine: vLLM
 quant: NVFP4
+quant_rationale: Blackwell-native FP4 — hardware-accelerated on the GB10; first choice for NVIDIA models.
+source_repo: nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4
+download_url: https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4
 context: 131072
 modalities: [text]
 mm_served: true

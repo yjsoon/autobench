@@ -11,6 +11,10 @@ configurations → record the attributes that matter, above all the
 **full run command · context window · tok/s (prefill + decode) · peak memory**.
 Take notes the entire time. The notes ARE the deliverable.
 
+**Experiments are conducted by an Opus-class agent.** Choosing between quants, sourcing trusted
+HF repos, and recovering from imprecise/unverified model-list entries (wrong repo IDs, renamed or
+gated models, ambiguous sizes) all require judgment — do not downgrade this run loop to a smaller model.
+
 ## The machine (`heruli`)
 
 - DGX Spark, **GB10 Grace-Blackwell**, **ARM64 (aarch64)**, Ubuntu 24.04, CUDA toolkit 13.
@@ -44,6 +48,21 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   entrypoint — run llama-bench via `--bench`, the server via `--server` (not the bare binary names).
   Reusable wrapper: `scripts/bench-llamacpp.sh` (runs `--bench`, samples memory at 10 s, parses tok/s).
 
+## Benchmarking policy
+
+- **Extra quants welcome.** Beyond the one stub config per model, add more quants whenever useful —
+  but only from a **trusted HF repo** (the model's own org, or a well-known quantizer like
+  ggml-org / unsloth / the lab's official quant). For every config record **`quant_rationale`**
+  (why this quant) and **`download_url`** + `source_repo` (its HF page).
+- **When unsure, BLOCK — don't guess.** If you're not confident a quant is safe/legit to run
+  (sketchy/unofficial repo, unclear license, can't confirm the format fits), set
+  **`status: blocked`** instead of running it; the user reviews blocked items later.
+- **Status values:** `pending` → `blocked` (needs human review) / `done`. Listing sorts
+  done (newest first) → blocked → pending.
+- **Benchmark used:** llama.cpp `llama-bench` — pure throughput (prefill `pp` + decode `tg` tok/s on
+  synthetic tokens), NOT an accuracy/quality eval. For vLLM/TRT-LLM use their serving benchmarks
+  (`vllm bench serve` / `benchmark_serving.py`) and note concurrency.
+
 ## What exists vs. what's left
 
 - ✅ **Website** (this repo) — see below. Builds clean; deploys via CI.
@@ -65,8 +84,9 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
 
 Structure:
 - `_configs/` — the collection; **one markdown page per configuration** (model × engine ×
-  quant). Front matter carries `model/company/family/params/engine/quant/context/tags` plus
-  results (`prefill_toks/decode_toks/mem_gb/run_command/status`). Layout: `_layouts/config.html`.
+  quant). Front matter: `model/company/family/params/engine/quant/quant_rationale/source_repo/
+  download_url/context/modalities/tags` plus results (`prefill_toks/decode_toks/mem_gb/mem_source/
+  run_command/completed_at`) and `status: pending | blocked | done`. Layout: `_layouts/config.html`.
 - `index.md` — project explainer + live config listing (homepage).
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
@@ -91,7 +111,7 @@ Structure:
 - Remote is **SSH**: `git@github.com:gauravmm/autobench.git`, authenticated by a repo
   **deploy key** at `.ssh-key/id_ed25519` (gitignored, no passphrase). `core.sshCommand` is
   configured to use it — normal `git push` just works.
-- Commit/push only when the user asks. Branch is `main`.
+- Commit/push after every new benchmark.
 
 ## Working style notes
 - The user moves fast and issues rapid directives; keep momentum, validate before pushing.
