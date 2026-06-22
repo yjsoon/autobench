@@ -22,6 +22,7 @@ mem_gb: 36.15
 mem_source: system MemAvailable delta (10s sampling) — base Q4_K_M + Q8_0-MTP draft, full KV at 65536 ctx
 measured_on: 2026-06-23
 completed_at: 2026-06-23 00:18 +08
+engine_image: ghcr.io/ggml-org/llama.cpp:full-cuda@sha256:12b288d6271e8de14412d61f641ca3ecd83bd73e1c4f4f22d86b2536f2b2f8e2
 run_command: |
   # ghcr.io/ggml-org/llama.cpp:full-cuda build 9744 (has --spec-type draft-mtp; MTP merged 2026-06-07).
   # Base + Google MTP drafter both under /home/gauravmm/models (unsloth merged GGUFs).

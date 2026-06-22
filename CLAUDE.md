@@ -232,8 +232,21 @@ Structure:
 - `_configs/` — the collection; **one markdown page per configuration** (model × engine ×
   quant). Front matter: `model/company/family/params/engine/speculative/quant/quant_rationale/
   source_repo/download_url/context/modalities/tags` plus results (`prefill_toks/decode_toks/mem_gb/
-  mem_source/run_command/completed_at`) and `status: pending | blocked | done`.
+  mem_source/run_command/completed_at/engine_image`) and `status: pending | blocked | done`.
   Layout: `_layouts/config.html`.
+  - **`engine_image`** — the **fully pinned base image** the run used: `repo:tag@sha256:<digest>`. Engine
+    tags (cu130-nightly, llama.cpp:full-cuda, …) are rolling, so the `@sha256` digest is the only durable
+    record of what actually ran. Populate it for every `done` run (capture with
+    `docker inspect --format '{{index .RepoDigests 0}}' <tag>` right after the run). No table column yet
+    (YAGNI) — when one's wanted, derive the short tag with `{{ c.engine_image | split: '@' | first }}`.
+    Digest map as of 2026-06-23 (cu130-nightly is abandoned — no push in ~2 months — so its digest is
+    stable): `vllm/vllm-openai:cu130-nightly@sha256:3dbe092ec5b2cef63b6104d33fa75d6ce53a7870962529ada69f78bbbc38e776` ·
+    `vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b`
+    (the cu130-nightly *successor* tag: vLLM 0.23.1rc1, GB10 jit-cache 0.6.12 — but it **regresses
+    Gemma-4 NVFP4 loading**, `gemma4.py tie_weights → NotImplementedError`, so it is NOT a drop-in
+    replacement; keep cu130-nightly default and use nightly-aarch64 only where 0.22+/`deepseek_v4` is
+    required) · `ghcr.io/ggml-org/llama.cpp:full-cuda@sha256:12b288d6271e8de14412d61f641ca3ecd83bd73e1c4f4f22d86b2536f2b2f8e2` ·
+    `lmsysorg/sglang:spark@sha256:16dec654b13e4d10a2d9eefa0560e85fed0d1fc9536986e1dfb1bcb0077cbc7a`.
 - `_archive/configs/` — **retired config pages that should no longer render.** To pull a model out of
   the site without losing its data (or to delete clutter), `git mv` its `_configs/*.md` here; `_archive/`
   is underscore-prefixed AND listed in `_config.yml` `exclude`, so Jekyll ignores it. (Done = preserved

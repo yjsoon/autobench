@@ -22,6 +22,7 @@ mem_gb: 14.90
 mem_source: system MemAvailable delta (10s sampling) — base Q4_K_M + Q8_0-MTP draft, full KV at 65536 ctx
 measured_on: 2026-06-22
 completed_at: 2026-06-22 23:59 +08
+engine_image: ghcr.io/ggml-org/llama.cpp:full-cuda@sha256:12b288d6271e8de14412d61f641ca3ecd83bd73e1c4f4f22d86b2536f2b2f8e2
 run_command: |
   # ghcr.io/ggml-org/llama.cpp:full-cuda build 9744. NOTE: -fa off (flash-attn) is REQUIRED here —
   # the E-series + MTP draft crashes the GB10 flash-attn kernel (ggml-cuda/fattn.cu:110 fatal error)
