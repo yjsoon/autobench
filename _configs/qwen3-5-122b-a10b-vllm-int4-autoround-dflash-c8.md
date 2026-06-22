@@ -15,40 +15,36 @@ modalities: [text]
 mm_served: false
 concurrency: 8
 tags: [qwen3.5-122b-a10b, Alibaba, Qwen, int4-AutoRound-EC, 41-130B, conc-8]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
-measured_on:
+measured_on: 2026-06-23
 completed_at:
+engine_image: vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b
 run_command: |
-  # User-supplied DGX Spark recipe (builder eugr). Needs the tf5 build = vLLM 0.22 + transformers 5.x
-  # (our autobench-vllm-022-tf image, VLLM_IMAGE=). DFlash is z-lab's custom spec method — verify the
-  # image's vLLM actually registers method=dflash before trusting the run (see Notes). solo_only.
-  # generation_config / speculative_config revision were truncated in the source recipe — fill from the
-  # repo before running. A custom chat template (qwen3.5-enhanced.jinja) must be mounted into the
-  # container (the recipe applies mods/fix-qwen3.5-enhanced-chat-template).
+  # BLOCKED at KV-cache unification (see Notes) — this is the actual de-risked command attempted,
+  # not the original recipe. Substituted nightly-aarch64 (vLLM 0.23.1, rewritten KV unifier) for the
+  # recipe's --tf5 build (vLLM 0.22, which hard-asserts on the hybrid page sizes). Pre-downloaded base +
+  # DFlash draft to cache; HF_HUB_OFFLINE=1. Dropped recipe extras irrelevant to a throughput bench
+  # (custom .jinja, fastsafetensors, flash_attn backend, tool/reasoning parsers, override-gen-config).
+  # Added num_speculative_tokens:8 (required by vLLM's dflash) and --enforce-eager (to skip the
+  # cudagraph-profiling KV path) — still hit the residual page-size assert.
   docker run -d --name vllm-qwen35-122b --gpus all --ipc=host -p 8000:8000 \
     -v ~/.cache/huggingface:/root/.cache/huggingface \
-    -v "$PWD/qwen3.5-enhanced.jinja:/chat/qwen3.5-enhanced.jinja:ro" \
-    --env HF_TOKEN=*** \
-    --env VLLM_ENABLE_CUDAGRAPH_GC=1 \
-    --env FLASHINFER_DISABLE_VERSION_CHECK=1 \
-    --env VLLM_USE_FLASHINFER_SAMPLER=1 \
-    --env VLLM_MARLIN_USE_ATOMIC_ADD=1 \
-    autobench-vllm-022-tf shieldstar/Qwen3.5-122B-A10B-int4-AutoRound-EC \
+    --env HF_TOKEN=*** --env HF_HUB_OFFLINE=1 \
+    --env VLLM_ENABLE_CUDAGRAPH_GC=1 --env FLASHINFER_DISABLE_VERSION_CHECK=1 \
+    --env VLLM_USE_FLASHINFER_SAMPLER=1 --env VLLM_MARLIN_USE_ATOMIC_ADD=1 \
+    vllm/vllm-openai:nightly-aarch64 shieldstar/Qwen3.5-122B-A10B-int4-AutoRound-EC \
     --served-model-name qwen --host 0.0.0.0 --port 8000 \
     --max-model-len 262144 --gpu-memory-utilization 0.85 \
     --max-num-batched-tokens 32768 --max-num-seqs 8 \
-    --dtype bfloat16 --load-format fastsafetensors --trust-remote-code \
-    --attention-backend flash_attn \
-    --speculative-config '{"method":"dflash","model":"z-lab/Qwen3.5-122B-A10B-DFlash","revision":"6c7242c934a9870d7c59c052..."}' \
-    --enable-prefix-caching --enable-chunked-prefill --enable-prompt-tokens-details \
-    --enable-auto-tool-choice --tool-call-parser qwen3_coder \
-    --chat-template /chat/qwen3.5-enhanced.jinja \
-    --reasoning-parser qwen3 --generation-config auto \
-    --override-generation-config '{"temperature":1.0,"top_p":0.95,"top_k":20,"min_p":0.0,"presence_penalty":1.5,"repetition_penalty":1.0}'
+    --dtype bfloat16 --trust-remote-code --enforce-eager \
+    --speculative-config '{"method":"dflash","model":"z-lab/Qwen3.5-122B-A10B-DFlash","revision":"bce6f76cef2027552bed4a8a1bc9c449def48f05","num_speculative_tokens":8}' \
+    --enable-prefix-caching --enable-chunked-prefill
+  # → RuntimeError: Engine core init failed; AssertionError at
+  #   vllm/v1/core/kv_cache_utils.py:1077 (unify_kv_cache_spec_page_size)
   python3 scripts/bench-serving.py --base-url http://localhost:8000 --model qwen \
     --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
     --num-prompts 500 --max-seconds 900 --concurrency 8 --max-tokens 256
@@ -76,24 +72,52 @@ old GPTQ stub.
   num_layers 48, `solo_only: true`, `max_nodes: 1`, container `vllm-node-tf5`, mod
   `fix-qwen3.5-enhanced-chat-template`.
 
-**Risk flags to resolve before/at run time** (why this is pending, not yet validated):
+---
 
-1. **Trust:** both `shieldstar` (base quant) and `z-lab` (DFlash drafter) are **individual uploaders** —
-   normally a BLOCK per the trusted-repo policy. Running only because the user supplied the full recipe
-   explicitly (same exception as the cosmicproc NVFP4 run). Verify both repos look legit (config,
-   `hf_quant_config.json`, downloads) at download time.
-2. **DFlash method support:** `method: dflash` is **z-lab's custom speculative method**, not a stock vLLM
-   one (vLLM ships eagle/eagle3/mtp/ngram/medusa). Confirm the `autobench-vllm-022-tf` vLLM actually
-   registers `dflash` (it may need a z-lab plugin / `--speculative-config` extension) before trusting the
-   run — if vLLM rejects the method, this is a BLOCK like the Gemma-4 MTP configs.
-3. **Truncated fields:** the source recipe truncated the `generation_config` (repetition_penalty + tail)
-   and the DFlash `revision` pin (`6c7242c9…`). Fill both from the repos before running; the command above
-   carries placeholders.
-4. **Custom chat template:** `qwen3.5-enhanced.jinja` (+ the `fix-qwen3.5-enhanced-chat-template` mod) is a
-   recipe artifact not in this repo — obtain and mount it, or the chat endpoint won't format correctly.
-5. **Fit:** int4 122B-A10B ≈ ~60 GB weights + 262K-ctx KV at util 0.85 on 121 GB unified — should fit but
-   watch the MemAvailable delta; drop `--max-model-len` if KV profiling OOMs.
+## BLOCKED 2026-06-23 — vLLM cannot unify this hybrid model's KV-cache page sizes. Investigated to the engine source; not flag-fixable here.
 
-**Capture at run time:** DFlash acceptance length / per-position acceptance (the wrapper greps
-`accept|spec.?decode` before teardown), decode speedup vs a non-spec int4 base, and the TRT-LLM-style
-engine/build cost if any. Cross-check DFlash acceptance against z-lab's published number and flag any gap.
+**Every preliminary risk flag cleared — the block is a real engine limitation, found only after the model
+loads.** Order of investigation:
+
+- **Trust ✓** — `shieldstar` int4-AutoRound-EC base: **42,785 dl/30d**, has `config.json` +
+  `quantization_config.json` + chat template in `tokenizer_config`; `z-lab` DFlash drafter: 1.55 GB,
+  4502 dl, 17 likes. Both corroborated (same individual-uploader exception as cosmicproc, on the user's
+  explicit recipe). Pre-downloaded both to cache (`HF_HUB_OFFLINE=1`, avoids the second-egress cap).
+- **DFlash support ✓** — `method: dflash` is **natively in vLLM 0.22+** (`vllm/v1/spec_decode/dflash.py`;
+  registered methods include `dflash`). Not a custom plugin. Needs explicit `num_speculative_tokens`
+  (set 8, matching z-lab's block-size; the recipe omitted it → first failure, a `pydantic ValidationError`,
+  fixed).
+- **Truncated fields ✓** — pinned the DFlash `revision` to the repo's current sha
+  `bce6f76cef2027552bed4a8a1bc9c449def48f05`; dropped the custom `qwen3.5-enhanced.jinja` (the base repo
+  ships a chat template) and the tool/reasoning/override-gen-config flags (irrelevant to a throughput
+  bench) — de-risked per ponytail.
+- **Weights load ✓** — int4 AutoRound runs on GB10: `MarlinLinearKernel` (linear) + `MARLIN` WNA16 MoE
+  backend selected, FLASH_ATTN, 15 shards (~67 GB) loaded. Fit is fine (~74 GB weights + small KV; only
+  2 KV heads).
+
+**The hard blocker — KV-cache page-size unification fails for `{GDN linear-attn + full-attn + DFlash draft}`:**
+Qwen3.5-122B-A10B is a **hybrid** model — Gated-DeltaNet **linear-attention** layers (`qwen_gdn_linear_attn`,
+mamba-style state cache) interleaved with **full-attention** layers — plus the DFlash draft's own KV spec.
+vLLM must unify all these into one page size, and can't:
+- **vLLM 0.22.0** (the recipe's `--tf5` build, `autobench-vllm-022-tf`): hard
+  `assert new_spec.page_size_bytes == max_page_size` in `unify_kv_cache_spec_page_size` → fails immediately.
+- **vLLM 0.23.1** (`nightly-aarch64`, the cu130-nightly successor — substituted because its KV unifier was
+  rewritten to pad mismatched pages): gets **further** — logs `Setting attention block size to 2192 …`
+  + `Padding mamba page size by 0.55% …` — but still trips a **residual**
+  `assert page_size_bytes == max_page_size` (`kv_cache_utils.py:1077`) inside `get_kv_cache_groups`. It
+  fails first in the cudagraph-memory-profiling path (`profile_cudagraph_memory →
+  _init_minimal_kv_cache_for_profiling`); with **`--enforce-eager`** (cudagraph disabled, profiling
+  skipped) it then fails at the **same assert in the real path** (`_initialize_kv_caches →
+  get_kv_cache_configs`). So `--enforce-eager` does **not** bypass it — the padding doesn't reach exact
+  page-size equality for this spec combination.
+
+**Conclusion:** needs an upstream vLLM fix to `unify_kv_cache_spec_page_size` (handle hybrid
+linear+full-attention **with** a spec-decode draft KV spec), or a source patch (declined — patching the
+sanity assert risks a wrong KV layout / silent corruption, against the trusted-path policy). Same *family*
+of "vLLM assertion on heterogeneous cache groups" that blocks Gemma-4 MTP, but a different exact assert
+(KV page size vs attention-head grouping). Re-test when vLLM ships a hybrid+spec KV-unification fix.
+
+**Note:** Qwen3.5 is superseded by Qwen3.6 (see the callout above); this was a user-requested standalone
+datapoint, not part of the core list. The base model would likely serve **without** DFlash (the draft's
+KV spec is a prime suspect for tipping unification over), but a non-spec int4 run is a different config and
+wasn't requested — left for a follow-up if wanted.
