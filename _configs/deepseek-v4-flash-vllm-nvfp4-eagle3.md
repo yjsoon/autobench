@@ -7,7 +7,7 @@ params: 158B (MoE)
 engine: vLLM
 speculative: EAGLE3.1
 quant: NVFP4
-quant_rationale: NVIDIA's NVFP4 (~79 GB) is the only build of this 158B MoE that fits one Spark — FP8 is ~160 GB. Base nvidia/DeepSeek-V4-Flash-NVFP4 + the ManiacLabs EAGLE3.1 draft (hidden sizes match at 4096). Blocked on engine support — see Notes.
+quant_rationale: Intended as NVIDIA's NVFP4 base + ManiacLabs EAGLE3.1 draft (hidden sizes match at 4096). BLOCKED ON FIT, not engine — the repo's *actual* weights are 168.3 GB (MIXED_PRECISION = FP8 backbone + NVFP4 experts; the "~79 GB" was a nominal-4-bit estimate that never held), over the 121 GB ceiling. See Notes.
 source_repo: nvidia/DeepSeek-V4-Flash-NVFP4
 download_url: https://huggingface.co/ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1
 context: 65536
@@ -36,7 +36,39 @@ run_command: |
   #     --speculative-config '{"method":"eagle3","model":"ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1","num_speculative_tokens":3}'
 ---
 
-**Blocked — got *agonizingly* close: everything works except v0.22.0's NVFP4 fused-MoE kernels lack
+## CORRECTION 2026-06-23 — the real blocker is FIT (168 GB), not the engine. The engine arrived; the model still doesn't fit.
+
+**The earlier "NVFP4 ~79 GB fits / blocked on a GB10 NVFP4-MoE kernel gap" conclusion was wrong on the
+decisive fact.** Re-checked the actual downloaded weights: `nvidia/DeepSeek-V4-Flash-NVFP4`'s own
+`safetensors.index.json` reports **`total_size = 168.3 GB`** (157 GiB on disk, 46 shards). Its
+`config.json` is **`quant_algo: MIXED_PRECISION` / `quant_method: fp8`** with per-layer NVFP4 only on the
+experts — i.e. an FP8 backbone + NVFP4 experts, essentially **FP8-sized**, not the nominal ~79 GB a pure
+4-bit 158B would be. **168 GB > the 121 GB unified-memory ceiling**, so the weights alone can't be held,
+let alone KV + the EAGLE3.1 draft. This was never caught before because the model failed at the kernel
+step *before* it ever tried to allocate weights. **No engine/kernel/oracle/compilation work changes this
+— it's a hard fit wall.**
+
+**Engine support, meanwhile, has fully arrived (now moot for this build):** `vllm/vllm-openai:nightly-aarch64`
+(vLLM **0.23.1rc1**, the cu130-nightly successor — cu130-nightly itself is **abandoned**, no push in
+~2 months) ships **`DeepseekV4ForCausalLM`** + **`deepseek_eagle3.py`** + a **rewritten NVFP4-MoE oracle**
+(CUTLASS/CuteDSL/Marlin fallbacks, no blanket sm_121 reject). `tie_word_embeddings` is False, so it would
+also dodge the gemma `tie_weights` regression. So the two-image standoff below is **resolved** — one image
+now has both halves — but it doesn't matter, because the NVFP4 build is 168 GB.
+
+**To actually benchmark DeepSeek-V4-Flash on one Spark you need a ~80 GB build (none is NVFP4):**
+- **GGUF Q4_K_M / IQ-quants (~80 GB)** — fits, but `deepseek_v4` is **not in upstream llama.cpp**; only
+  community/WIP forks load it (antirez's CPU+Metal experimental fork; the `ggml-org` `wip/deepseek-v4-support`
+  branch / PR #22378 with CUDA-Blackwell work). Requires building a WIP fork from source.
+- **INT4-AWQ/GPTQ (~80 GB) on vLLM** — fits, but only from community (individual-uploader) repos → trust
+  per the repo policy.
+
+So the **`vllm-nvfp4-eagle3` config as specified is physically impossible on a single 121 GB Spark.** Status
+stays **blocked**; the unblock is a fitting 4-bit build (different quant, and for GGUF a different engine),
+not a compile. Left for a follow-up pending an explicit choice of fitting path.
+
+<details><summary>Superseded 2026-06-22 investigation (engine-support angle — kept for the record)</summary>
+
+**Got *agonizingly* close: everything works except v0.22.0's NVFP4 fused-MoE kernels lack
 GB10 support.** Deep investigation 2026-06-22 at the user's request (try a newer engine, keep it in
 Docker, capture a full recipe).
 
@@ -96,3 +128,8 @@ are saved above and ready.
   a proper ≥0.22 GB10 build (or a targeted oracle patch — vLLM-internals surgery with crash risk if the
   forced backend's kernel doesn't actually fit) would resolve. Conclusion stands: **wait for
   cu130-nightly ≥ 0.22**, then the saved recipe runs as-is.
+
+*(Superseded: nightly-aarch64 = vLLM 0.23.1 now has both `deepseek_v4` and a GB10-capable NVFP4-MoE oracle,
+so this engine angle is resolved — but the 168 GB fit wall above makes it moot.)*
+
+</details>

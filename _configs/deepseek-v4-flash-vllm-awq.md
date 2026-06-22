@@ -25,13 +25,18 @@ run_command: |
   # blocked — deepseek_v4 arch not yet in the stock vLLM/SGLang Spark images (see Notes)
 ---
 
-**Blocked — fits at NVFP4, but the `deepseek_v4` arch isn't in the stock engines yet.** Updated
-2026-06-22.
+**Blocked — corrected 2026-06-23: the real wall is FIT, and the engine now exists.**
 
-The base (158B MoE) fits one Spark only at **`nvidia/DeepSeek-V4-Flash-NVFP4` (~79 GB)** — the FP8 is
-~160 GB, over the ceiling (the stub's AWQ-Int4 idea was right; NVFP4 is the trusted fitting build). But
-neither **vLLM cu130-nightly** nor **SGLang `:spark`** ships a `deepseek_v4` model implementation (both
-stop at `deepseek_v2`/V3), so the base won't load on the documented Spark engines. See
-`deepseek-v4-flash-vllm-nvfp4-eagle3` for the full investigation (done while evaluating the EAGLE3.1
-speculative draft) and the unblock options (newer engine build, or llama.cpp GGUF). Unblock once
-`deepseek_v4` lands in the stock images.
+Two facts changed since the 2026-06-22 note:
+1. **`deepseek_v4` IS now in vLLM** — `nightly-aarch64` (vLLM 0.23.1, the cu130-nightly successor) ships
+   `DeepseekV4ForCausalLM` + `deepseek_eagle3` + a GB10-capable NVFP4-MoE oracle. So "arch not in the
+   engines" is **no longer the blocker**.
+2. **The NVFP4 repo does NOT fit.** `nvidia/DeepSeek-V4-Flash-NVFP4` is **168.3 GB** (its own
+   `safetensors.index.json`; `MIXED_PRECISION` = FP8 backbone + NVFP4 experts, ≈ FP8-sized — the "~79 GB"
+   was a nominal-4-bit guess). 168 GB **> the 121 GB ceiling** → won't load on one Spark at all.
+
+A *fitting* build (~80 GB) means a **true** 4-bit quant: GGUF Q4 (needs a WIP/community `deepseek_v4`
+llama.cpp fork — not upstream) or an INT4-AWQ/GPTQ community repo on vLLM (trust caveat). Despite this
+page's title, **no NVFP4 build fits**; the AWQ-int4 route is the realistic one if a trusted repo is
+chosen. See `deepseek-v4-flash-vllm-nvfp4-eagle3` for the full corrected investigation. Stays blocked
+pending a fitting 4-bit build.
