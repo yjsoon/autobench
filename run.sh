@@ -1,3 +1,1 @@
-export CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=20
-
-claude --dangerously-skip-permissions
+CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=40 claude --dangerously-skip-permissions
