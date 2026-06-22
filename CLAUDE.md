@@ -153,6 +153,18 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
     spec run helped or hurt (e.g. gpt-oss-120b EAGLE3 went net-negative at conc 32: low acceptance +
     compute-saturated batch). If the grep catches nothing, note the metric wasn't emitted rather than
     omitting it silently.
+  - **Cross-check the acceptance rate against the published/expected value, and flag any gap.** Before
+    accepting a spec result, look up what the model's drafter is *supposed* to achieve (the lab/unsloth
+    blog, vLLM recipe, the EAGLE3/MTP paper) and compare. Rules of thumb: well-matched **MTP/EAGLE3
+    drafts land ~70–85% draft acceptance** (often >80% on *coding* workloads; **ShareGPT general chat
+    runs lower**, e.g. Qwen3.6-27B MTP measured **67%** here vs ~80%+ reported on code), **mean
+    acceptance length ≈ 3.0** for `num_speculative_tokens=3`; off-the-shelf separate draft models
+    usually <50%. **Acceptance is workload-driven, NOT strongly concurrency-driven** — it should stay
+    roughly constant across conc 1/8/32; what changes with concurrency is whether the *speedup*
+    materializes (bigger at low batch). So if a measured acceptance is **far from expectation**
+    (e.g. an MTP head at 30%, or acceptance that swings wildly with concurrency), that's a **red flag**
+    — likely a misconfigured method name, a base/draft mismatch, or a quant/format problem — and should
+    be investigated and noted on the config page, not silently recorded.
 - **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
 - **Per-run runtime cap:** target **~1000 entries or 15 minutes of wall-clock, whichever is
   shorter**, for each config's serving benchmark. Cap the ShareGPT prompt count (`--num-prompts`
