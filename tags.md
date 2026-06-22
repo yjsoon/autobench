@@ -16,6 +16,8 @@ its configurations in a table like the homepage. Pick a kind:
 - **[Quant / precision]({{ '/tags/quant/' | relative_url }})** — weight format (e.g. NVFP4, FP8, Q4_K_M).
 - **[Size bucket]({{ '/tags/size/' | relative_url }})** — by total params (`≤4B`, `5-15B`, `16-40B`,
   `41-130B`, `130B+`).
+- **[Concurrency]({{ '/tags/concurrency/' | relative_url }})** — parallel serves per run (e.g.
+  `conc-32`); the benchmark's fixed-load axis.
 - **[Spark recipe]({{ '/tags/spark-recipe/' | relative_url }})** — models with native DGX Spark support.
 
 <p class="tag-cloud">
@@ -24,5 +26,6 @@ its configurations in a table like the homepage. Pick a kind:
   <a class="tag" href="{{ '/tags/family/' | relative_url }}">Family</a>
   <a class="tag" href="{{ '/tags/quant/' | relative_url }}">Quant</a>
   <a class="tag" href="{{ '/tags/size/' | relative_url }}">Size</a>
+  <a class="tag" href="{{ '/tags/concurrency/' | relative_url }}">Concurrency</a>
   <a class="tag" href="{{ '/tags/spark-recipe/' | relative_url }}">Spark recipe</a>
 </p>

@@ -189,7 +189,9 @@ Structure:
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
   any plugin is fine; just keep tags.md plugin-free as-is).
-- **Tag taxonomy = 6 categories**, nothing else: **model** (a per-model slug, e.g. `gemma-4-31b`,
+- **Tag taxonomy = 7 categories**, nothing else: **concurrency** (a `conc-N` tag from the
+  `concurrency:` field, e.g. `conc-32` — the parallel-serve count; lets low-conc variants like
+  `conc-1` group separately) · **model** (a per-model slug, e.g. `gemma-4-31b`,
   derived from the canonical `model:` field — basename, lowercased, with `-it`/`-instruct`/format/quant/
   date suffixes stripped; **every run of one model shares it**, grouping all its engine/quant/spec
   variants) · lab · family · quant · size-bucket (`≤4B`/`5-15B`/`16-40B`/`41-130B`/`130B+`, by total

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/ibm-granite/granite-4.1-30b-FP8
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [granite-4.1-30b, IBM, Granite, FP8, 16-40B]
+concurrency: 32
+tags: [granite-4.1-30b, IBM, Granite, FP8, 16-40B, conc-32]
 status: done
 prefill_toks: 220.82
 decode_toks: 181.81

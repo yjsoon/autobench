@@ -12,7 +12,8 @@ download_url: https://huggingface.co/unsloth/gemma-4-12b-it-GGUF
 context: 65536
 modalities: [text]
 mm_served: false
-tags: [gemma-4-12b, Google, Gemma, Q6_K, 5-15B]
+concurrency: 32
+tags: [gemma-4-12b, Google, Gemma, Q6_K, 5-15B, conc-32]
 status: done
 prefill_toks: 115.67
 decode_toks: 159.29

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/deepseek-ai/DeepSeek-V2-Lite-Chat
 context: 163840
 modalities: [text]
 mm_served: true
-tags: [deepseek-v2-lite, DeepSeek, DeepSeek, Q4_K_M, 16-40B]
+concurrency: 32
+tags: [deepseek-v2-lite, DeepSeek, DeepSeek, Q4_K_M, 16-40B, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

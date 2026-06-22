@@ -12,7 +12,8 @@ download_url: https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [llama-3.3-70b, Meta, Llama, Q4_K_M, 41-130B]
+concurrency: 32
+tags: [llama-3.3-70b, Meta, Llama, Q4_K_M, 41-130B, conc-32]
 status: done
 prefill_toks: 62.17
 decode_toks: 48.7

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/Qwen/Qwen3.5-122B-A10B-GPTQ-Int4
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [qwen3.5-122b-a10b, Alibaba, Qwen, GPTQ-Int4, 41-130B]
+concurrency: 32
+tags: [qwen3.5-122b-a10b, Alibaba, Qwen, GPTQ-Int4, 41-130B, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [qwen3.5-397b-a17b, Alibaba, Qwen, UD-IQ1_M, 130B+]
+concurrency: 32
+tags: [qwen3.5-397b-a17b, Alibaba, Qwen, UD-IQ1_M, 130B+, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

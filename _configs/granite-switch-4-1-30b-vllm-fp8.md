@@ -12,7 +12,8 @@ download_url: https://huggingface.co/ibm-granite/granite-switch-4.1-30b-preview
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [granite-switch-4.1-30b-preview, IBM, Granite, FP8, 16-40B]
+concurrency: 32
+tags: [granite-switch-4.1-30b-preview, IBM, Granite, FP8, 16-40B, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

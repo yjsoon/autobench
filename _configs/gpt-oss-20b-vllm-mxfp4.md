@@ -12,7 +12,8 @@ download_url: https://huggingface.co/openai/gpt-oss-20b
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [gpt-oss-20b, OpenAI, gpt-oss, MXFP4, 16-40B, Spark recipe]
+concurrency: 32
+tags: [gpt-oss-20b, OpenAI, gpt-oss, MXFP4, 16-40B, Spark recipe, conc-32]
 status: done
 prefill_toks: 654.13
 decode_toks: 535.29

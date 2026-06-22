@@ -12,7 +12,8 @@ download_url: https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [devstral-2-123b, Mistral AI, Devstral, AWQ-Int4, 41-130B]
+concurrency: 32
+tags: [devstral-2-123b, Mistral AI, Devstral, AWQ-Int4, 41-130B, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

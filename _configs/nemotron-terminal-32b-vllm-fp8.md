@@ -12,7 +12,8 @@ download_url: https://huggingface.co/nvidia/Nemotron-Terminal-32B
 context: 40960
 modalities: [text]
 mm_served: true
-tags: [nemotron-terminal-32b, NVIDIA, Nemotron, FP8, 16-40B]
+concurrency: 32
+tags: [nemotron-terminal-32b, NVIDIA, Nemotron, FP8, 16-40B, conc-32]
 status: done
 prefill_toks: 170.66
 decode_toks: 166.22

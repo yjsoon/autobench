@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/mistralai_Ministral-3-14B-Reasoni
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [ministral-3-14b-reasoning, Mistral AI, Ministral, Q4_K_M, 5-15B]
+concurrency: 32
+tags: [ministral-3-14b-reasoning, Mistral AI, Ministral, Q4_K_M, 5-15B, conc-32]
 status: done
 prefill_toks: 304.9
 decode_toks: 266.03

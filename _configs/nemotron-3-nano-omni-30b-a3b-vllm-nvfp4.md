@@ -12,7 +12,8 @@ download_url: https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoni
 context: 65536
 modalities: [text, image, audio, video]
 mm_served: true
-tags: [nemotron-3-nano-omni-30b-a3b-reasoning, NVIDIA, Nemotron, NVFP4, 16-40B, Spark recipe]
+concurrency: 32
+tags: [nemotron-3-nano-omni-30b-a3b-reasoning, NVIDIA, Nemotron, NVFP4, 16-40B, Spark recipe, conc-32]
 status: done
 prefill_toks: 444.92
 decode_toks: 388.93

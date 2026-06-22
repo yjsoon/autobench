@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [deepseek-r1-distill-qwen-14b, DeepSeek, Q4_K_M, 5-15B]
+concurrency: 32
+tags: [deepseek-r1-distill-qwen-14b, DeepSeek, Q4_K_M, 5-15B, conc-32]
 status: done
 prefill_toks: 178.42
 decode_toks: 243.75

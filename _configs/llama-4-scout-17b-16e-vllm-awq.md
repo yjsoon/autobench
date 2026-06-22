@@ -12,7 +12,8 @@ download_url: https://huggingface.co/RedHatAI/Llama-4-Scout-17B-16E-Instruct-qua
 context: 65536
 modalities: [text]
 mm_served: false
-tags: [llama-4-scout-17b-16e, Meta, Llama, W4A16, 41-130B]
+concurrency: 32
+tags: [llama-4-scout-17b-16e, Meta, Llama, W4A16, 41-130B, conc-32]
 status: done
 prefill_toks: 86.65
 decode_toks: 61.48

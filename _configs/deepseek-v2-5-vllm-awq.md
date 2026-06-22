@@ -12,7 +12,8 @@ download_url: https://huggingface.co/deepseek-ai/DeepSeek-V2.5
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [deepseek-v2.5, DeepSeek, AWQ-Int4, 130B+]
+concurrency: 32
+tags: [deepseek-v2.5, DeepSeek, AWQ-Int4, 130B+, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/mistralai_Ministral-3-3B-Instruct
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [ministral-3-3b, Mistral AI, Ministral, Q4_K_M, ≤4B]
+concurrency: 32
+tags: [ministral-3-3b, Mistral AI, Ministral, Q4_K_M, ≤4B, conc-32]
 status: done
 prefill_toks: 1457.3
 decode_toks: 523.73

@@ -12,7 +12,8 @@ download_url: https://huggingface.co/microsoft/Phi-4-reasoning-vision-15B
 context: 131072
 modalities: [text, image]
 mm_served: true
-tags: [phi-4-reasoning-vision-15b, Microsoft, Phi, FP8, 5-15B]
+concurrency: 32
+tags: [phi-4-reasoning-vision-15b, Microsoft, Phi, FP8, 5-15B, conc-32]
 status: blocked
 prefill_toks:
 decode_toks:

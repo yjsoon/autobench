@@ -13,8 +13,8 @@ download_url: https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF
 context: 65536
 modalities: [text]
 mm_served: false
-tags: [gemma-4-e4b, Google, Gemma, Q4_K_M, ≤4B]
-
+concurrency: 32
+tags: [gemma-4-e4b, Google, Gemma, Q4_K_M, ≤4B, conc-32]
 status: done
 prefill_toks: 209.81
 decode_toks: 276.59

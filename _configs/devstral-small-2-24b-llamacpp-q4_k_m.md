@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/mistralai_Devstral-Small-2507-GGU
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [devstral-small, Mistral AI, Devstral, Q4_K_M, 16-40B]
+concurrency: 32
+tags: [devstral-small, Mistral AI, Devstral, Q4_K_M, 16-40B, conc-32]
 status: done
 prefill_toks: 967.85
 decode_toks: 139.0

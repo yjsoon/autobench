@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/microsoft_Phi-4-reasoning-plus-GG
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [phi-4-reasoning-plus, Microsoft, Phi, Q4_K_M, 5-15B]
+concurrency: 32
+tags: [phi-4-reasoning-plus, Microsoft, Phi, Q4_K_M, 5-15B, conc-32]
 status: done
 prefill_toks: 361.25
 decode_toks: 230.99

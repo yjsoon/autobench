@@ -12,7 +12,8 @@ download_url: https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [deepseek-r1-distill-llama-70b, DeepSeek, Q4_K_M, 41-130B]
+concurrency: 32
+tags: [deepseek-r1-distill-llama-70b, DeepSeek, Q4_K_M, 41-130B, conc-32]
 status: done
 prefill_toks: 53.57
 decode_toks: 52.82

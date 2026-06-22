@@ -12,7 +12,8 @@ download_url: https://huggingface.co/nvidia/Gemma-4-26B-A4B-NVFP4
 context: 65536
 modalities: [text, image]
 mm_served: false
-tags: [gemma-4-26b-a4b, Google, Gemma, NVFP4, 16-40B]
+concurrency: 32
+tags: [gemma-4-26b-a4b, Google, Gemma, NVFP4, 16-40B, conc-32]
 status: done
 prefill_toks: 439.25
 decode_toks: 384.12

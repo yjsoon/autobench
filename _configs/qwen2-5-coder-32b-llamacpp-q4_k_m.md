@@ -12,7 +12,8 @@ download_url: https://huggingface.co/bartowski/Qwen2.5-Coder-32B-Instruct-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [qwen2.5-coder-32b, Alibaba, Qwen, Q4_K_M, 16-40B]
+concurrency: 32
+tags: [qwen2.5-coder-32b, Alibaba, Qwen, Q4_K_M, 16-40B, conc-32]
 status: done
 prefill_toks: 108.21
 decode_toks: 112.11
