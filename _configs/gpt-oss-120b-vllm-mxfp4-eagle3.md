@@ -14,26 +14,53 @@ context: 65536
 modalities: [text]
 mm_served: true
 tags: [gpt-oss-120b, OpenAI, gpt-oss, MXFP4, 41-130B, Spark recipe]
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-measured_on:
-completed_at:
+status: done
+prefill_toks: 169.8
+decode_toks: 138.45
+mem_gb: 113.63
+mem_source: system MemAvailable delta (10s sampling) — vLLM static KV reservation (util 0.85) + EAGLE3 head
+measured_on: 2026-06-22
+completed_at: 2026-06-22 17:42 +08
 run_command: |
-  # planned: vllm/vllm-openai:cu130-nightly, harmony vocab pre-seeded, NVIDIA EAGLE3-throughput draft.
+  # vllm/vllm-openai:cu130-nightly, harmony vocab pre-seeded, NVIDIA EAGLE3-throughput draft.
   docker run -d --gpus all --ipc=host -p 8000:8000 \
     -v ~/.cache/huggingface:/root/.cache/huggingface -v ~/models/tiktoken_cache:/vocab:ro \
     --env HF_TOKEN=*** --env TIKTOKEN_ENCODINGS_BASE=/vocab \
     vllm/vllm-openai:cu130-nightly openai/gpt-oss-120b \
     --host 0.0.0.0 --port 8000 --max-model-len 65536 --gpu-memory-utilization 0.85 --max-num-seqs 32 \
     --speculative-config '{"model":"nvidia/gpt-oss-120b-Eagle3-throughput","method":"eagle3","num_speculative_tokens":3}'
+  python3 scripts/bench-serving.py --base-url http://localhost:8000 --model openai/gpt-oss-120b \
+    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
+    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**Queued.** EAGLE3 spec-decode on the gpt-oss-120b headliner, to compare against the base
-gpt-oss-120b vLLM run (279/253) and the SGLang run (188/140). Uses NVIDIA's **throughput**-optimized
-EAGLE3 head — the variant matched to 32-way serving (vs the `-short-context`/`-long-context`/latency
-heads). Expectation: a vLLM batch-aware EAGLE3 lift like Gemma saw (+41–59% at conc 32), though the
-harmony-parse errors from 256-token truncation will persist (the draft only speeds decode, it doesn't
-change the chat-path parsing). Will run after the current 41-130B MoE-giant sweep.
+**A clear negative result: EAGLE3 *hurt* gpt-oss-120b at concurrency 32 — the opposite of the Gemma
+spec-decode wins, and an important lesson about where speculation pays off.** gpt-oss-120b MXFP4 +
+NVIDIA's throughput-tuned EAGLE3 head, on vLLM.
+
+- **Workload:** ShareGPT V3, concurrency 32. **513/1000, 76 errors**, **hit the 15-min cap**. Loaded +
+  CUDA-graph captured in **511 s**.
+- **It went the wrong way vs the base:**
+
+  | gpt-oss-120b config | prefill | decode | completed | TTFT med |
+  |---|---|---|---|---|
+  | vLLM (base) | 278.8 | **252.8** | 788 | 29.6 s |
+  | **vLLM + EAGLE3** | 169.8 | **138.5** | 513 | 53.2 s |
+  | SGLang (base) | 187.7 | 140.3 | 560 | — |
+
+  Decode **dropped 253 → 138** (−45%) and completions fell 788 → 513 with EAGLE3 on. The draft head's
+  extra memory (reservation 113.6 vs 107.9 GB) and per-step draft+verify compute **compete with an
+  already-saturated batch**: at conc 32 a **120B** model leaves the GB10 with no idle compute for
+  speculation to exploit, so the draft is pure overhead and TTFT balloons to 53 s.
+- **Why Gemma won and this lost — the size × concurrency interaction.** vLLM-EAGLE3 gave the *26–31B*
+  Gemmas **+41–59%** at the same conc 32, because those smaller models leave headroom on the GB10 for
+  the draft to use. gpt-oss-120b is ~4× larger and already compute-bound at conc 32, so the same
+  technique inverts. **Speculative decoding helps when there's spare compute (small model and/or low
+  concurrency); for a large model under heavy batching it's counterproductive.** It would very likely
+  help gpt-oss-120b at low concurrency (a single-user latency deployment) — the regime EAGLE3 is built
+  for — just not in this 32-way throughput test. (Lowering `num_speculative_tokens` might claw some
+  back, but it won't beat the no-spec base here.)
+- **Harmony caveat unchanged:** still the harmony chat path (TPOT 0.0 not meaningful; 76 errors from
+  256-token truncation — fewer than the base's 212 only because far fewer requests completed).
+- **Takeaway:** for gpt-oss-120b throughput on one Spark, run **base vLLM** (253) — not EAGLE3. Save
+  EAGLE3 for latency-bound single-stream use.
