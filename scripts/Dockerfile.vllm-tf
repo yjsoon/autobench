@@ -1,0 +1,4 @@
+# vLLM cu130-nightly + upgraded transformers, for Gemma 4 "gemma4_unified" arch (12B)
+# which the stock image's transformers 5.6.0 does not recognize.
+FROM vllm/vllm-openai:cu130-nightly
+RUN pip install -U transformers

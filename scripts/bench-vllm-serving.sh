@@ -18,7 +18,9 @@ set -a; source .env 2>/dev/null || true; set +a
 
 DATASET="$(pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(pwd)/scripts/bench-serving.py"
-IMAGE=vllm/vllm-openai:cu130-nightly
+# Default to the DGX-Spark-documented image; override with VLLM_IMAGE for models needing a
+# newer transformers (e.g. the gemma4_unified 12B — see scripts/Dockerfile.vllm-tf).
+IMAGE="${VLLM_IMAGE:-vllm/vllm-openai:cu130-nightly}"
 PORT=8000
 
 MODEL="${1:?need an HF model path, e.g. nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4}"
