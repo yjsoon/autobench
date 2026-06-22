@@ -7,7 +7,7 @@ params: 158B (MoE)
 engine: vLLM
 speculative: EAGLE3.1
 quant: NVFP4
-quant_rationale: NVIDIA's NVFP4 (~79 GB) is the only build of this 158B MoE that fits one Spark — FP8 is ~160 GB. Base nvidia/DeepSeek-V4-Flash-NVFP4 + the ManiacLabs EAGLE3.1 draft (hidden sizes match: 4096). Blocked on engine support — see Notes.
+quant_rationale: NVIDIA's NVFP4 (~79 GB) is the only build of this 158B MoE that fits one Spark — FP8 is ~160 GB. Base nvidia/DeepSeek-V4-Flash-NVFP4 + the ManiacLabs EAGLE3.1 draft (hidden sizes match at 4096). Blocked on engine support — see Notes.
 source_repo: nvidia/DeepSeek-V4-Flash-NVFP4
 download_url: https://huggingface.co/ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1
 context: 65536
