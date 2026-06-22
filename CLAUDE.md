@@ -190,6 +190,18 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
     (e.g. an MTP head at 30%, or acceptance that swings wildly with concurrency), that's a **red flag**
     — likely a misconfigured method name, a base/draft mismatch, or a quant/format problem — and should
     be investigated and noted on the config page, not silently recorded.
+  - **gpt-oss EAGLE3 on ShareGPT = poor & concurrency-degrading acceptance (measured here).** The
+    RedHatAI 20b / NVIDIA-throughput 120b EAGLE3 heads land **mean accept-len only ~1.0–1.7** (avg draft
+    accept ~1.5–25%) on the ShareGPT + harmony-reasoning stream — far below the ~3.0/~70% expectation —
+    and it **falls monotonically as concurrency/model-size rises** (20b ~1.7→1.2 over conc 1→8; 120b
+    ~1.25→~1.05/~zero), the *opposite* of the constant-with-concurrency rule above. Off-distribution
+    draft tokens also intermittently **corrupt the harmony channel** → `HarmonyError: unexpected tokens
+    remaining in message header` / `Unexpected token 0 while expecting start token 200006` (a handful of
+    failed requests, worse at higher conc). So the published gpt-oss-20b conc-32 "+28% decode" win is a
+    scheduling/prefill effect at that one batch size, NOT high acceptance — don't generalize it down the
+    sweep, and the 120b gains nothing at any concurrency. **Takeaway:** these EAGLE3 heads only pay off
+    on **coding** workloads (where acceptance is high); for general chat, expect spec-decode to be neutral
+    or negative on gpt-oss. Re-test on a code dataset before claiming an EAGLE3 win for any reasoning model.
 - **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
 - **Per-run runtime cap:** target **~1000 entries or 15 minutes of wall-clock, whichever is
   shorter**, for each config's serving benchmark. Cap the ShareGPT prompt count (`--num-prompts`
