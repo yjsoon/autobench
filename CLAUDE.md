@@ -93,6 +93,31 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   **`TIKTOKEN_ENCODINGS_BASE=/vocab`** (a **plain path**, NOT `file:///vocab` — the rust file:// parser
   fails with "No such file or directory"). No second egress then needed. Same applies to any
   harmony/gpt-oss model on SGLang.
+- **Gemma-4 MTP on vLLM = BLOCKED on GB10 (heterogeneous-head + TRITON_ATTN), despite the recipe.**
+  vLLM *does* now ship native gemma-4 MTP (`--speculative-config '{"method":"mtp","model":"google/gemma-4-E<size>-it-assistant","num_speculative_tokens":N}'`)
+  — so the old "vLLM rejects gemma spec-decode" claim is only **half** true. Two walls, in order: (1) the
+  drafter's `gemma4_assistant` arch needs **transformers ≥ ~5.12**; stock `cu130-nightly` (vLLM
+  0.19.2rc1 / tf 5.6.0) rejects it at config-validation. Built **`scripts/Dockerfile.vllm-022-tf`**
+  (`FROM autobench-vllm-cu130-022` = vLLM **0.22.0** + `pip install -U transformers` → **5.12.1**, image
+  tag **`autobench-vllm-022-tf`**, pass via `VLLM_IMAGE=`) to clear it. (2) Past that, EngineCore dies in
+  KV-cache profiling: `triton_attn.py get_num_attention_heads_from_layers` asserts uniform `num_heads`
+  per attention group, but Gemma-4 (E4B) has **mixed `{8,4}` heads** — the same heterogeneous-head
+  property (head_dim 256/512) that *force-pins* it to TRITON_ATTN. With MTP's draft layer the builder
+  groups differing head counts → `AssertionError`. **Not flag-fixable** (backend is forced;
+  `num_speculative_tokens=1`/`enforce_eager` don't change grouping); **independent of base quant** (kills
+  FP8+MTP and NVFP4+MTP alike). **Working Gemma-4 MTP path = llama.cpp** (`--spec-type draft-mtp`, unsloth
+  merged-GGUF drafter; E-series also needs `-fa off`). See the `gemma-4-e4b-it-vllm-*-mtp` config pages.
+- **NVFP4 (W4A4) is a genuine GB10 fast-path even for tiny models** — cosmicproc's `gemma-4-E4B-it-NVFP4`
+  (ModelOpt, `FlashInferCutlassNvFp4LinearKernel`) beat FP8 on the same E4B by ~23% decode (the
+  benchmark's fastest decode). Worth trying NVFP4 alongside FP8 wherever a trusted NVFP4 exists. (Trust:
+  cosmicproc is an *individual* uploader — normally a BLOCK per the trusted-repo policy, run here on the
+  user's explicit request; 61k dl/mo + a clean error-free result corroborated it.)
+- **Transient EngineCore spawn deadlock on first vLLM launch — kill & retry.** Seen twice: a fresh
+  `vllm serve` hangs at init (log frozen at `Enabled custom fusions: act_quant`, **no** EngineCore
+  startup line, container ~0.2% CPU / weights never loaded). It's a **spawn race, not an
+  incompatibility** — a clean `docker rm -f` + relaunch loads fine. Distinguish from a *real* failure
+  (which prints a Python traceback / non-zero exit and reproduces every time): the deadlock is silent and
+  clears on retry. Don't mark a config blocked on the first hang.
 
 ## Benchmarking policy
 
@@ -197,6 +222,14 @@ Structure:
   source_repo/download_url/context/modalities/tags` plus results (`prefill_toks/decode_toks/mem_gb/
   mem_source/run_command/completed_at`) and `status: pending | blocked | done`.
   Layout: `_layouts/config.html`.
+- `_archive/configs/` — **retired config pages that should no longer render.** To pull a model out of
+  the site without losing its data (or to delete clutter), `git mv` its `_configs/*.md` here; `_archive/`
+  is underscore-prefixed AND listed in `_config.yml` `exclude`, so Jekyll ignores it. (Done = preserved
+  but hidden. True deletion is `git rm`.)
+- **`tags-model.md` / `tags-family.md` fold low-count groups into a trailing "Other" section** (via the
+  Liquid `concat` filter — accumulate single-config groups into one array, render multi-config groups in
+  their own `<h2>`, then one "Other" `<h2>` at the end). Thresholds differ on purpose: model folds only
+  true one-offs (`group.size == 1`); family folds `<= 3`. Keep both pure-Liquid (Pages-safe).
 - `index.md` — project explainer + live config listing (homepage).
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
