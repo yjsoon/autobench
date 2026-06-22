@@ -29,6 +29,7 @@ plugins:
 # Keep working files out of the built site.
 exclude:
   - notes/
+  - _archive/
   - scripts/
   - run.sh
   - serve.sh
