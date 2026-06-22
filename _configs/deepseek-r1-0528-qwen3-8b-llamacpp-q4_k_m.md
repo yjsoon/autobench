@@ -12,8 +12,7 @@ download_url: https://huggingface.co/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [DeepSeek, Q4_K_M, 5-15B]
-
+tags: [deepseek-r1-0528-qwen3-8b, DeepSeek, Q4_K_M, 5-15B]
 status: done
 prefill_toks: 256.08
 decode_toks: 374.69

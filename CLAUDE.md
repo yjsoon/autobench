@@ -181,10 +181,14 @@ Structure:
 - `tags.md` — pure-Liquid tag browser (no plugins, so it works on GitHub Pages). Don't add
   plugins that aren't Pages-safe unless CI builds with `ruby/setup-ruby` (it does — so 4.x +
   any plugin is fine; just keep tags.md plugin-free as-is).
-- **Tag taxonomy = exactly 5 categories**, nothing else: lab · family · quant · size-bucket
-  (`≤4B`/`5-15B`/`16-40B`/`41-130B`/`130B+`, by total params) · `Spark recipe` (native DGX Spark
-  support). Engine is a field/column, NOT a tag. `scripts/seed-stubs.sh` applies this when
-  generating stub pages — keep new pages consistent.
+- **Tag taxonomy = 6 categories**, nothing else: **model** (a per-model slug, e.g. `gemma-4-31b`,
+  derived from the canonical `model:` field — basename, lowercased, with `-it`/`-instruct`/format/quant/
+  date suffixes stripped; **every run of one model shares it**, grouping all its engine/quant/spec
+  variants) · lab · family · quant · size-bucket (`≤4B`/`5-15B`/`16-40B`/`41-130B`/`130B+`, by total
+  params) · `Spark recipe` (native DGX Spark support). Engine is a field/column, NOT a tag. Keep the
+  `model:` field identical across all configs of one model so the model tag groups them. Put the model
+  slug FIRST in the `tags:` list. `scripts/seed-stubs.sh` applies the taxonomy when generating stubs —
+  keep new pages consistent.
 - Done configs carry `completed_at` (date+time); shown as "Completed" on the page and in the listing.
   The homepage sorts done (newest first) → pending → blocked (last).
 - `scripts/new-config.sh` — generates a config page from CLI flags (the harness should call this).

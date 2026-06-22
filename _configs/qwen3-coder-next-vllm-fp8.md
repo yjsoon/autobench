@@ -12,8 +12,7 @@ download_url: https://huggingface.co/Qwen/Qwen3-Coder-Next
 context: 262144
 modalities: [text]
 mm_served: true
-tags: [Alibaba, Qwen, FP8, 41-130B]
-
+tags: [qwen3-coder-next, Alibaba, Qwen, FP8, 41-130B]
 status: pending
 prefill_toks:
 decode_toks:

@@ -12,8 +12,7 @@ download_url: https://huggingface.co/zai-org/GLM-4.7-Flash
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [Zhipu AI, GLM, FP8, 16-40B]
-
+tags: [glm-4.7-flash, Zhipu AI, GLM, FP8, 16-40B]
 status: blocked
 prefill_toks:
 decode_toks:

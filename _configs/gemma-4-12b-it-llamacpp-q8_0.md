@@ -12,8 +12,7 @@ download_url: https://huggingface.co/ggml-org/gemma-4-12B-it-GGUF
 context: 65536
 modalities: [text]
 mm_served: false
-tags: [Google, Gemma, Q8_0, 5-15B]
-
+tags: [gemma-4-12b, Google, Gemma, Q8_0, 5-15B]
 status: done
 prefill_toks: 111.22
 decode_toks: 153.02

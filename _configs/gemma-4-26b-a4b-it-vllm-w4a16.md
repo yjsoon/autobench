@@ -12,8 +12,7 @@ download_url: https://huggingface.co/google/gemma-4-26B-A4B-it
 context: 65536
 modalities: [text, image]
 mm_served: false
-tags: [Google, Gemma, BF16, 16-40B]
-
+tags: [gemma-4-26b-a4b, Google, Gemma, BF16, 16-40B]
 status: done
 prefill_toks: 212.74
 decode_toks: 190.09

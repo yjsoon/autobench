@@ -12,8 +12,7 @@ download_url: https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [Meta, Llama, Q4_K_M, 41-130B]
-
+tags: [llama-3.3-70b, Meta, Llama, Q4_K_M, 41-130B]
 status: pending
 prefill_toks:
 decode_toks:

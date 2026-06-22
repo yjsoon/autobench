@@ -12,8 +12,7 @@ download_url: https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NV
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [NVIDIA, Nemotron, NVFP4, 41-130B, Spark recipe]
-
+tags: [nvidia-nemotron-3-super-120b-a12b, NVIDIA, Nemotron, NVFP4, 41-130B, Spark recipe]
 status: done
 prefill_toks: 115.17
 decode_toks: 96.91

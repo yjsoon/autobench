@@ -12,8 +12,7 @@ download_url: https://huggingface.co/nvidia/Gemma-4-31B-IT-NVFP4
 context: 65536
 modalities: [text, image]
 mm_served: false
-tags: [Google, Gemma, NVFP4, 16-40B]
-
+tags: [gemma-4-31b, Google, Gemma, NVFP4, 16-40B]
 status: done
 prefill_toks: 182.75
 decode_toks: 166.96

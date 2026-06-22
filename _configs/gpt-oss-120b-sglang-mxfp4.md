@@ -12,8 +12,7 @@ download_url: https://huggingface.co/openai/gpt-oss-120b
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [OpenAI, gpt-oss, MXFP4, 41-130B, Spark recipe]
-
+tags: [gpt-oss-120b, OpenAI, gpt-oss, MXFP4, 41-130B, Spark recipe]
 status: done
 prefill_toks: 187.68
 decode_toks: 140.27

@@ -13,8 +13,7 @@ download_url: https://huggingface.co/unsloth/gemma-4-31B-it-GGUF
 context: 65536
 modalities: [text]
 mm_served: false
-tags: [Google, Gemma, Q4_K_M, 16-40B]
-
+tags: [gemma-4-31b, Google, Gemma, Q4_K_M, 16-40B]
 status: done
 prefill_toks: 79.37
 decode_toks: 92.98

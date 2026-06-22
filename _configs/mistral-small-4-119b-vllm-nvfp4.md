@@ -12,8 +12,7 @@ download_url: https://huggingface.co/mistralai/Mistral-Small-4-119B-2603-NVFP4
 context: 65536
 modalities: [text, image]
 mm_served: true
-tags: [Mistral AI, Mistral, NVFP4, 41-130B]
-
+tags: [mistral-small-4-119b, Mistral AI, Mistral, NVFP4, 41-130B]
 status: done
 prefill_toks: 174.3
 decode_toks: 134.96

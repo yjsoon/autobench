@@ -12,8 +12,7 @@ download_url: https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [Meta, Llama, Q4_K_M, 5-15B]
-
+tags: [llama-3.1-8b, Meta, Llama, Q4_K_M, 5-15B]
 status: done
 prefill_toks: 348.32
 decode_toks: 365.22

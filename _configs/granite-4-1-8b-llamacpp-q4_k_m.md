@@ -12,8 +12,7 @@ download_url: https://huggingface.co/ibm-granite/granite-4.1-8b-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [IBM, Granite, Q4_K_M, 5-15B]
-
+tags: [granite-4.1-8b, IBM, Granite, Q4_K_M, 5-15B]
 status: done
 prefill_toks: 271.57
 decode_toks: 323.81

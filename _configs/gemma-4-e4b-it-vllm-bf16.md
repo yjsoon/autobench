@@ -12,8 +12,7 @@ download_url: https://huggingface.co/google/gemma-4-E4B-it
 context: 65536
 modalities: [text, image]
 mm_served: false
-tags: [Google, Gemma, BF16, ≤4B]
-
+tags: [gemma-4-e4b, Google, Gemma, BF16, ≤4B]
 status: done
 prefill_toks: 678.77
 decode_toks: 565.78

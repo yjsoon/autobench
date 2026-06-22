@@ -12,8 +12,7 @@ download_url: https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [Alibaba, Qwen, FP8, 16-40B]
-
+tags: [qwen3-coder-30b-a3b, Alibaba, Qwen, FP8, 16-40B]
 status: done
 prefill_toks: 344.41
 decode_toks: 295.82

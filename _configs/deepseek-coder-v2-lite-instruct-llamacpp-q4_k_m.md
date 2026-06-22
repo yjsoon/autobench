@@ -12,8 +12,7 @@ download_url: https://huggingface.co/bartowski/DeepSeek-Coder-V2-Lite-Instruct-G
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [DeepSeek, Q4_K_M, 16-40B]
-
+tags: [deepseek-coder-v2-lite, DeepSeek, Q4_K_M, 16-40B]
 status: done
 prefill_toks: 112.01
 decode_toks: 130.53

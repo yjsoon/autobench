@@ -12,8 +12,7 @@ download_url: https://huggingface.co/RedHatAI/gemma-4-31B-it-FP8-Dynamic
 context: 65536
 modalities: [text, image]
 mm_served: false
-tags: [Google, Gemma, FP8, 16-40B]
-
+tags: [gemma-4-31b, Google, Gemma, FP8, 16-40B]
 status: done
 prefill_toks: 174.77
 decode_toks: 147.62

@@ -12,8 +12,7 @@ download_url: https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [Alibaba, Qwen, Q4_K_M, 16-40B]
-
+tags: [qwen2.5-coder-32b, Alibaba, Qwen, Q4_K_M, 16-40B]
 status: pending
 prefill_toks:
 decode_toks:

@@ -12,8 +12,7 @@ download_url: https://huggingface.co/unsloth/Llama-4-Maverick-17B-128E-Instruct-
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [Meta, Llama, UD-Q2_K_XL, 130B+]
-
+tags: [llama-4-maverick-17b-128e, Meta, Llama, UD-Q2_K_XL, 130B+]
 status: blocked
 prefill_toks:
 decode_toks:

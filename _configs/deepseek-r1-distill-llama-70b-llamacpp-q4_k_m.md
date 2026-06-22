@@ -12,8 +12,7 @@ download_url: https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [DeepSeek, DeepSeek, Q4_K_M, 41-130B]
-
+tags: [deepseek-r1-distill-llama-70b, DeepSeek, DeepSeek, Q4_K_M, 41-130B]
 status: pending
 prefill_toks:
 decode_toks:

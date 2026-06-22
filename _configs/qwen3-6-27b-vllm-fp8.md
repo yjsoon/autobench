@@ -12,8 +12,7 @@ download_url: https://huggingface.co/Qwen/Qwen3-32B-FP8
 context: 40960
 modalities: [text]
 mm_served: true
-tags: [Alibaba, Qwen, FP8, 16-40B]
-
+tags: [qwen3-32b, Alibaba, Qwen, FP8, 16-40B]
 status: done
 prefill_toks: 166.44
 decode_toks: 156.12

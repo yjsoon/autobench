@@ -12,8 +12,7 @@ download_url: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [DeepSeek, DeepSeek, AWQ-Int4, 130B+]
-
+tags: [deepseek-v4-flash, DeepSeek, DeepSeek, AWQ-Int4, 130B+]
 status: pending
 prefill_toks:
 decode_toks:

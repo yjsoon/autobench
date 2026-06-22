@@ -12,8 +12,7 @@ download_url: https://huggingface.co/bartowski/microsoft_Phi-4-mini-reasoning-GG
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [Microsoft, Phi, Q4_K_M, ≤4B]
-
+tags: [phi-4-mini-reasoning, Microsoft, Phi, Q4_K_M, ≤4B]
 status: done
 prefill_toks: 402.97
 decode_toks: 552.37

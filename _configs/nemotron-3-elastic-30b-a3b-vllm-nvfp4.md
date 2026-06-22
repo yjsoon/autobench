@@ -12,8 +12,7 @@ download_url: https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [NVIDIA, Nemotron, NVFP4, 16-40B, Spark recipe]
-
+tags: [nvidia-nemotron-labs-3-elastic-30b-a3b, NVIDIA, Nemotron, NVFP4, 16-40B, Spark recipe]
 status: done
 prefill_toks: 391.26
 decode_toks: 353.0

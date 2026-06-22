@@ -12,8 +12,7 @@ download_url: https://huggingface.co/ggml-org/gpt-oss-20b-GGUF
 context: 131072
 modalities: [text]
 mm_served: true
-tags: [OpenAI, gpt-oss, MXFP4, 16-40B, Spark recipe]
-
+tags: [gpt-oss-20b, OpenAI, gpt-oss, MXFP4, 16-40B, Spark recipe]
 status: blocked
 prefill_toks:
 decode_toks:

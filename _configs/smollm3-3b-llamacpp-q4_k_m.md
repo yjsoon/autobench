@@ -12,8 +12,7 @@ download_url: https://huggingface.co/ggml-org/SmolLM3-3B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [Hugging Face, SmolLM, Q4_K_M, ≤4B]
-
+tags: [smollm3-3b, Hugging Face, SmolLM, Q4_K_M, ≤4B]
 status: done
 prefill_toks: 1044.80
 decode_toks: 653.55

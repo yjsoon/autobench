@@ -12,8 +12,7 @@ download_url: https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF
 context: 65536
 modalities: [text]
 mm_served: true
-tags: [NVIDIA, Nemotron, Q4_K_M, ≤4B, Spark recipe]
-
+tags: [nvidia-nemotron-3-nano-4b, NVIDIA, Nemotron, Q4_K_M, ≤4B, Spark recipe]
 status: done
 prefill_toks: 112.44
 decode_toks: 141.32

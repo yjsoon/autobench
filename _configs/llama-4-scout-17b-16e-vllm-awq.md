@@ -12,8 +12,7 @@ download_url: https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct
 context: 1048576
 modalities: [text]
 mm_served: true
-tags: [Meta, Llama, AWQ-Int4, 41-130B]
-
+tags: [llama-4-scout-17b-16e, Meta, Llama, AWQ-Int4, 41-130B]
 status: pending
 prefill_toks:
 decode_toks:
