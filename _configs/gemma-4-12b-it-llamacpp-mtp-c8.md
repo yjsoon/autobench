@@ -15,13 +15,13 @@ modalities: [text]
 mm_served: false
 concurrency: 8
 tags: [gemma-4-12b, Google, Gemma, Q4_K_M, 5-15B, conc-8]
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-measured_on:
-completed_at:
+status: done
+prefill_toks: 191.35
+decode_toks: 145.48
+mem_gb: 25.26
+mem_source: system MemAvailable delta (10s sampling) — base Q4_K_M + Q8_0-MTP draft, full KV at 65536 ctx
+measured_on: 2026-06-23
+completed_at: 2026-06-23 00:12 +08
 run_command: |
   # ghcr.io/ggml-org/llama.cpp:full-cuda build 9744 (--spec-type draft-mtp). Base + MTP drafter (unsloth).
   docker run --gpus all -p 8081:8081 -v /home/gauravmm/models:/models:ro \
@@ -35,4 +35,23 @@ run_command: |
     --num-prompts 500 --max-seconds 300 --concurrency 8 --max-tokens 256
 ---
 
-**Queued — concurrency-8 variant of [Gemma 4 12B · llama.cpp · Q4_K_M + MTP].** Low-concurrency point for the spec-decode concurrency sweep (the run is otherwise identical; cap reduced to 500 prompts / 300 s since low-conc runs are latency characterizations, not throughput-to-1000). Compare decode + TPOT against this config's conc-32 run to see how the speculative gain scales as the batch empties.
+**Conc-8 point for the Gemma 4 12B MTP sweep — acceptance holds steady at ~3.15 across concurrency,
+confirming the "acceptance is workload-driven, not concurrency-driven" rule (the inverse of the gpt-oss
+EAGLE3 behavior).** unsloth Q4_K_M base + Google's official Q8_0 MTP drafter on llama.cpp, `-fa on`,
+ctx 65536, conc 8.
+
+- **Load:** ready in **29 s**.
+- **Workload:** ShareGPT V3, concurrency 8. **179/500 completed, 0 errors** before the **300 s time cap**
+  (`hit_time_cap=true`).
+- **Throughput:** prefill **191.35 tok/s**, decode **145.48 tok/s** aggregate (~18.2 tok/s/stream). TTFT
+  median **994 ms**, TPOT median **41.8 ms** — real latencies.
+- **MTP acceptance — steady at ~3.15.** Run-aggregate **mean acceptance length 3.15**, **per-position
+  (0.766, 0.580, 0.448, 0.354)** — essentially unchanged from conc-1 (3.21 / 0.789…). This is the textbook
+  MTP behavior CLAUDE.md describes: acceptance is set by how well the draft predicts the *workload*, so it
+  barely moves between conc-1 and conc-8. (Per-request accept-len swung 2.6–4.1 by prompt, but the running
+  mean was rock-steady.) 0 errors — no draft-induced corruption, unlike gpt-oss EAGLE3.
+- **Memory: 25.3 GB** = base Q4_K_M (~7.1 GB) + Q8_0 MTP draft (~0.5 GB) + 8-way KV at 65536 ctx — true
+  footprint.
+- Compare decode + TPOT against the conc-32 run to see how the speculative gain scales as the batch
+  empties: per-stream decode 18.2 (c8) vs 49.2 (c1) — the spec gain per stream is largest at low batch,
+  while aggregate throughput is highest at high batch, the expected trade-off.
