@@ -8,7 +8,7 @@
 {% assign _ordered = _done | concat: _pending | concat: _blocked %}
 <table class="listing">
   <thead>
-    <tr><th>Configuration</th><th>Engine</th><th>Quant</th><th>Ctx</th><th class="num">Decode tok/s</th><th>Status</th><th>Completed</th></tr>
+    <tr><th>Configuration</th><th>Engine</th><th>Quant</th><th>Ctx</th><th class="num">Conc</th><th class="num">Decode tok/s</th><th>Status</th><th>Completed</th></tr>
   </thead>
   <tbody>
   {% for c in _ordered %}
@@ -17,6 +17,7 @@
       <td>{{ c.engine | default: "—" }}{% if c.speculative %} + {{ c.speculative }}{% endif %}</td>
       <td>{{ c.quant | default: "—" }}</td>
       <td>{{ c.context | default: "—" }}</td>
+      <td class="num">{{ c.concurrency | default: "—" }}</td>
       <td class="num">{% if c.decode_toks %}{{ c.decode_toks | round: 1 }}{% else %}—{% endif %}</td>
       <td><span class="status status-{{ c.status | default: 'pending' }}">{{ c.status | default: "pending" }}</span></td>
       <td>{{ c.completed_at | default: c.measured_on | default: "—" }}</td>
