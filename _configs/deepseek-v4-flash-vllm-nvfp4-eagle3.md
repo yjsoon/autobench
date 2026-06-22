@@ -23,42 +23,57 @@ mem_source:
 measured_on:
 completed_at:
 run_command: |
-  # blocked — deepseek_v4 arch not in the stock engines (see Notes). Intended once an engine supports it:
-  #   vllm serve nvidia/DeepSeek-V4-Flash-NVFP4 --max-model-len 65536 --gpu-memory-utilization 0.9 \
-  #     --max-num-seqs 32 --speculative-config \
-  #     '{"model":"ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1","method":"eagle3","num_speculative_tokens":3}'
+  # Recipe is correct & ready (verified to the kernel-select step); blocked only by a GB10 NVFP4-MoE
+  # kernel gap in vLLM 0.22.0 (see Notes). Dockerfile: scripts/Dockerfile.vllm-v4flash
+  #   FROM vllm/vllm-openai:v0.22.0                 # natively bundles vllm/models/deepseek_v4 + eagle3
+  #   ENV VLLM_ALLOW_INSECURE_SERIALIZATION=1  EAGLE3_DRAFT_KV_CACHE_DTYPE=auto
+  # Run (single Spark, adapted from ManiacLabs SERVING.md's 4-GPU recipe → TP=1, NVFP4 base to fit):
+  #   docker run --gpus all --ipc=host -p 8000:8000 \
+  #     -v ~/.cache/huggingface:/root/.cache/huggingface --env HF_TOKEN=*** \
+  #     autobench-vllm-v4flash nvidia/DeepSeek-V4-Flash-NVFP4 \
+  #     --max-model-len 8192 --gpu-memory-utilization 0.85 --max-num-seqs 32 \
+  #     --trust-remote-code --enforce-eager --kv-cache-dtype fp8 --tensor-parallel-size 1 \
+  #     --speculative-config '{"method":"eagle3","model":"ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1","num_speculative_tokens":3}'
 ---
 
-**Blocked — the pieces fit, but no stock engine on the Spark supports the `deepseek_v4` architecture
-yet.** Investigated 2026-06-22 at the user's request.
+**Blocked — got *agonizingly* close: everything works except v0.22.0's NVFP4 fused-MoE kernels lack
+GB10 support.** Deep investigation 2026-06-22 at the user's request (try a newer engine, keep it in
+Docker, capture a full recipe).
 
-**What lines up (the run *would* work once an engine supports the arch):**
-- **Base fits at NVFP4.** DeepSeek-V4-Flash is a 158B MoE (256 experts, `DeepseekV4ForCausalLM`). FP8 is
-  ~160 GB (over the 121 GB ceiling); **`nvidia/DeepSeek-V4-Flash-NVFP4` is ~79 GB** — NVIDIA-official,
-  fits with room for KV. (The model-list stub's AWQ-Int4 was the right idea; NVFP4 is the better,
-  trusted, fitting build.)
-- **The EAGLE3.1 draft is compatible.** `ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1` is a standard
-  `LlamaForCausalLMEagle3` head whose **`target_hidden_size` (4096) matches the base's `hidden_size`
-  (4096)** — so vLLM's `eagle3` method should drive it. (Community org, 159 dl/mo — would carry a
-  source-tier caveat, but it's wirable.)
+**Everything that works (verified, in order):**
+- **Engine arch:** the stub's premise ("no engine has `deepseek_v4`") is **outdated for vLLM 0.22.0** —
+  it **natively bundles `vllm/models/deepseek_v4`** (the ManiacLabs SERVING.md overlay was upstreamed;
+  that overlay's GitHub repo is now 404, and doesn't matter). transformers 5.9.0 recognizes
+  `deepseek_v4`; the registry has `DeepSeekV4MTP` + `deepseek_eagle3`.
+- **Base fits:** `nvidia/DeepSeek-V4-Flash-NVFP4` (~79 GB) vs the 160 GB FP8 — NVIDIA-official, fits one
+  Spark.
+- **Draft compatible:** `ManiacLabs/DeepSeek-V4-Flash-EAGLE3.1` is a standard `LlamaForCausalLMEagle3`
+  head, `target_hidden_size` 4096 = base `hidden_size` 4096.
+- **GB10 runs v0.22.0:** smoke test passed — `torch 2.11.0+cu130`, device **NVIDIA GB10**, capability
+  **(12, 1) = sm_121**, a real matmul executed; and at load vLLM selected `CutlassFp8BlockScaledMMKernel`
+  for the FP8 linear layers (so **FP8 kernels work on GB10 in 0.22.0**).
 
-**The hard blocker — engine arch support:**
-- **vLLM cu130-nightly:** ships `deepseek_v2` + `deepseek_eagle3`/`deepseek_mtp`, but **no
-  `deepseek_v4` model** and nothing for `DeepseekV4ForCausalLM` in the registry → the base won't load.
-- **SGLang `:spark`** (the user asked specifically): ships `deepseek_v2` + `deepseek_nextn` + an EAGLE3
-  worker, but **also no `deepseek_v4`** → same wall. So **neither stock engine can serve the base**,
-  EAGLE3.1 or not.
-- A transformers bump won't help — this is a missing *engine model implementation*, not just a config
-  the tokenizer can't parse.
+**The one hard blocker — a 4-bit-MoE kernel gap (not the model, not the arch, not GB10 generally):**
+```
+NotImplementedError: No NvFp4 MoE backend supports the deployment configuration.
+DEBUG  NvFp4 MoE backend 'FLASHINFER_TRTLLM' does not support the deployment
+       configuration since kernel does not support current device cuda.
+```
+v0.22.0 ships **flashinfer 0.6.11**, whose **NVFP4 fused-MoE kernels have no GB10/sm_121 build** — every
+NVFP4 MoE backend (FlashInfer-TRTLLM, CUTLASS, Marlin) reports the device unsupported. It's specifically
+the **4-bit NVFP4 expert** path; FP8 linear is fine. Forcing a backend
+(`VLLM_USE_FLASHINFER_MOE_FP4=1`) hits the same wall.
 
-**Paths to unblock (need a decision):**
-1. **Newer engine build** — a bleeding-edge vLLM (main) or SGLang nightly that has added `deepseek_v4`.
-   Not the documented Spark images; ARM64/GB10 compatibility unverified, so this is itself an
-   experiment.
-2. **llama.cpp via GGUF** — many DeepSeek-V4-Flash GGUFs exist (incl. Spark-targeted
-   `0xSero/DeepSeek-V4-Flash-Spark-GGUF`), so a recent llama.cpp likely supports `deepseek_v4`. That
-   would run the **base**, and a **native-MTP** GGUF draft exists — but **not** this specific EAGLE3.1
-   safetensors head (no GGUF eagle3 draft for it). So that's "V4-Flash + MTP on llama.cpp", a different
-   spec config, not the requested one.
-3. **Wait** for `deepseek_v4` to land in the stock vLLM/SGLang Spark images, then run exactly as the
-   commented `run_command` above.
+**A genuine two-image standoff — neither has both halves:**
+
+| Image | `deepseek_v4` model | GB10 NVFP4-MoE kernels |
+|---|---|---|
+| `vllm/vllm-openai:v0.22.0` | ✅ native | ❌ (flashinfer 0.6.11, no sm_121) |
+| `vllm/vllm-openai:cu130-nightly` | ❌ (vLLM 0.19.2) | ✅ (the Nemotron NVFP4 MoEs run here) |
+
+**Unblock path (clean, no surgery):** the `cu130-nightly` tag is rolling — **once it advances to
+≥ 0.22, it has *both*** the `deepseek_v4` model and the GB10 NVFP4-MoE kernels, and the recipe above
+runs as-is. Alternatively, a v0.22.x image rebuilt with a GB10-capable flashinfer (≥ the version in
+cu130-nightly). The Dockerfile (`scripts/Dockerfile.vllm-v4flash`) and the exact single-Spark command
+are saved above and ready. (Not pursued: hand-porting kernels across the 0.19↔0.22 ABI, or rebuilding
+flashinfer for sm_121 — both heavy and fragile.)

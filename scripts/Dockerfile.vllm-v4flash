@@ -1,0 +1,6 @@
+# DeepSeek-V4-Flash + EAGLE3.1 on a single DGX Spark (GB10).
+# v0.22.0 natively bundles vllm/models/deepseek_v4 (the ManiacLabs overlay was upstreamed),
+# so no out-of-tree patch is needed. Env vars per ManiacLabs SERVING.md.
+FROM vllm/vllm-openai:v0.22.0
+ENV VLLM_ALLOW_INSECURE_SERIALIZATION=1 \
+    EAGLE3_DRAFT_KV_CACHE_DTYPE=auto
