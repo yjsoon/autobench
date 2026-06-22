@@ -1,0 +1,4 @@
+# vLLM 0.22 (cu130, GB10) + upgraded transformers, for Gemma 4 MTP drafter arch
+# `gemma4_assistant`, which the base image's transformers 5.6.0 does not recognize.
+FROM autobench-vllm-cu130-022
+RUN pip install -U transformers
