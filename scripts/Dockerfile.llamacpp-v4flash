@@ -1,0 +1,22 @@
+# llama.cpp built from cchuter/llama.cpp branch feat/v4-port-cuda with CUDA for GB10 (sm_121).
+# deepseek_v4 is NOT in upstream; this fork adds the DeepSeek-V4 CSA/HCA/Indexer attention + FP4/FP8 KV
+# (5 custom dsv4 ops: rope_tail, hc_split_sinkhorn, hc_weighted_sum, hc_expand, fp8_kv_quantize).
+# IMPORTANT: the teamblobfish GGUFs are quantized for THIS fork (tensor hc_head_base etc.) — the
+# ggml-org PR #22378 implementation is incompatible (different tensor layout → "missing tensor" errors).
+FROM nvidia/cuda:13.0.1-devel-ubuntu24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git cmake build-essential libcurl4-openssl-dev ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone -b feat/v4-port-cuda --depth 1 https://github.com/cchuter/llama.cpp /llama.cpp
+# libcuda.so lives only as a build-time stub in the devel image (real driver comes from --gpus all at
+# runtime). ggml links libggml-cuda.so with --no-undefined, so its VMM driver calls (cuMemCreate, …) must
+# resolve at link time — force -lcuda from the stubs dir onto every shared/exe link. The stub's SONAME is
+# libcuda.so.1, satisfied at runtime by the mounted real driver.
+ENV LIBRARY_PATH=/usr/local/cuda/lib64/stubs
+RUN cd /llama.cpp && \
+    cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=121 -DLLAMA_CURL=ON \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_SHARED_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs -lcuda" \
+      -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs -lcuda" && \
+    cmake --build build -j --config Release --target llama-server llama-cli
+ENV PATH=/llama.cpp/build/bin:$PATH

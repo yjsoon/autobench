@@ -3,7 +3,7 @@ title: DeepSeek V4-Flash · vLLM · AWQ-Int4
 model: deepseek-ai/DeepSeek-V4-Flash
 company: DeepSeek
 family: DeepSeek
-params: 158B (MoE)
+params: 284B (MoE) — measured via llama.cpp (was mislabeled 158B)
 engine: vLLM
 quant: NVFP4
 quant_rationale: NVIDIA NVFP4 (~79 GB) is the only build that fits one Spark (FP8 ~160 GB). Blocked on engine support, not quant — see Notes.

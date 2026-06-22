@@ -3,7 +3,7 @@ title: DeepSeek V4-Flash · vLLM · NVFP4 + EAGLE3.1
 model: deepseek-ai/DeepSeek-V4-Flash
 company: DeepSeek
 family: DeepSeek
-params: 158B (MoE)
+params: 284B (MoE) — measured via llama.cpp (was mislabeled 158B)
 engine: vLLM
 speculative: EAGLE3.1
 quant: NVFP4
