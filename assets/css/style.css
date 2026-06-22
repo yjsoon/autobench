@@ -99,6 +99,14 @@ table.listing thead th {
   color: var(--muted);
 }
 
+/* Numeric columns (e.g. decode tok/s): monospace, right-aligned for easy scanning. */
+table.listing th.num,
+table.listing td.num {
+  text-align: right;
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
 code {
   background: var(--code-bg);
   padding: .1rem .3rem;
