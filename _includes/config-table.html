@@ -1,0 +1,26 @@
+{%- comment -%}
+  Renders an index.md-style listing table for the configs passed as include.configs.
+  Ordering matches the homepage: done (newest completion first) → pending → blocked (last).
+{%- endcomment -%}
+{% assign _done = include.configs | where_exp: "c", "c.completed_at" | sort: "completed_at" | reverse %}
+{% assign _blocked = include.configs | where_exp: "c", "c.status == 'blocked'" | sort: "title" %}
+{% assign _pending = include.configs | where_exp: "c", "c.completed_at == nil" | where_exp: "c", "c.status != 'blocked'" | sort: "title" %}
+{% assign _ordered = _done | concat: _pending | concat: _blocked %}
+<table class="listing">
+  <thead>
+    <tr><th>Configuration</th><th>Engine</th><th>Quant</th><th>Ctx</th><th>Decode tok/s</th><th>Status</th><th>Completed</th></tr>
+  </thead>
+  <tbody>
+  {% for c in _ordered %}
+    <tr>
+      <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a></td>
+      <td>{{ c.engine | default: "—" }}{% if c.speculative %} + {{ c.speculative }}{% endif %}</td>
+      <td>{{ c.quant | default: "—" }}</td>
+      <td>{{ c.context | default: "—" }}</td>
+      <td>{{ c.decode_toks | default: "—" }}</td>
+      <td><span class="status status-{{ c.status | default: 'pending' }}">{{ c.status | default: "pending" }}</span></td>
+      <td>{{ c.completed_at | default: c.measured_on | default: "—" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

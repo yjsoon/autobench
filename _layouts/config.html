@@ -38,8 +38,18 @@ layout: default
   {% endif %}
 
   {% if p.tags and p.tags.size > 0 %}
+  {%- assign sizeset = "≤4B,5-15B,16-40B,41-130B,130B+" | split: "," -%}
   <p class="tags">
-    {% for tag in p.tags %}{% assign anchor = tag | slugify %}<a class="tag" href="{{ '/tags/' | relative_url }}#{{ anchor }}">{{ tag }}</a>{% endfor %}
+    {% for tag in p.tags %}{% assign anchor = tag | slugify %}
+      {%- if tag == p.company -%}{% assign kind = 'lab' %}
+      {%- elsif tag == p.family -%}{% assign kind = 'family' %}
+      {%- elsif tag == p.quant -%}{% assign kind = 'quant' %}
+      {%- elsif tag == 'Spark recipe' -%}{% assign kind = 'spark-recipe' %}
+      {%- elsif sizeset contains tag -%}{% assign kind = 'size' %}
+      {%- else -%}{% assign kind = 'model' %}
+      {%- endif -%}
+      <a class="tag" href="{{ '/tags/' | relative_url }}{{ kind }}/#{{ anchor }}">{{ tag }}</a>
+    {% endfor %}
   </p>
   {% endif %}
 
