@@ -75,5 +75,24 @@ the **4-bit NVFP4 expert** path; FP8 linear is fine. Forcing a backend
 ≥ 0.22, it has *both*** the `deepseek_v4` model and the GB10 NVFP4-MoE kernels, and the recipe above
 runs as-is. Alternatively, a v0.22.x image rebuilt with a GB10-capable flashinfer (≥ the version in
 cu130-nightly). The Dockerfile (`scripts/Dockerfile.vllm-v4flash`) and the exact single-Spark command
-are saved above and ready. (Not pursued: hand-porting kernels across the 0.19↔0.22 ABI, or rebuilding
-flashinfer for sm_121 — both heavy and fragile.)
+are saved above and ready.
+
+---
+
+**Update — tried upgrading vLLM *inside* cu130-nightly (`scripts/Dockerfile.vllm-cu130-022`). Got 2 of
+3 barriers down; the 3rd is a vLLM-0.22 code gate, not a kernel gap.**
+- `pip install vllm==0.22.0` inside cu130-nightly **works**: there's an `aarch64` wheel, and its
+  **`vllm._C` runs on GB10** (rms_norm kernel verified on sm_121) — so no source rebuild is needed, and
+  `deepseek_v4` is now present on a GB10-capable image. ✅✅
+- The dep bump pushed flashinfer 0.6.8→0.6.11, but the **`flashinfer-jit-cache` stays `0.6.8.post1+cu130`**
+  (the GB10 kernels). Pinning `flashinfer-python==0.6.8.post1` (+ `FLASHINFER_DISABLE_VERSION_CHECK=1`)
+  re-matches them.
+- **Still blocked at the same line:** vLLM **0.22.0's** NVFP4-MoE *oracle*
+  (`fused_moe/oracle/nvfp4.py::select_nvfp4_moe_backend`) raises *No NvFp4 MoE backend supports the
+  deployment configuration* — its `is_supported_config` checks **gate out sm_121 for every backend**
+  (FlashInfer-TRTLLM / CUTLASS / Marlin) regardless of the cu130 kernels being present. vLLM **0.19.2's**
+  older NVFP4-MoE path *did* accept GB10 (the Nemotron NVFP4 MoEs run on cu130-nightly), but it has no
+  `deepseek_v4`. So the real gap is **a GB10 capability gate in vLLM 0.22's MoE oracle code**, which only
+  a proper ≥0.22 GB10 build (or a targeted oracle patch — vLLM-internals surgery with crash risk if the
+  forced backend's kernel doesn't actually fit) would resolve. Conclusion stands: **wait for
+  cu130-nightly ≥ 0.22**, then the saved recipe runs as-is.

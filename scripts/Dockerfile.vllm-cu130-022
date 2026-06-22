@@ -1,0 +1,6 @@
+# cu130-nightly (GB10 sm_121 kernels + flashinfer-jit-cache 0.6.8+cu130 = GB10 NVFP4-MoE kernels)
+# + vLLM upgraded to 0.22.0 (adds deepseek_v4). Pin flashinfer python back to 0.6.8.post1 so it
+# matches the cu130 jit-cache (vLLM 0.22's dep bump to 0.6.11 would orphan the GB10 kernels).
+FROM vllm/vllm-openai:cu130-nightly
+RUN pip install vllm==0.22.0 && pip install --no-deps "flashinfer-python==0.6.8.post1"
+ENV VLLM_ALLOW_INSECURE_SERIALIZATION=1 EAGLE3_DRAFT_KV_CACHE_DTYPE=auto FLASHINFER_DISABLE_VERSION_CHECK=1
