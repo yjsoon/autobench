@@ -80,3 +80,11 @@ python3 "$BENCH" --base-url "http://localhost:$PORT" --model "$MODEL" \
 kill "$sampler" >/dev/null 2>&1 || true
 min_avail=$(cat /tmp/$NAME.minavail 2>/dev/null || echo "$base_avail"); rm -f /tmp/$NAME.minavail
 echo "MEM mem_gb=$(echo "$((base_avail - min_avail))" | gib_kb) mem_source=\"system MemAvailable delta (10s sampling)\""
+
+# Speculative-decoding acceptance metrics — pulled from the engine log BEFORE teardown (the trap
+# removes the container). vLLM logs e.g. "Spec decode: ... mean acceptance length: X.XX" / per-pos
+# "acceptance rate". Record on the config page for any --speculative-config run; empty for base runs.
+if [ -n "${EXTRA[*]:-}" ] && printf '%s\n' "${EXTRA[@]}" | grep -q "speculative"; then
+  echo "==> SPEC-METRICS (acceptance):"
+  docker logs "$NAME" 2>&1 | grep -iE "accept|spec.?decode|num_spec|draft" | tail -20 || true
+fi

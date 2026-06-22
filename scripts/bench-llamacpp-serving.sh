@@ -71,3 +71,10 @@ min_avail=$(cat /tmp/$NAME.minavail 2>/dev/null || echo "$base_avail")
 rm -f /tmp/$NAME.minavail
 sys_delta_gib=$(echo "$((base_avail - min_avail))" | gib_kb)
 echo "MEM mem_gb=$sys_delta_gib mem_source=\"system MemAvailable delta (10s sampling)\""
+
+# Speculative-decoding acceptance metrics (MTP/EAGLE3 draft runs) — from the server log before teardown.
+# llama-server logs draft stats e.g. "n_draft", "n_accept", "accept = X%".
+if printf '%s\n' "${EXTRA[@]:-}" | grep -q "spec-type\|model-draft"; then
+  echo "==> SPEC-METRICS (acceptance):"
+  docker logs "$NAME" 2>&1 | grep -iE "n_accept|n_draft|accept|draft" | tail -20 || true
+fi

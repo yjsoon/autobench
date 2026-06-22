@@ -64,3 +64,10 @@ python3 "$BENCH" --base-url "http://localhost:$PORT" --model "$MODEL" \
 kill "$sampler" >/dev/null 2>&1 || true
 min_avail=$(cat /tmp/$NAME.minavail 2>/dev/null || echo "$base_avail"); rm -f /tmp/$NAME.minavail
 echo "MEM mem_gb=$(echo "$((base_avail - min_avail))" | gib_kb) mem_source=\"system MemAvailable delta (10s sampling)\""
+
+# Speculative-decoding acceptance metrics (EAGLE3/NEXTN runs) — from the server log before teardown.
+# SGLang logs e.g. "Accept length: X.XX" / "accept_length" per decode.
+if printf '%s\n' "${EXTRA[@]:-}" | grep -q "speculative"; then
+  echo "==> SPEC-METRICS (acceptance):"
+  docker logs "$NAME" 2>&1 | grep -iE "accept|spec" | tail -20 || true
+fi

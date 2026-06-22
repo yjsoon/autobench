@@ -145,6 +145,14 @@ concurrency. Verify exact HF repo IDs at download time — the model list has un
   run in Notes. SGLang (EAGLE3) and vLLM/TRT-LLM (MTP) are the usual paths. The `speculative:` value
   is **folded into the Engine display** (e.g. `SGLang + EAGLE3`) on the page and listing — it is NOT
   a separate table column.
+  - **ALWAYS capture the draft acceptance rate for spec runs.** The serving wrappers print a
+    `==> SPEC-METRICS (acceptance):` block (grepped from the engine container's log **before** teardown)
+    whenever a speculative flag is present — vLLM logs mean acceptance length / per-position acceptance,
+    llama.cpp logs `n_draft`/`n_accept`, SGLang logs accept length. **Record the acceptance rate (and
+    mean accepted tokens/step) on the config page** alongside the speedup — it's what explains *why* a
+    spec run helped or hurt (e.g. gpt-oss-120b EAGLE3 went net-negative at conc 32: low acceptance +
+    compute-saturated batch). If the grep catches nothing, note the metric wasn't emitted rather than
+    omitting it silently.
 - **Benchmark measures throughput, not accuracy** (tok/s + concurrency), per the speed-only scope.
 - **Per-run runtime cap:** target **~1000 entries or 15 minutes of wall-clock, whichever is
   shorter**, for each config's serving benchmark. Cap the ShareGPT prompt count (`--num-prompts`
