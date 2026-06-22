@@ -13,24 +13,27 @@ context: 131072
 modalities: [text]
 mm_served: true
 tags: [qwen3.5-397b-a17b, Alibaba, Qwen, UD-IQ1_M, 130B+]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
 completed_at:
 run_command: |
-  # planned: llama.cpp --bench on the UD-IQ1_M GGUF; expect a tiny context (KV headroom is ~10–15 GB)
+  # superseded on quality by Qwen3.6-27B; kept blocked as an optional max-fit stress test (see Notes)
 ---
 
-**Why this is interesting:** this is the single most "crazy-large" model that actually fits one
-Spark. At 397B total it's normally 🔴 — but at Unsloth's dynamic ~1.7-bit (UD-IQ1_M, **107 GB**) the
-weights drop under the 128 GB ceiling with ~10–15 GB to spare. Because it's **MoE with only 17B
-active params**, decode stays usable (a dense 400B at the same size would crawl at ~5 tok/s).
+**Blocked — superseded on quality by Qwen3.6, but flagged for review because it has a *separate*
+value.** Decision 2026-06-22.
 
-It's a deliberate stress test of three things at once: the **memory ceiling** (how much context fits
-on top of 107 GB of weights before OOM), the **sub-2-bit quant regime** (does dynamic 1-bit hold up),
-and **large-MoE decode bandwidth** on the GB10. Record the max context that doesn't OOM as a result.
-
-The 600B+/1T flagships (DeepSeek-R1 671B ≥162 GB at 1-bit, Kimi K2.6 1T ≥340 GB) do **not** fit even
-at 1-bit — they stay multi-node. This 397B MoE is the boundary case.
+- **Quality supersession (the reason it's blocked):** Qwen's **Qwen3.6-27B** — a *27B dense* model —
+  **beats this 397B/17B 3.5 model on every major coding benchmark** (SWE-bench Verified 77.2 vs 76.2,
+  SWE-bench Pro 53.5 vs 50.9, Terminal-Bench 2.0 59.3 vs 52.5, SkillsBench 48.2 vs 30.0;
+  [qwen.ai/blog](https://qwen.ai/blog?id=qwen3.6-27b)). There is **no Qwen3.6 giant** — the line tops out
+  at 35B-A3B — so the "best Qwen" is now small. Per the replace-3.5-with-better-3.6 directive, this is
+  replaced in the queue by **`Qwen3.6-27B-FP8`** (base + native MTP).
+- **But this config also tested something Qwen3.6 can't:** the **max-fit boundary** — the single largest
+  model (397B at Unsloth dynamic ~1.7-bit, 107 GB) that fits one 128 GB Spark, the sub-2-bit quant
+  regime, and large-MoE decode bandwidth near the memory ceiling. That's a *fit/throughput* experiment,
+  orthogonal to quality. **Unblock if you want the extreme-fit stress test** as its own data point;
+  it's blocked only because the *quality* rationale that originally justified it is now obsolete.
