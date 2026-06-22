@@ -7,7 +7,9 @@
 # unified allocations.
 #
 # Usage: bench-llamacpp-serving.sh <model.gguf under /home/gauravmm/models> \
-#          [ctx] [concurrency] [num_prompts] [max_seconds] [max_tokens] [ngl]
+#          [ctx] [concurrency] [num_prompts] [max_seconds] [max_tokens] [ngl] [extra llama-server args...]
+#   Extra args pass straight to llama-server — e.g. speculative decoding (Gemma 4 MTP drafter):
+#     ... 99 --model-draft /models/MTP/gemma-4-12b-it-Q8_0-MTP.gguf --spec-type draft-mtp --spec-draft-n-max 4 -fa on
 set -euo pipefail
 
 MODELS_DIR=/home/gauravmm/models
@@ -18,17 +20,19 @@ PORT=8081
 
 FILE="${1:?need a gguf filename under $MODELS_DIR}"
 CTX="${2:-8192}"; CONC="${3:-32}"; NUMP="${4:-1000}"; MAXS="${5:-900}"; MAXTOK="${6:-256}"; NGL="${7:-99}"
+shift 7 2>/dev/null || shift $#
+EXTRA=("$@")   # extra llama-server flags (e.g. --model-draft … --spec-type draft-mtp …)
 NAME="serve-$(echo "$FILE" | tr -c 'A-Za-z0-9' '-')"
 gib_kb() { awk '{printf "%.2f", $1/1024/1024}'; }
 
 base_avail=$(awk '/MemAvailable/{print $2}' /proc/meminfo)   # kB, idle baseline
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
-echo "==> launch llama-server $FILE (ctx=$CTX ngl=$NGL)"
+echo "==> launch llama-server $FILE (ctx=$CTX ngl=$NGL) extra=[${EXTRA[*]:-}]"
 docker run -d --name "$NAME" --gpus all -p "$PORT:$PORT" \
   -v "$MODELS_DIR":/models:ro "$IMAGE" \
   --server -m "/models/$FILE" -ngl "$NGL" -c "$CTX" \
-  --parallel "$CONC" -cb --host 0.0.0.0 --port "$PORT" >/dev/null
+  --parallel "$CONC" -cb --host 0.0.0.0 --port "$PORT" "${EXTRA[@]}" >/dev/null
 
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
