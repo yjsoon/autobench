@@ -15,26 +15,33 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 1
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, Spark recipe, conc-1]
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-spec_acceptance:
-completed_at:
+status: done
+prefill_toks: 116.8
+decode_toks: 93.91
+mem_gb: 108.57
+mem_source: system MemAvailable delta (10s sampling) — vLLM static KV (util 0.85) + MTP head
+spec_acceptance: mean acceptance length ~3.0 (range 2.79–3.24, median 2.99) · accepted throughput ~70 tok/s single-stream · per-position ~0.84/0.66/0.51
+measured_on: 2026-06-23
+completed_at: 2026-06-23 13:02 +08
 engine_image: vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b
 run_command: |
   # conc-1 single-stream latency point (200 prompts / 300 s cap). Same NVIDIA Spark MTP recipe.
   scripts/bench-vllm-serving.sh nvidia/Qwen3.6-35B-A3B-NVFP4 65536 1 200 300 256 \
     --quantization modelopt --trust-remote-code --reasoning-parser qwen3 --moe-backend marlin \
     --speculative-config '{"method":"mtp","num_speculative_tokens":3,"moe_backend":"triton"}'
+  # 111/200 prompts (hit 300 s cap), 0 errors. ready after 420 s. TTFT median 2394 ms.
 ---
 
 **conc-1 (single-stream) point of the Qwen3.6-35B-A3B NVFP4 + MTP sweep.** Best-case MTP latency — no
 batch contention. Pairs with the conc-32 done run (decode 541 tok/s agg) and the conc-8 sibling.
 
-- **What to capture:** single-stream decode tok/s + TPOT (the meaningful low-conc metric), peak mem, and
-  SpecDecoding accept-len. Single stream + cold load means only a handful of prompts land in the 300 s
-  window — that's expected; the per-stream latency is the point, not throughput.
-- **TPOT caveat:** the `qwen3` reasoning-parser can zero the client TPOT median — corroborate with the
-  in-engine SpecDecoding metrics.
+- **Result (conc 1):** prefill 116.8 / decode **93.91** tok/s single-stream aggregate; **111/200** prompts
+  (hit 300 s cap), 0 errors; peak mem **108.57 GB**; TTFT median **2394 ms**. The single-stream decode is
+  the headline low-conc number — no batch contention, so this is best-case MTP latency for this checkpoint.
+- **Acceptance holds:** mean accept-len **~3.0** (range 2.79–3.24, median 2.99), avg draft acceptance
+  ~66%, per-position ~0.84/0.66/0.51 — identical to conc-8 (~3.0) and conc-32 (~3.0). **Acceptance is
+  workload-driven, not concurrency-driven** — same conclusion across the whole 35B-A3B and 27B sweeps.
+- **Single-stream accepted throughput ~70 tok/s** (SpecDecoding log) vs ~93.9 tok/s client decode — the
+  spec head sustains ~70 accepted tokens/s of useful generation per stream at acc-len 3.
+- **TPOT caveat:** the `qwen3` reasoning-parser zeros the client TPOT median (reads 0.0) — corroborate with
+  the in-engine SpecDecoding metrics above.
