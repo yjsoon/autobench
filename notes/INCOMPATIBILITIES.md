@@ -81,8 +81,22 @@ declaring a model-level block.** The history, for reference:
   benchmarks fine (27B NVFP4 base decode ~178 tok/s, vs vLLM 188). Pass it via the new **`SGLANG_IMAGE=`**
   override on `scripts/bench-sglang-serving.sh`. Benign load warnings on this image: *"Falling back to
   UnquantizedLinearMethod"* (applies only to non-quantized layers — NVFP4 weights are still used) and a
-  TokenizersBackend tokenizer warning (no request errors). Open question per config: whether SGLang's
-  compressed-tensors path also accepts **nvidia ModelOpt** NVFP4 (the 35B-A3B repo) — verify at run time.
+  TokenizersBackend tokenizer warning (no request errors).
+
+- **Qwen3.6-35B-A3B (MoE+GDN) on SGLang — BLOCKED by a GatedDeltaNet block-FP8 shape wall** (measured
+  2026-06-23, same nightly image). The arch loads, but `nvidia/Qwen3.6-35B-A3B-NVFP4` crashes during model
+  construction inside the hybrid linear-attention layer: `qwen3_5.py Qwen3_5GatedDeltaNet.create_ba_proj`
+  builds the GDN b/a gate as a `MergedColumnParallelLinear` with **output_partition_size = 32**, SGLang
+  routes it through the **FP8 block-quant** path (`fp8.py validate_block_quant_shapes`, `block_n = 128`),
+  and raises `ValueError: Weight output_partition_size = 32 is not divisible by weight quantization
+  block_n = 128`. The 32-wide GDN gate isn't block-128 tileable. **This is the answer to the ModelOpt
+  open question, but the wall is the hybrid-GDN layer, not NVFP4 packing per se** — nvidia's ModelOpt
+  checkpoint quantizes that small GDN projection in FP8-block, which SGLang's qwen3_5 impl can't validate.
+  The 27B sibling avoids it because `unsloth/Qwen3.6-27B-NVFP4` packs the GDN gates differently (not
+  block-FP8). **No trusted alternative NVFP4 exists for the 35B-A3B** (HF has only `unsloth/...-GGUF`
+  → llama.cpp, and an untrusted `dealignai/...-MXFP4-CRACK` repo), so there is no SGLang-viable fallback.
+  **Use vLLM for the 35B-A3B NVFP4** (base 430 / +MTP 541 tok/s — both done). Blocks both
+  `qwen3-6-35b-a3b-nvfp4-sglang` and its `-mtp` sibling (load fails before MTP/NEXTN is reached).
 
 ## Quant notes
 

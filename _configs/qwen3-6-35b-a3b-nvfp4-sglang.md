@@ -14,30 +14,40 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
-completed_at:
-engine_image: lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed
+completed_at: 2026-06-23 13:08 +08
+engine_image: lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed@sha256:ca580c17cf5f9d2e268f4153d977e3cd46528feb2c62a4de8683a05d08da3cf2
 run_command: |
-  # UNBLOCKED via the newer SGLang nightly (transformers 5.8.1 loads the qwen3.6 arch — the spark image
-  # can't). Still to verify: whether SGLang's compressed-tensors path accepts nvidia's ModelOpt NVFP4
-  # packing (the 27B unsloth NVFP4 loaded fine; nvidia modelopt may differ). If SGLang rejects it, BLOCK.
+  # BLOCKED — SGLang's qwen3_5 GatedDeltaNet (GDN) layer fails block-FP8 shape validation on the
+  # nvidia ModelOpt 35B-A3B checkpoint. Not a download/arch problem (transformers 5.8.1 loads the arch fine):
   SGLANG_IMAGE=lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed \
     scripts/bench-sglang-serving.sh nvidia/Qwen3.6-35B-A3B-NVFP4 65536 32 1000 900 256 --trust-remote-code
+  # Crash during load (qwen3_5.py create_ba_proj -> MergedColumnParallelLinear -> fp8.py
+  # validate_block_quant_shapes):
+  #   ValueError: Weight output_partition_size = 32 is not divisible by weight quantization block_n = 128.
 ---
 
-**Queued (UNBLOCKED via SGLang nightly) — Qwen3.6-35B-A3B NVFP4 base on SGLang.** Cross-engine partner to
-the vLLM NVFP4 MoE base run. The stock `spark` image couldn't load the qwen3.6 arch; the
-**`nightly-dev-cu13-20260623`** image (transformers 5.8.1) can — confirmed on the 27B sibling
-(`qwen3-6-27b-nvfp4-sglang`, now done).
+**BLOCKED — SGLang's qwen3_5 GatedDeltaNet can't load the nvidia ModelOpt 35B-A3B NVFP4.** The arch loads
+(transformers 5.8.1 on the `nightly-dev-cu13-20260623` image — same image the 27B sibling runs on), but
+load crashes inside the hybrid linear-attention layer, not on the MoE NVFP4 weights.
 
-- **Repo — NVIDIA official:** [`nvidia/Qwen3.6-35B-A3B-NVFP4`](https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4)
-  (ModelOpt v0.44.0), per policy (prefer nvidia where it exists).
-- **Remaining risk to verify at run time:** the 27B run used **unsloth** compressed-tensors NVFP4, which
-  SGLang loaded; this is **nvidia ModelOpt** NVFP4 (different packing). If SGLang's compressed-tensors path
-  rejects the ModelOpt format, record the error and BLOCK (the unsloth 35B-A3B NVFP4 would be the
-  SGLang-viable fallback if so).
-- **Spec-decode:** in `qwen3-6-35b-a3b-nvfp4-sglang-mtp`. This is the non-spec baseline.
+- **Exact failure:** `qwen3_5.py` → `Qwen3_5GatedDeltaNet.create_ba_proj` builds the GDN b/a gate as a
+  `MergedColumnParallelLinear` with **output_partition_size = 32**. SGLang routes it through the **FP8
+  block-quant** path (`fp8.py validate_block_quant_shapes`, `block_n = 128`) and raises
+  `ValueError: Weight output_partition_size = 32 is not divisible by weight quantization block_n = 128`.
+  The 32-wide GDN gate projection simply isn't block-128 tileable.
+- **Independent of the MoE NVFP4 quant** — this is a SGLang hybrid-GDN + block-FP8 shape wall, tripped by
+  the ModelOpt checkpoint quantizing the small GDN projections in FP8-block. It is **not** a
+  ModelOpt-NVFP4-packing rejection (the risk this config originally flagged).
+- **Why the 27B succeeded but this doesn't:** the 27B uses `unsloth/Qwen3.6-27B-NVFP4` (different packing,
+  GDN gates not block-FP8). **No trusted unsloth/nvidia NVFP4 exists for the 35B-A3B** — HF has only
+  `unsloth/...-GGUF` (llama.cpp path, not SGLang) and an untrusted `dealignai/...-MXFP4-CRACK` repo
+  (skipped on trust grounds). So there is no SGLang-viable NVFP4 fallback for this model.
+- **Use the vLLM NVFP4 path instead** — `qwen3-6-35b-a3b-nvfp4-vllm` (done, 430 tok/s base / 541 tok/s
+  +MTP) is the supported route. See `notes/INCOMPATIBILITIES.md`.
+- **Spec-decode sibling** `qwen3-6-35b-a3b-nvfp4-sglang-mtp` is blocked for the same reason (load fails
+  before MTP is even reached).
