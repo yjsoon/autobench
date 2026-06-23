@@ -13,29 +13,41 @@ context: 32768
 modalities: [text]
 concurrency: 32
 tags: [minimax-m2-7, MiniMax, MiniMax-M2, IQ4_XS, 130B+, conc-32]
-status: pending
+status: done
+prefill_toks: 36.56
+decode_toks: 58.42
+mem_gb: 117.78
+mem_source: system MemAvailable delta (10s sampling)
+measured_on: 2026-06-23
+completed_at: 2026-06-23 22:37 +0800
+engine_image: ghcr.io/ggml-org/llama.cpp:full-cuda@sha256:12b288d6271e8de14412d61f641ca3ecd83bd73e1c4f4f22d86b2536f2b2f8e2
 run_command: |
-  # ghcr.io/ggml-org/llama.cpp:full-cuda — 4-shard GGUF auto-loaded from shard 1.
-  # Context reduced to 32768 (vs 65536) to leave KV room: 108 GB weights on a 121 GB box.
-  ./scripts/bench-llamacpp-serving.sh \
-    minimax-m2-7/UD-IQ4_XS/MiniMax-M2.7-UD-IQ4_XS-00001-of-00004.gguf \
-    32768 32 1000 900 256 99
+  # llama-server (NGC dispatcher image) + ShareGPT serving benchmark, conc=32
+  docker run --rm --gpus all -p 8081:8081 -v /home/gauravmm/models:/models:ro \
+    ghcr.io/ggml-org/llama.cpp:full-cuda \
+    --server -m /models/minimax-m2-7/UD-IQ4_XS/MiniMax-M2.7-UD-IQ4_XS-00001-of-00004.gguf \
+    -ngl 99 -c 32768 --parallel 32 -cb \
+    --host 0.0.0.0 --port 8081
+  python3 scripts/bench-serving.py --base-url http://localhost:8081 \
+    --model minimax-m2-7/UD-IQ4_XS/MiniMax-M2.7-UD-IQ4_XS-00001-of-00004.gguf \
+    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
+    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**Queued — the runnable MiniMax-M2.7 4-bit on llama.cpp.** The user's first two MiniMax requests
-(MXFP4_MOE 136 GB, saricles NVFP4 130 GB) both exceed the 121 GB unified ceiling
-(see `minimax-m2-7-llamacpp-mxfp4` / `minimax-m2-7-vllm-nvfp4`). `UD-IQ4_XS` is the largest ≈4-bit
-tier that fits: **108.4 GB** across 4 shards (49.6 + 49.6 + 9.2 + index), leaving ~12 GB for KV/compute
-— comparable to how gpt-oss-120b filled the box to ~8 GB headroom.
+Runnable 4-bit MiniMax-M2.7 stand-in for the blocked MXFP4/NVFP4 requests — this is the largest
+trusted GGUF in the unsloth repo that actually fits the 121 GB GB10.
 
-- **Download in progress** (108 GB → `~/models/minimax-m2-7/UD-IQ4_XS/`, overlapping the gpt-oss GPU run).
-- **Context set to 32768, not 65536** — at 108 GB resident the KV pool must fit in ~12 GB headroom;
-  65536 risks OOM. Start at 32768/conc-32; tune down if the load OOMs, up if headroom allows. ShareGPT
-  prompts are short enough that 32768 across 32 slots is ample.
-- **Pre-run check:** confirm the pinned `llama.cpp:full-cuda` build recognizes the MiniMax-M2 arch
-  (unsloth's [M2.7 guide](https://unsloth.ai/docs/models/tutorials/minimax-m27) notes a recent
-  llama.cpp is required) — if the load rejects the arch, pull a newer `full-cuda` tag and record the
-  digest. MiniMax-M2 is **not** harmony, so it should serve cleanly on llama-server's chat endpoint
-  (unlike gpt-oss).
-
-<!-- results pending — runs after the gpt-oss-120b SGLang+EAGLE3 sweep frees the GPU -->
+- **Workload:** ShareGPT V3, conc-32, target 1000 prompts / 15 min cap. The run **hit the time cap**
+  at **997.3 s** with only **241 completed** and **29 HTTP 400 errors**, so this path is far too slow
+  for the standard workload at this batch size. Aggregate request throughput was **0.242 req/s**.
+- **Throughput:** prefill **36.56 tok/s**, decode **58.42 tok/s**. Median **TTFT 4348 ms**, median
+  **TPOT 488.5 ms** (about 2.0 tok/s per live stream once generation starts).
+- **Memory:** **117.78 GB**, effectively the whole box. With **108.4 GB** of weights already resident,
+  MiniMax-M2.7 leaves almost no headroom for KV/cache growth; the 32768 context was necessary just to
+  fit conc-32 at all.
+- **Load behavior:** `/health` took **446 s** to come up before the benchmark started, which is itself
+  a meaningful operational penalty for this GGUF path.
+- **HTTP 400s are likely slot-context overflows, not model instability.** At `-c 32768 --parallel 32`,
+  llama-server effectively gives each slot about **1024 tokens** of context budget; longer ShareGPT
+  turns can exceed that and fail early, similar to the smaller-model llama.cpp runs at tighter per-slot
+  budgets.
