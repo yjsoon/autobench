@@ -37,9 +37,11 @@ docker run -d --name "$NAME" --gpus all -p "$PORT:$PORT" \
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-# Wait for health (model load can take a while for big files).
-echo "==> waiting for /health ..."
-for i in $(seq 1 180); do
+# Wait for health (model load can take a while for big files — multi-100GB GGUFs need >180s,
+# so the timeout is env-configurable via HEALTH_TIMEOUT).
+HT="${HEALTH_TIMEOUT:-180}"
+echo "==> waiting for /health (timeout ${HT}s) ..."
+for i in $(seq 1 "$HT"); do
   if curl -fsS "http://localhost:$PORT/health" >/dev/null 2>&1; then
     echo "    ready after ${i}s"; break
   fi
@@ -47,7 +49,7 @@ for i in $(seq 1 180); do
     echo "!! server container exited during load:"; docker logs "$NAME" 2>&1 | tail -30; exit 1
   fi
   sleep 1
-  [ "$i" = 180 ] && { echo "!! health timeout"; docker logs "$NAME" 2>&1 | tail -30; exit 1; }
+  [ "$i" = "$HT" ] && { echo "!! health timeout"; docker logs "$NAME" 2>&1 | tail -30; exit 1; }
 done
 
 # Sample MemAvailable in the background during the benchmark.
