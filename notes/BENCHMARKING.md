@@ -131,3 +131,6 @@ Digest map as of 2026-06-23:
   `nightly-aarch64` regresses (e.g. Gemma-4 NVFP4 loading).
 - `ghcr.io/ggml-org/llama.cpp:full-cuda@sha256:12b288d6271e8de14412d61f641ca3ecd83bd73e1c4f4f22d86b2536f2b2f8e2`
 - `lmsysorg/sglang:spark@sha256:16dec654b13e4d10a2d9eefa0560e85fed0d1fc9536986e1dfb1bcb0077cbc7a`
+- `lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed@sha256:ca580c17cf5f9d2e268f4153d977e3cd46528feb2c62a4de8683a05d08da3cf2`
+  — newer nightly (transformers 5.8.1); needed for Qwen3.6 arch **and** for gpt-oss-120b EAGLE3 at
+  conc-32 (the `spark` image drops ~70% of streams with eagle3 — see `INCOMPATIBILITIES.md`).

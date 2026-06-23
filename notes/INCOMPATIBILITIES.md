@@ -114,6 +114,19 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   **Use vLLM for the 35B-A3B NVFP4** (base 430 / +MTP 541 tok/s — both done). Blocks both
   `qwen3-6-35b-a3b-nvfp4-sglang` and its `-mtp` sibling (load fails before MTP/NEXTN is reached).
 
+- **gpt-oss-120b EAGLE3 + conc-32 streaming = ~70% `Connection reset` on `sglang:spark`; FIXED on nightly.**
+  The LMSYS draft (`lmsys/EAGLE3-gpt-oss-120b-bf16`) serves gpt-oss-120b EAGLE3 fine at **conc-1** on the
+  `spark` image (0 errors), but at **conc-32** the `spark` image **reproducibly drops ~70% of requests**
+  with client-side `Connection reset by peer` / `Broken pipe` (298/1000 completed, 702 errors — stable
+  across 3 runs, box idle). **Not** OOM/CUDA/harmony/draft: server logs are clean (no traceback), single
+  requests succeed, and draft acceptance stays healthy (~2.2) throughout — the scheduler keeps decoding
+  the survivors. EAGLE3 **disables SGLang's overlap scheduler** (`Overlap scheduler is disabled because
+  of using eagle3`), and the `spark` build's serving path can't sustain 32 concurrent streams in that
+  mode. **Fix: use `lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed` (`SGLANG_IMAGE=` override) — 0
+  errors, decode 171.86 tok/s (`gpt-oss-120b-sglang-mxfp4-eagle3-c32`).** Same image family that fixed
+  the Qwen3.6 arch (above). Base (no-spec) gpt-oss-120b conc-32 is unaffected on `spark` (overlap
+  scheduler stays on).
+
 ## Quant notes
 
 - **NVFP4 (W4A4) is a genuine GB10 fast-path even for tiny models** — cosmicproc's `gemma-4-E4B-it-NVFP4`
@@ -134,3 +147,16 @@ effect at that one batch size, NOT high acceptance — don't generalize it down 
 gains nothing at any concurrency. **Takeaway:** these EAGLE3 heads only pay off on **coding** workloads
 (where acceptance is high); for general chat, expect spec-decode to be neutral or negative on gpt-oss.
 Re-test on a code dataset before claiming an EAGLE3 win for any reasoning model.
+
+**UPDATE (2026-06-23) — the failure was the DRAFT, not gpt-oss EAGLE3 per se. The SGLang-native LMSYS
+draft REVERSES it on the same ShareGPT+harmony workload.** Swapping `nvidia/gpt-oss-120b-Eagle3-throughput`
+(vLLM, throughput-tuned, off-distribution for chat) for **`lmsys/EAGLE3-gpt-oss-120b-bf16`** (SGLang's
+own SpecForge draft, its documented gpt-oss recipe) lifts mean accept-len from **~1.05–1.25 → ~2.2–2.4**
+and avg acceptance from **~9% → ~55–60%**, **concurrency-stable** (conc-1 ~2.4, conc-32 ~2.25 — the
+textbook EAGLE3 pattern, not the NVIDIA draft's monotonic collapse). Result: **net speed wins** — conc-1
+decode **40.6 tok/s** (vs vLLM/NVIDIA 14.7) with **0 harmony errors** (vs intermittent corruption), and
+conc-32 decode **171.86 tok/s = +22% over base SGLang (140.3)**, the first gpt-oss-120b spec-decode win
+here. So: "EAGLE3 is useless on gpt-oss general chat" was really **"the NVIDIA throughput draft is
+off-distribution"** — a *workload-matched* draft (LMSYS/SpecForge) pays off even on ShareGPT. Always
+prefer the engine's own recipe draft. See `gpt-oss-120b-sglang-mxfp4-eagle3-c1` / `-c32`. (Caveat: needs
+the SGLang nightly for conc-32 — the spark image's eagle3 serving bug, above.)
