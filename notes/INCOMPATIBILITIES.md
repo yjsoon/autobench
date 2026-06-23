@@ -70,6 +70,16 @@ declaring a model-level block.** The history, for reference:
   ride it — needs retest when NVFP4 loading is fixed on a 0.23+ image. **llama.cpp** (`--spec-type
   draft-mtp`, unsloth merged-GGUF drafter; E-series needs `-fa off`) remains a working path for both.
 
+## SGLang
+
+- **`lmsysorg/sglang:spark` is too old for the Qwen3.6 (`qwen3_5`) arch (measured 2026-06-23).** The
+  image ships **transformers 4.57.1**; loading any Qwen3.6 checkpoint fails at config load with
+  `ValueError: model type 'qwen3_5' but Transformers does not recognize this architecture`. Needs
+  transformers ~5.x — **and** a newer SGLang build with native Qwen3.6 model support (SGLang ships its
+  own model classes, so a transformers bump alone likely won't suffice). Blocks all SGLang Qwen3.6 NVFP4
+  configs (27B + 35B-A3B, base + MTP) — they're marked blocked; the vLLM `nightly-aarch64` runs carry the
+  Qwen3.6 numbers. Revisit with a newer `lmsysorg/sglang` tag.
+
 ## Quant notes
 
 - **NVFP4 (W4A4) is a genuine GB10 fast-path even for tiny models** — cosmicproc's `gemma-4-E4B-it-NVFP4`

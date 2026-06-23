@@ -14,11 +14,12 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
+measured_on: 2026-06-23
 completed_at:
 engine_image: lmsysorg/sglang:spark
 run_command: |
@@ -35,7 +36,15 @@ run_command: |
     --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**Queued — Qwen3.6-35B-A3B NVFP4 base on SGLang (NVIDIA official quant).** Cross-engine partner to the
+**BLOCKED 2026-06-23 — SGLang `spark` image too old for the Qwen3.6 arch.** The `lmsysorg/sglang:spark`
+image (transformers 4.57.1) rejects the `qwen3_5` (Qwen3.6) arch at config load — measured directly on the
+27B sibling (`qwen3-6-27b-nvfp4-sglang`). Blocks every SGLang Qwen3.6 config (needs a newer `lmsysorg/sglang`
+tag with transformers ~5.x + native Qwen3.6 model support). This supersedes the earlier ModelOpt-NVFP4-on-
+SGLang concern below — we never get that far. The vLLM NVFP4 runs carry the 35B-A3B numbers.
+
+---
+
+**Was queued — Qwen3.6-35B-A3B NVFP4 base on SGLang (NVIDIA official quant).** Cross-engine partner to the
 vLLM NVFP4 MoE base run.
 
 - **Repo — NVIDIA official:** [`nvidia/Qwen3.6-35B-A3B-NVFP4`](https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4)

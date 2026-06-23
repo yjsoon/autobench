@@ -15,12 +15,13 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-27b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
-spec_acceptance:                 # capture SGLang accept length; cross-check vs the vLLM MTP run
+spec_acceptance:
+measured_on: 2026-06-23
 completed_at:
 engine_image: lmsysorg/sglang:spark
 run_command: |
@@ -37,7 +38,14 @@ run_command: |
     --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**Queued — Qwen3.6-27B NVFP4 + MTP on SGLang (NEXTN).** SGLang's speculative path for the same in-repo
+**BLOCKED 2026-06-23 — same SGLang `spark` arch wall as the [base SGLang sibling].** The image's
+transformers 4.57.1 can't load the Qwen3.6 (`qwen3_5`) arch (needs ~5.x + native SGLang Qwen3.6 support),
+so MTP is moot until the base loads. Revisit with a newer `lmsysorg/sglang` tag. See
+`qwen3-6-27b-nvfp4-sglang` for the full diagnosis.
+
+---
+
+**Was queued — Qwen3.6-27B NVFP4 + MTP on SGLang (NEXTN).** SGLang's speculative path for the same in-repo
 MTP module that the vLLM `-mtp` sibling uses, so the four NVFP4 pages form a clean engine × spec grid.
 
 - **MTP via NEXTN:** `--speculative-algo NEXTN --speculative-num-steps 3 --speculative-eagle-topk 1

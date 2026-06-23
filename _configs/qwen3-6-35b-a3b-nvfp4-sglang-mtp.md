@@ -15,12 +15,13 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: pending
+status: blocked
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
-spec_acceptance:                 # capture SGLang accept length; cross-check vs the vLLM MTP run
+spec_acceptance:
+measured_on: 2026-06-23
 completed_at:
 engine_image: lmsysorg/sglang:spark
 run_command: |
@@ -38,7 +39,13 @@ run_command: |
     --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
 ---
 
-**Queued — Qwen3.6-35B-A3B NVFP4 + MTP on SGLang (NEXTN), NVIDIA official quant.** Completes the MoE
+**BLOCKED 2026-06-23 — same SGLang `spark` arch wall.** transformers 4.57.1 in `lmsysorg/sglang:spark`
+can't load the Qwen3.6 (`qwen3_5`) arch (measured on `qwen3-6-27b-nvfp4-sglang`); MTP is moot until the
+base loads. Revisit with a newer SGLang tag. The MoE NVFP4 grid is therefore vLLM-only for now.
+
+---
+
+**Was queued — Qwen3.6-35B-A3B NVFP4 + MTP on SGLang (NEXTN), NVIDIA official quant.** Completes the MoE
 NVFP4 grid: `{vLLM, SGLang} × {base, MTP}`.
 
 - **Repo — NVIDIA official:** [`nvidia/Qwen3.6-35B-A3B-NVFP4`](https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4).
