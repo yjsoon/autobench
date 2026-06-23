@@ -49,21 +49,26 @@ bypassing the broken kernel) **+ `--gpu-memory-utilization 0.90`** (MLA-disabled
 so 0.85 under-sizes the pool for 65536 ctx). `FLASHINFER_MLA` override is *ignored* (falls back to
 Triton MLA) — disabling MLA is the only path that works on this build.
 
-### Gemma-4 MTP on vLLM = BLOCKED on GB10 (heterogeneous-head + TRITON_ATTN), despite the recipe
-vLLM *does* now ship native gemma-4 MTP
-(`--speculative-config '{"method":"mtp","model":"google/gemma-4-E<size>-it-assistant","num_speculative_tokens":N}'`)
-— so the old "vLLM rejects gemma spec-decode" claim is only **half** true. Two walls, in order: (1) the
-drafter's `gemma4_assistant` arch needs **transformers ≥ ~5.12**; stock `cu130-nightly` (vLLM 0.19.2rc1
-/ tf 5.6.0) rejects it at config-validation. Built **`scripts/Dockerfile.vllm-022-tf`**
-(`FROM autobench-vllm-cu130-022` = vLLM **0.22.0** + `pip install -U transformers` → **5.12.1**, image
-tag **`autobench-vllm-022-tf`**, pass via `VLLM_IMAGE=`) to clear it. (2) Past that, EngineCore dies in
-KV-cache profiling: `triton_attn.py get_num_attention_heads_from_layers` asserts uniform `num_heads`
-per attention group, but Gemma-4 (E4B) has **mixed `{8,4}` heads** — the same heterogeneous-head
-property (head_dim 256/512) that *force-pins* it to TRITON_ATTN. With MTP's draft layer the builder
-groups differing head counts → `AssertionError`. **Not flag-fixable** (backend is forced;
-`num_speculative_tokens=1`/`enforce_eager` don't change grouping); **independent of base quant** (kills
-FP8+MTP and NVFP4+MTP alike). **Working Gemma-4 MTP path = llama.cpp** (`--spec-type draft-mtp`, unsloth
-merged-GGUF drafter; E-series also needs `-fa off`). See the `gemma-4-e4b-it-vllm-*-mtp` config pages.
+### Gemma-4 MTP on vLLM — was BLOCKED on 0.22, FIXED on nightly-aarch64 (0.23.1)
+vLLM ships native gemma-4 MTP
+(`--speculative-config '{"method":"mtp","model":"google/gemma-4-E<size>-it-assistant","num_speculative_tokens":N}'`).
+Two walls historically blocked it on the older images; **both are resolved on `nightly-aarch64` (vLLM
+0.23.1rc1)** — FP8+MTP now serves cleanly (measured 2026-06-23: E4B conc-32 decode ~1261 tok/s, accept
+~44% / mean-len ~2.3; see `gemma-4-e4b-it-vllm-fp8-mtp`). **Retry vLLM walls on `nightly-aarch64` before
+declaring a model-level block.** The history, for reference:
+- **Wall 1 — arch not recognized:** the drafter's `gemma4_assistant` arch needs **transformers ≥ ~5.12**;
+  stock `cu130-nightly` (vLLM 0.19.2rc1 / tf 5.6.0) rejected it at config-validation. (Worked around on
+  0.22 by building `scripts/Dockerfile.vllm-022-tf` = vLLM 0.22.0 + tf 5.12.1.) `nightly-aarch64` ships a
+  new-enough transformers and recognizes `Gemma4MTPModel` out of the box.
+- **Wall 2 — TRITON_ATTN attention-group assertion (the hard blocker on 0.22):** `triton_attn.py
+  get_num_attention_heads_from_layers` asserted uniform `num_heads` per group, but Gemma-4 E4B has
+  **mixed `{8,4}` heads** (head_dim 256/512) which *force-pin* it to TRITON_ATTN; with MTP's draft layer
+  the 0.22 metadata builder grouped differing head counts → `AssertionError`. **0.23.1 still forces
+  TRITON_ATTN** (logs the heterogeneous-head message) but its metadata builder no longer trips the assert.
+- **Caveat — NVFP4+MTP not yet on this image:** `nightly-aarch64` **regresses Gemma-4 NVFP4 *loading***
+  (`gemma4.py tie_weights → NotImplementedError`, see image policy), so the NVFP4+MTP config can't simply
+  ride it — needs retest when NVFP4 loading is fixed on a 0.23+ image. **llama.cpp** (`--spec-type
+  draft-mtp`, unsloth merged-GGUF drafter; E-series needs `-fa off`) remains a working path for both.
 
 ## Quant notes
 

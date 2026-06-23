@@ -20,22 +20,40 @@ prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
-measured_on: 2026-06-22
+measured_on: 2026-06-23
 completed_at:
 run_command: |
-  # BLOCKED — same vLLM heterogeneous-head + MTP attention-group bug as the FP8+MTP config (see Notes).
-  # Needs the gemma4_assistant-aware image (scripts/Dockerfile.vllm-022-tf = vLLM 0.22 + transformers
-  # 5.12.1); past arch-recognition it still crashes EngineCore in the TRITON_ATTN metadata builder.
-  VLLM_IMAGE=autobench-vllm-022-tf scripts/bench-vllm-serving.sh \
-    cosmicproc/gemma-4-E4B-it-NVFP4 65536 32 1000 900 256 \
+  # STILL BLOCKED after the 2026-06-23 retest — now by MUTUALLY-EXCLUSIVE image requirements (see Notes):
+  #  • nightly-aarch64 (0.23.1) fixes the TRITON_ATTN+MTP assertion (FP8+MTP works there) BUT regresses
+  #    NVFP4 *loading*: lm_head.tie_weights → quant_method.tie_weights → NotImplementedError.
+  #  • cu130-nightly LOADS NVFP4 fine (the done NVFP4 base used it) but is too old for the gemma4_assistant
+  #    MTP drafter arch. No single image does both.
+  # Retest command (fails at weight-load on nightly-aarch64):
+  scripts/bench-vllm-serving.sh cosmicproc/gemma-4-E4B-it-NVFP4 65536 32 1000 900 256 \
     --speculative-config '{"method":"mtp","model":"google/gemma-4-E4B-it-assistant","num_speculative_tokens":3}'
 ---
 
-**BLOCKED — same vLLM heterogeneous-head + MTP attention bug as the [FP8+MTP] sibling.** Intended to
-stack cosmicproc's NVFP4 (W4A4) base with Google's `google/gemma-4-E4B-it-assistant` MTP drafter over
-vLLM's gemma-4 MTP path. The blocker is **not** the NVFP4 base (the [NVFP4 base, no-MTP] config runs
-clean — decode 1073.8 tok/s, the benchmark's fastest); it's vLLM's MTP path on Gemma-4's
-heterogeneous-head attention:
+## STILL BLOCKED after 2026-06-23 retest — now by mutually-exclusive image requirements
+
+**The FP8+MTP sibling was UNBLOCKED on `nightly-aarch64` (vLLM 0.23.1) — but NVFP4+MTP can't follow it.**
+Retesting on the newer image surfaced a *different* wall: `nightly-aarch64` fixes the TRITON_ATTN+MTP
+assertion (so FP8+MTP serves), **but it regresses Gemma-4 NVFP4 loading** — EngineCore dies at weight
+load with `lm_head.tie_weights(embed_tokens)` → `quant_method.tie_weights` → **`NotImplementedError`**
+(`vocab_parallel_embedding.py:560` / `base_config.py:55`), before MTP is even exercised. Meanwhile the
+*older* `cu130-nightly` loads NVFP4 fine (the [NVFP4 base, no-MTP] config runs clean there — decode
+1073.8 tok/s, the benchmark's fastest) but is too old for the `gemma4_assistant` MTP drafter arch.
+**So the two requirements are mutually exclusive on the images available today** — no single vLLM build
+both loads Gemma-4 NVFP4 *and* runs the MTP drafter. Revisit when a 0.23+ image fixes NVFP4 `tie_weights`
+(then this should work exactly like the FP8+MTP run). **Working E4B MTP path meanwhile = llama.cpp**
+(`--spec-type draft-mtp`, conc-1 mean-accept-len 2.88).
+
+---
+
+### Original block (2026-06-22, on vLLM 0.22) — the heterogeneous-head + MTP attention bug
+Intended to stack cosmicproc's NVFP4 (W4A4) base with Google's `google/gemma-4-E4B-it-assistant` MTP
+drafter over vLLM's gemma-4 MTP path. The blocker was **not** the NVFP4 base (it runs clean on
+cu130-nightly — decode 1073.8 tok/s); it was vLLM 0.22's MTP path on Gemma-4's heterogeneous-head
+attention:
 
 - On the arch-aware image (`scripts/Dockerfile.vllm-022-tf` = vLLM 0.22 + transformers 5.12.1) vLLM
   resolves `Gemma4MTPModel` + `SpeculativeConfig(method='mtp')`, then **EngineCore dies in KV-cache
