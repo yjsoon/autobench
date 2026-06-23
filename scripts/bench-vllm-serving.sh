@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Serving benchmark for one HF model via vLLM (vllm/vllm-openai:cu130-nightly — the
-# image NVIDIA/vLLM document for DGX Spark GB10), driven by scripts/bench-serving.py
-# against the ShareGPT workload.
+# Serving benchmark for one HF model via vLLM (default vllm/vllm-openai:nightly-aarch64
+# — the maintained DGX Spark GB10 image; cu130-nightly is the outdated fallback),
+# driven by scripts/bench-serving.py against the ShareGPT workload.
 #
 # vLLM exposes an OpenAI-compatible API on :8000, so the same client works as for
 # llama.cpp / SGLang. Headline memory = system MemAvailable delta from idle (10s sampling).
@@ -18,9 +18,10 @@ set -a; source .env 2>/dev/null || true; set +a
 
 DATASET="$(pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(pwd)/scripts/bench-serving.py"
-# Default to the DGX-Spark-documented image; override with VLLM_IMAGE for models needing a
-# newer transformers (e.g. the gemma4_unified 12B — see scripts/Dockerfile.vllm-tf).
-IMAGE="${VLLM_IMAGE:-vllm/vllm-openai:cu130-nightly}"
+# Default to the maintained nightly image; override with VLLM_IMAGE to fall back to
+# cu130-nightly (e.g. Gemma-4 NVFP4 loading) or a custom-transformers build (gemma4_unified
+# 12B — see scripts/Dockerfile.vllm-tf). See notes/BENCHMARKING.md "vLLM image policy".
+IMAGE="${VLLM_IMAGE:-vllm/vllm-openai:nightly-aarch64}"
 PORT=8000
 
 MODEL="${1:?need an HF model path, e.g. nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4}"
