@@ -70,6 +70,22 @@ declaring a model-level block.** The history, for reference:
   ride it — needs retest when NVFP4 loading is fixed on a 0.23+ image. **llama.cpp** (`--spec-type
   draft-mtp`, unsloth merged-GGUF drafter; E-series needs `-fa off`) remains a working path for both.
 
+### Hybrid GDN+full-attn KV unifies on its own, but NOT with a third (spec-decode draft) KV spec
+Qwen3.5-122B-A10B is a **hybrid** model — Gated-DeltaNet **linear-attention** (mamba-style state cache)
+interleaved with **full-attention** layers. vLLM must unify these into one KV page size.
+- **Base (no spec-decode) serves fine** on `nightly-aarch64` (vLLM 0.23.1): the GDN + full-attn cache
+  unifies (the 0.23 unifier pads mismatched pages), loads, and benchmarks cleanly — measured 2026-06-23,
+  decode 85.5 tok/s conc-8, 0 errors (`qwen3-5-122b-a10b-vllm-int4-autoround`).
+- **Adding a DFlash draft → BLOCKED.** The same model **+ a `--speculative-config` DFlash drafter** adds a
+  *third* KV spec and trips `assert page_size_bytes == max_page_size` in
+  `unify_kv_cache_spec_page_size` / `kv_cache_utils.py:1077` (fails in both the cudagraph-profiling and
+  real paths; `--enforce-eager` does not bypass it). **CONFIRMED by the base-vs-draft A/B:** it is
+  specifically the draft's KV spec vLLM can't reconcile with the two-way hybrid, **not** the hybrid base.
+  Needs an upstream hybrid+spec KV-unification fix. Full trace in
+  `qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8`. (Same *family* as the Gemma-4-MTP-on-0.22 assert, but
+  a different exact assert — KV page size vs attention-head grouping.) int4 AutoRound itself runs fine on
+  GB10 via AutoGPTQ `MarlinLinearKernel` + `int_wna16` MARLIN MoE.
+
 ## SGLang
 
 - **`lmsysorg/sglang:spark` is too old for the Qwen3.6 (`qwen3_5`) arch — FIXED by a newer nightly.**

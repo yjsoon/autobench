@@ -118,6 +118,9 @@ of "vLLM assertion on heterogeneous cache groups" that blocks Gemma-4 MTP, but a
 (KV page size vs attention-head grouping). Re-test when vLLM ships a hybrid+spec KV-unification fix.
 
 **Note:** Qwen3.5 is superseded by Qwen3.6 (see the callout above); this was a user-requested standalone
-datapoint, not part of the core list. The base model would likely serve **without** DFlash (the draft's
-KV spec is a prime suspect for tipping unification over), but a non-spec int4 run is a different config and
-wasn't requested — left for a follow-up if wanted.
+datapoint, not part of the core list. **Follow-up done & hypothesis CONFIRMED:** the base model serves
+fine **without** DFlash — see [`qwen3-5-122b-a10b-vllm-int4-autoround`](qwen3-5-122b-a10b-vllm-int4-autoround)
+(decode 85.5 tok/s, conc-8, 0 errors). Dropping the `--speculative-config` removes the draft's KV spec and
+the hybrid GDN+full-attn cache **unifies cleanly** — proving it is specifically the **third (DFlash draft)
+KV spec** that vLLM can't reconcile, not the two-way hybrid base. This DFlash variant stays BLOCKED pending
+an upstream hybrid+spec KV-unification fix.
