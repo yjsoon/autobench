@@ -7,7 +7,7 @@ params: 27B (dense) + grafted MTP head
 engine: vLLM
 speculative: MTP (qwen3_5_mtp, grafted)
 quant: NVFP4 (XS mixed-precision)
-quant_rationale: AEON-7's NVFP4-MTP-XS — an abliterated/uncensored fine-tune of Qwen3.6-27B (via AEON-7/...-Uncensored-BF16), NVFP4-quantized with nvidia-modelopt 0.43.0 (NVFP4_DEFAULT_CFG). "XS" = mixed precision: GDN projection matmuls → NVFP4, linear_attn.conv1d (SSM kernel) + vision tower kept BF16 for stability (~21 GB disk, ~22 GB VRAM). MTP head grafted (15 BF16 tensors) from stock Qwen3.6-27B. Individual-uploader DERIVATIVE added at the user's explicit request (same exception as cosmicproc/shieldstar). NOT a clean comparison to stock Qwen3.6-27B — it is a different (abliterated) model.
+quant_rationale: AEON-7's NVFP4-MTP-XS — an abliterated/uncensored fine-tune of Qwen3.6-27B (via AEON-7/...-Uncensored-BF16), NVFP4-quantized with nvidia-modelopt 0.43.0 (NVFP4_DEFAULT_CFG). "XS" = mixed precision (GDN projection matmuls → NVFP4; linear_attn.conv1d SSM kernel + vision tower kept BF16 for stability, ~21 GB disk, ~22 GB VRAM). MTP head grafted (15 BF16 tensors) from stock Qwen3.6-27B. Individual-uploader DERIVATIVE added at the user's explicit request (same exception as cosmicproc/shieldstar). NOT a clean comparison to stock Qwen3.6-27B — it is a different (abliterated) model.
 source_repo: AEON-7/Qwen3.6-27B-AEON-Ultimate-Uncensored-Multimodal-NVFP4-MTP-XS
 download_url: https://huggingface.co/AEON-7/Qwen3.6-27B-AEON-Ultimate-Uncensored-Multimodal-NVFP4-MTP-XS
 context: 65536
