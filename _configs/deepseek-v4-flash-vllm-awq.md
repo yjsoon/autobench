@@ -40,3 +40,11 @@ llama.cpp fork — not upstream) or an INT4-AWQ/GPTQ community repo on vLLM (tru
 page's title, **no NVFP4 build fits**; the AWQ-int4 route is the realistic one if a trusted repo is
 chosen. See `deepseek-v4-flash-vllm-nvfp4-eagle3` for the full corrected investigation. Stays blocked
 pending a fitting 4-bit build.
+
+**Re-verified 2026-06-23 (user re-requested `nvidia/DeepSeek-V4-Flash-NVFP4`):** `model.safetensors.index.json`
+`total_size` = **168 266 793 544 bytes ≈ 168.3 GB** — confirmed > 121 GB. NVIDIA's own model card serves
+it **multi-GPU** (`vllm ... --tensor-parallel-size 4` on GB300; SGLang `--tensor-parallel-size 8`),
+corroborating that it is not a single-GB10 target. The card lists **no MTP/EAGLE** for this model
+(the `deepseek_v4` engine *does* ship `deepseek_eagle3`, tracked in `deepseek-v4-flash-vllm-nvfp4-eagle3`,
+also blocked on the same FIT wall). **So an MTP variant can't be run either — the base doesn't load on one
+Spark.** Would need a true ~80 GB 4-bit build to revisit.
