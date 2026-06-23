@@ -13,7 +13,9 @@ set -a; source .env 2>/dev/null || true; set +a
 
 DATASET="$(pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(pwd)/scripts/bench-serving.py"
-IMAGE=lmsysorg/sglang:spark
+# Default to the spark image; override with SGLANG_IMAGE (e.g. a newer nightly that supports a
+# newer model arch — the spark tag's transformers can lag, see notes/INCOMPATIBILITIES.md).
+IMAGE="${SGLANG_IMAGE:-lmsysorg/sglang:spark}"
 PORT=30000
 
 MODEL="${1:?need an HF model path, e.g. openai/gpt-oss-20b}"
