@@ -15,13 +15,14 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 8
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, Spark recipe, conc-8]
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-spec_acceptance:
-completed_at:
+status: done
+prefill_toks: 327.44
+decode_toks: 289.14
+mem_gb: 108.09
+mem_source: system MemAvailable delta (10s sampling) — vLLM static KV (util 0.85) + MTP head
+spec_acceptance: mean acceptance length ~3.0 (range 2.9–3.2) · avg draft acceptance ~67% · per-position 0.84/0.66/0.51
+measured_on: 2026-06-23
+completed_at: 2026-06-23 12:49 +08
 engine_image: vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b
 run_command: |
   # conc-8 latency point (500 prompts / 300 s cap, matching the -c8 convention). Same NVIDIA Spark
@@ -29,12 +30,17 @@ run_command: |
   scripts/bench-vllm-serving.sh nvidia/Qwen3.6-35B-A3B-NVFP4 65536 8 500 300 256 \
     --quantization modelopt --trust-remote-code --reasoning-parser qwen3 --moe-backend marlin \
     --speculative-config '{"method":"mtp","num_speculative_tokens":3,"moe_backend":"triton"}'
+  # 345/500 prompts (hit 300 s cap), 0 errors. ready after 437 s. TTFT median 6245 ms.
 ---
 
 **conc-8 point of the Qwen3.6-35B-A3B NVFP4 + MTP sweep.** Lower-batch latency characterization
-(cap 500 prompts / 300 s). Pairs with the conc-32 done run (decode 541 tok/s) and the conc-1 sibling.
+(cap 500 prompts / 300 s — reached 345, 0 errors). Pairs with the conc-32 done run (decode 541 tok/s
+agg) and the conc-1 sibling.
 
-- **What to capture:** aggregate prefill/decode tok/s, per-stream TPOT, peak mem, and the SpecDecoding
-  acceptance — expect mean accept-len ~3.0 to hold (workload-driven, as on the 27B sweep).
-- **TPOT caveat:** the `qwen3` reasoning-parser zeroes client TPOT median — read the in-engine
-  SpecDecoding metrics + aggregate decode tok/s instead.
+- **Result (conc 8):** prefill 327.4 / decode **289.14** tok/s aggregate; peak mem 108.1 GB. Lower
+  aggregate than conc-32 (541) purely because 8 streams push fewer total tokens — the meaningful low-conc
+  signal is per-stream latency, but the `qwen3` reasoning-parser zeros the client TPOT median here (read
+  the SpecDecoding throughput instead: ~225 tok/s accepted across the run).
+- **Acceptance holds:** mean accept-len **~3.0** (2.9–3.2), avg draft acceptance **~67%**, per-position
+  0.84 / 0.66 / 0.51 — essentially identical to the conc-32 run (~3.0 / 66–69%). **Acceptance is
+  workload-driven, not concurrency-driven** — same conclusion as the 27B sweep.
