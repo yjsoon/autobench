@@ -44,6 +44,7 @@ echo "==> launch vLLM $MODEL (ctx=$CTX, max-num-seqs=$CONC) extra=[${EXTRA[*]:-}
 VOCAB_DIR="$HOME/models/tiktoken_cache"
 docker run -d --name "$NAME" --gpus all --ipc=host -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -v "$HOME/.cache/vllm:/root/.cache/vllm" \
   -v "$VOCAB_DIR:/vocab:ro" \
   --env "HF_TOKEN=${HF_TOKEN:-}" \
   --env "TIKTOKEN_ENCODINGS_BASE=/vocab" \
