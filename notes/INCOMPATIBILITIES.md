@@ -72,13 +72,17 @@ declaring a model-level block.** The history, for reference:
 
 ## SGLang
 
-- **`lmsysorg/sglang:spark` is too old for the Qwen3.6 (`qwen3_5`) arch (measured 2026-06-23).** The
-  image ships **transformers 4.57.1**; loading any Qwen3.6 checkpoint fails at config load with
-  `ValueError: model type 'qwen3_5' but Transformers does not recognize this architecture`. Needs
-  transformers ~5.x — **and** a newer SGLang build with native Qwen3.6 model support (SGLang ships its
-  own model classes, so a transformers bump alone likely won't suffice). Blocks all SGLang Qwen3.6 NVFP4
-  configs (27B + 35B-A3B, base + MTP) — they're marked blocked; the vLLM `nightly-aarch64` runs carry the
-  Qwen3.6 numbers. Revisit with a newer `lmsysorg/sglang` tag.
+- **`lmsysorg/sglang:spark` is too old for the Qwen3.6 (`qwen3_5`) arch — FIXED by a newer nightly.**
+  The `spark` image ships **transformers 4.57.1**; loading any Qwen3.6 checkpoint fails at config load
+  with `ValueError: model type 'qwen3_5' but Transformers does not recognize this architecture`.
+  **Fix (measured 2026-06-23): use `lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed`** (arm64 manifest
+  exists; transformers **5.8.1**, ships `qwen3_moe`/`qwen3_vl*` model classes). It loads Qwen3.6-27B-NVFP4
+  cleanly (`type=Qwen3_5ForConditionalGeneration`, `quant=compressed-tensors`, weights 24.55 GB) and
+  benchmarks fine (27B NVFP4 base decode ~178 tok/s, vs vLLM 188). Pass it via the new **`SGLANG_IMAGE=`**
+  override on `scripts/bench-sglang-serving.sh`. Benign load warnings on this image: *"Falling back to
+  UnquantizedLinearMethod"* (applies only to non-quantized layers — NVFP4 weights are still used) and a
+  TokenizersBackend tokenizer warning (no request errors). Open question per config: whether SGLang's
+  compressed-tensors path also accepts **nvidia ModelOpt** NVFP4 (the 35B-A3B repo) — verify at run time.
 
 ## Quant notes
 

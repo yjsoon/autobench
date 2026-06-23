@@ -15,38 +15,27 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-35b-a3b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: blocked
+status: pending
 prefill_toks:
 decode_toks:
 mem_gb:
 mem_source:
 spec_acceptance:
-measured_on: 2026-06-23
 completed_at:
-engine_image: lmsysorg/sglang:spark
+engine_image: lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed
 run_command: |
-  # INTENDED (not yet run). SGLang NEXTN/MTP. Same ModelOpt-NVFP4-on-SGLang risk as the base sibling —
-  # verify the format loads before trusting any spec result; BLOCK if SGLang rejects it.
-  docker run --gpus all --ipc=host --shm-size 32g -p 30000:30000 \
-    -v ~/.cache/huggingface:/root/.cache/huggingface --env HF_TOKEN=*** \
-    lmsysorg/sglang:spark python3 -m sglang.launch_server \
-    --model-path nvidia/Qwen3.6-35B-A3B-NVFP4 --host 0.0.0.0 --port 30000 \
-    --context-length 65536 --trust-remote-code \
-    --speculative-algo NEXTN --speculative-num-steps 3 --speculative-eagle-topk 1 \
-    --speculative-num-draft-tokens 4
-  python3 scripts/bench-serving.py --base-url http://localhost:30000 --model nvidia/Qwen3.6-35B-A3B-NVFP4 \
-    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
-    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
+  # UNBLOCKED via the SGLang nightly (transformers 5.8.1). SGLang NEXTN/MTP. Still to verify: whether
+  # SGLang's compressed-tensors path accepts nvidia ModelOpt NVFP4 (the 27B unsloth NVFP4 loaded; modelopt
+  # may differ) AND whether NEXTN picks up the in-repo MTP layers. If either fails, BLOCK.
+  SGLANG_IMAGE=lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed \
+    scripts/bench-sglang-serving.sh nvidia/Qwen3.6-35B-A3B-NVFP4 65536 32 1000 900 256 \
+    --trust-remote-code --speculative-algo NEXTN --speculative-num-steps 3 \
+    --speculative-eagle-topk 1 --speculative-num-draft-tokens 4
 ---
 
-**BLOCKED 2026-06-23 — same SGLang `spark` arch wall.** transformers 4.57.1 in `lmsysorg/sglang:spark`
-can't load the Qwen3.6 (`qwen3_5`) arch (measured on `qwen3-6-27b-nvfp4-sglang`); MTP is moot until the
-base loads. Revisit with a newer SGLang tag. The MoE NVFP4 grid is therefore vLLM-only for now.
-
----
-
-**Was queued — Qwen3.6-35B-A3B NVFP4 + MTP on SGLang (NEXTN), NVIDIA official quant.** Completes the MoE
-NVFP4 grid: `{vLLM, SGLang} × {base, MTP}`.
+**Queued (UNBLOCKED via SGLang nightly) — Qwen3.6-35B-A3B NVFP4 + MTP on SGLang (NEXTN).** Completes the
+MoE NVFP4 grid: `{vLLM, SGLang} × {base, MTP}`. The `nightly-dev-cu13-20260623` image loads the qwen3.6
+arch the `spark` image couldn't.
 
 - **Repo — NVIDIA official:** [`nvidia/Qwen3.6-35B-A3B-NVFP4`](https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4).
 - **MTP via NEXTN:** `--speculative-algo NEXTN --speculative-num-steps 3 --speculative-eagle-topk 1

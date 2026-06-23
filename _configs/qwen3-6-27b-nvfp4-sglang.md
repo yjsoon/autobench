@@ -6,7 +6,7 @@ family: Qwen
 params: 27B (dense)
 engine: SGLang
 quant: NVFP4
-quant_rationale: Unsloth's NVFP4 (W4A4) quant of Qwen3.6-27B (unsloth/Qwen3.6-27B-NVFP4) on SGLang — the card lists SGLang as a supported serving path. Base (non-speculative) run; the repo's MTP module is exercised in the -mtp sibling. Cross-engine compare against the vLLM NVFP4 run.
+quant_rationale: Unsloth's NVFP4 (W4A4) quant of Qwen3.6-27B (unsloth/Qwen3.6-27B-NVFP4) on SGLang — the card lists SGLang as a supported path. Base (non-speculative). Required a NEWER SGLang nightly (nightly-dev-cu13-20260623, transformers 5.8.1) — the stock spark image can't load the qwen3.6 arch. Cross-engine compare vs the vLLM NVFP4 run.
 source_repo: unsloth/Qwen3.6-27B-NVFP4
 download_url: https://huggingface.co/unsloth/Qwen3.6-27B-NVFP4
 context: 65536
@@ -14,52 +14,38 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-27b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: blocked
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
+status: done
+prefill_toks: 179.07
+decode_toks: 177.99
+mem_gb: 103.21
+mem_source: system MemAvailable delta (10s sampling) — SGLang static KV reservation; weights 24.55 GB resident (from log)
 measured_on: 2026-06-23
-completed_at:
-engine_image: lmsysorg/sglang:spark
+completed_at: 2026-06-23 11:35 +08
+engine_image: lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed@sha256:ca580c17cf5f9d2e268f4153d977e3cd46528feb2c62a4de8683a05d08da3cf2
 run_command: |
-  # BLOCKED 2026-06-23 — the lmsysorg/sglang:spark image can't load the Qwen3.6 (qwen3_5) arch:
-  #   ValueError: model type `qwen3_5` but Transformers does not recognize this architecture
-  #   (image ships transformers 4.57.1; qwen3_5 needs ~5.x — and SGLang also needs its own qwen3.6
-  #    model class). Not NVFP4-specific; the base arch won't load. See Notes.
-  # Command attempted:
-  scripts/bench-sglang-serving.sh unsloth/Qwen3.6-27B-NVFP4 65536 32 1000 900 256 --trust-remote-code
-  docker run --gpus all --ipc=host --shm-size 32g -p 30000:30000 \
-    -v ~/.cache/huggingface:/root/.cache/huggingface --env HF_TOKEN=*** \
-    lmsysorg/sglang:spark python3 -m sglang.launch_server \
-    --model-path unsloth/Qwen3.6-27B-NVFP4 --host 0.0.0.0 --port 30000 \
-    --context-length 65536 --trust-remote-code
-  python3 scripts/bench-serving.py --base-url http://localhost:30000 --model unsloth/Qwen3.6-27B-NVFP4 \
-    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
-    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
+  # Stock spark image CAN'T load qwen3.6 (transformers 4.57.1). Used a newer SGLang nightly
+  # (nightly-dev-cu13-20260623-ba9d5aed, arm64, transformers 5.8.1) via the new SGLANG_IMAGE override.
+  SGLANG_IMAGE=lmsysorg/sglang:nightly-dev-cu13-20260623-ba9d5aed \
+    scripts/bench-sglang-serving.sh unsloth/Qwen3.6-27B-NVFP4 65536 32 1000 900 256 --trust-remote-code
+  # 647/1000 prompts, 0 errors (hit 900 s cap). ready after 276 s. TTFT median 2169 ms, TPOT median 159 ms.
+  # Load log: type=Qwen3_5ForConditionalGeneration, quant=compressed-tensors, weights 24.55 GB.
 ---
 
-## BLOCKED 2026-06-23 — SGLang `spark` image too old for the Qwen3.6 arch
+**UNBLOCKED on a newer SGLang nightly — cross-engine NVFP4 datapoint vs vLLM.** The stock
+`lmsysorg/sglang:spark` image (transformers 4.57.1) couldn't load the Qwen3.6 (`qwen3_5`) arch; the
+**`nightly-dev-cu13-20260623-ba9d5aed`** image (arm64, **transformers 5.8.1**) loads it fine.
 
-The `lmsysorg/sglang:spark` image (**transformers 4.57.1**) rejects the model at config load:
-`ValueError: model type 'qwen3_5' but Transformers does not recognize this architecture` (Qwen3.6's
-arch needs transformers ~5.x — the same arch-recognition wall that hit old vLLM images). **Not
-NVFP4-specific** — the base Qwen3.6 arch won't load on this image at all, so every SGLang Qwen3.6 config
-(27B + 35B-A3B, base + MTP) is blocked the same way. A transformers bump alone likely won't fix it —
-SGLang ships its **own** model classes, so it also needs an SGLang build with native Qwen3.6 support.
-**Revisit with a newer `lmsysorg/sglang` tag** (or a custom transformers-5.x + qwen3.6 SGLang build).
-Meanwhile the vLLM NVFP4 runs (`qwen3-6-27b-nvfp4-vllm*`) carry the Qwen3.6 NVFP4 numbers.
-
----
-
-**Was queued — Qwen3.6-27B NVFP4 base on SGLang.** Cross-engine partner to the vLLM NVFP4 base run:
-same model/quant/context/concurrency, different engine, to see which serves NVFP4 faster on GB10.
-
-- **Model:** `unsloth/Qwen3.6-27B-NVFP4`, served text-only at **65536** ctx (native 262K).
-- **Spec-decode:** exercised separately in `qwen3-6-27b-nvfp4-sglang-mtp` (SGLang NEXTN/MTP). This page
-  is the non-spec baseline.
-- **Note at run time:** confirm SGLang's `spark` image loads the `qwen3_5` multimodal arch + NVFP4
-  kernels; if it rejects either, record it and (if needed) BLOCK rather than guess.
-- **Repo choice — unsloth (no NVIDIA option).** Policy prefers an official `nvidia/` NVFP4 when one
-  exists, but NVIDIA publishes none for the 27B (only the 35B-A3B sibling); 27B has only community NVFP4
-  quants. Using **unsloth** (trusted quantizer per policy).
+- **Result (conc 32):** prefill 179.1 / decode **177.99** tok/s aggregate; **647/1000, 0 errors** (hit the
+  900 s cap). Peak mem **103.2 GB**; weights **24.55 GB** resident (log) — confirms NVFP4 is active (a BF16
+  fallback would be ~54 GB and far slower).
+- **Cross-engine vs vLLM:** decode **178.0 (SGLang) vs 187.7 (vLLM)** on the same unsloth NVFP4 / 65536 /
+  conc-32 — **vLLM ~5% faster** on decode, SGLang ~5 GB leaner on peak mem. Close; neither dominates for
+  this 27B NVFP4 base.
+- **NVFP4 caveat (benign):** SGLang logs *"Acceleration for non-quantized schemes is not supported by
+  Compressed Tensors. Falling back to UnquantizedLinearMethod"* — this applies only to the model's
+  **non-quantized layers** (norms/embeddings); `quant=compressed-tensors` + the 24.55 GB footprint + the
+  178 tok/s decode all confirm the 4-bit expert/linear weights are used.
+- **Tokenizer warning:** *"Tokenizer … is still TokenizersBackend … attributes may be missing"* — did not
+  cause errors (0 failed requests), noted in case it matters for a later run.
+- **Engine image:** pinned the nightly via the new `SGLANG_IMAGE=` wrapper override. The blocked SGLang
+  Qwen3.6 siblings (27B MTP, 35B-A3B base/MTP) are unblocked the same way.
