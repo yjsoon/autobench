@@ -15,36 +15,39 @@ modalities: [text, image, video]
 mm_served: false
 concurrency: 32
 tags: [qwen3.6-27b, Alibaba, Qwen, NVFP4, 16-40B, conc-32]
-status: pending
-prefill_toks:
-decode_toks:
-mem_gb:
-mem_source:
-spec_acceptance:                 # capture avg draft acceptance + mean acceptance length; cross-check vs FP8+MTP (~70%)
-completed_at:
-engine_image: vllm/vllm-openai:nightly-aarch64
+status: done
+prefill_toks: 283.3
+decode_toks: 274.07
+mem_gb: 108.53
+mem_source: system MemAvailable delta (10s sampling) — vLLM static KV reservation (util 0.85) + MTP head
+spec_acceptance: 67% avg draft acceptance · mean acceptance length 3.0 · per-position 0.84/0.66/0.51 (num_speculative_tokens=3)
+measured_on: 2026-06-23
+completed_at: 2026-06-23 10:19 +08
+engine_image: vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b
 run_command: |
-  # INTENDED (not yet run). NVFP4 base + native MTP via vLLM --speculative-config (card's MTP form).
-  docker run -d --gpus all --ipc=host -p 8000:8000 \
-    -v ~/.cache/huggingface:/root/.cache/huggingface --env HF_TOKEN=*** \
-    vllm/vllm-openai:nightly-aarch64 unsloth/Qwen3.6-27B-NVFP4 \
-    --host 0.0.0.0 --port 8000 --max-model-len 65536 --gpu-memory-utilization 0.85 --max-num-seqs 32 \
+  # NVFP4 base + native MTP (Resolved architecture: Qwen3_5MTP) on vLLM nightly-aarch64. conc-32.
+  scripts/bench-vllm-serving.sh unsloth/Qwen3.6-27B-NVFP4 65536 32 1000 900 256 \
     --trust-remote-code --dtype bfloat16 \
     --speculative-config '{"method":"mtp","num_speculative_tokens":3}'
-  python3 scripts/bench-serving.py --base-url http://localhost:8000 --model unsloth/Qwen3.6-27B-NVFP4 \
-    --dataset benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json \
-    --num-prompts 1000 --max-seconds 900 --concurrency 32 --max-tokens 256
+  # 986/1000 prompts, 0 errors (hit 900 s cap by a hair). TTFT median 958 ms, TPOT median 104.7 ms.
+  # SpecDecoding (steady-state): mean acceptance length ~3.0, avg draft acceptance ~67%,
+  # per-position 0.84 / 0.66 / 0.51 (num_speculative_tokens=3).
 ---
 
-**Queued — Qwen3.6-27B NVFP4 + native MTP on vLLM.** Spec-decode counterpart of the NVFP4 base run;
-records decode-tok/s speedup vs that base plus the draft acceptance rate.
+**The fastest 27B config in the sweep — NVFP4 + native MTP, decode 274 tok/s at conc-32.** Unsloth NVFP4
+base + the in-repo MTP module on vLLM.
 
-- **MTP:** `--speculative-config '{"method":"mtp","num_speculative_tokens":3}'` (card's form). The MTP
-  weights ship in-repo — no separate drafter.
-- **Acceptance:** capture avg draft acceptance + mean acceptance length and **cross-check against the
-  FP8 + MTP runs** (measured ~67–70% / mean ~3.1 here on ShareGPT) — a big gap from FP8+MTP would flag
-  a quant/format interaction with the MTP head (see BENCHMARKING.md spec-decode rules).
-- **Pair:** base `qwen3-6-27b-nvfp4-vllm` + this (MTP). SGLang siblings under `*-sglang*`.
+- **Result (conc 32):** prefill **283.3** / decode **274.07** tok/s aggregate; **986/1000, 0 errors**
+  (just grazed the 900 s cap). TTFT median 958 ms, TPOT median 104.7 ms. Peak mem **108.5 GB**.
+- **MTP speedup:** vs the [NVFP4 base] (decode 187.7) that's **+46%**; vs the stock [FP8 + MTP] conc-32
+  (decode ~241) it's **+14%** — NVFP4 stacks cleanly on top of MTP. This is the fastest 27B decode here.
+- **Acceptance: ~67% avg draft acceptance, mean accept-len ~3.0** (per-position 0.84 / 0.66 / 0.51,
+  `num_speculative_tokens=3`). **Cross-check ✓:** this *matches* the stock FP8+MTP run's ~67% / ~3.1 on
+  ShareGPT — so the NVFP4 quant does **not** degrade the MTP head's acceptance (no red flag). Right at the
+  published MTP expectation for general chat (the ~70–85% band is coding-skewed; ShareGPT runs a touch
+  lower).
+- **Pair:** base `qwen3-6-27b-nvfp4-vllm` + this (MTP). conc-8 / conc-1 variants in
+  `qwen3-6-27b-nvfp4-vllm-mtp-c8` / `-c1`. SGLang siblings under `*-sglang*`.
 - **Repo choice — unsloth (no NVIDIA option).** Policy prefers an official `nvidia/` NVFP4 when one
   exists, but NVIDIA publishes none for the 27B (only the 35B-A3B sibling); 27B has only community NVFP4
   quants. Using **unsloth** (trusted quantizer per policy).
