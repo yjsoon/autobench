@@ -52,6 +52,15 @@ vLLM, NVIDIA official quant + DGX Spark recipe. Spec-decode counterpart of the N
   `--speculative-config`) loaded and ran with **0 errors** — the marlin-base / triton-MTP split is the
   correct GB10 recipe for this checkpoint. Log confirms weight-sharing (MTP shares target embedding +
   lm_head) and the hybrid attention/`mamba` page-size reconciliation (GDN layers present).
+- **"NVFP4" here is really W4A16 (weight-only) — there is no native-FP4 *compute* to capture.** The
+  checkpoint quantizes the experts to **4-bit weights but keeps 16-bit activations** (`quant_algo
+  W4A16_NVFP4`). Native FP4 tensor-core math needs **W4A4** (FP4 activations too); with bf16 activations
+  the matmul *must* dequantize the weights — exactly what marlin does. `--moe-backend flashinfer_cutlass`
+  (the native sm_121 FP4 GEMM) **rejects this scheme outright** (`NvFp4 MoE backend 'FLASHINFER_CUTLASS'
+  does not support … quantization scheme QuantKey(u8, scale(f8e4m3fn,…GroupShape(row=1,col=16)), …)`),
+  verified on GB10 — engine-core init fails. So **marlin is the correct kernel, not a fallback**, and the
+  NVFP4 win is **memory bandwidth** (smaller expert weights → less MoE traffic → faster decode), *not* FP4
+  tensor cores. A real FP4-compute speedup would require a W4A4 NVFP4 export of this model.
 - **TPOT caveat:** client TPOT median reads 0.0 because the `qwen3` reasoning-parser splits
   reasoning/content streams (same as the base run) — trust the aggregate decode tok/s and the in-engine
   SpecDecoding metrics, not the client TPOT.
