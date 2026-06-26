@@ -8,7 +8,7 @@ engine: vLLM
 quant: NVFP4 (W4A16)
 quant_rationale: Self-quantized from the Cerebras block-FP8 REAP checkpoint to compressed-tensors NVFP4A16 (4-bit float E2M1, block-16 fp8_e4m3 scale + fp32 global scale; weight-only). No BF16/FP16 REAP exists, so the source is block-FP8 (float8_e4m3fn + weight_scale_inv [128,128]); the streaming quantizer dequantizes FP8→BF16 on the fly per shard (no ~280 GB BF16 intermediate) before NVFP4. Produced by the same shard-by-shard streaming quantizer as the GLM-Air REAP run because ModelOpt OOMs materializing the model in 121 GB RAM and LLM Compressor's offload converter is brittle — the streamer peaks at ~one shard of RAM. W4A16 over W4A4 because on GB10 the NVFP4 win is memory-bandwidth via the marlin dequant kernel, not FP4 compute, and W4A16 keeps ~2% accuracy vs W4A4's >4% on an already double-compressed (REAP) model.
 source_repo: cerebras/MiniMax-M2.5-REAP-139B-A10B
-download_url: https://huggingface.co/cerebras/MiniMax-M2.5-REAP-139B-A10B
+download_url: https://huggingface.co/gauravmm/MiniMax-M2.5-REAP-139B-A10B-NVFP4
 hf_repo: gauravmm/MiniMax-M2.5-REAP-139B-A10B-NVFP4
 hf_url: https://huggingface.co/gauravmm/MiniMax-M2.5-REAP-139B-A10B-NVFP4
 context: 65536
