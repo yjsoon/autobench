@@ -15,7 +15,7 @@ context: 65536
 modalities: [text]
 mm_served: true
 concurrency: 32
-tags: [glm-4-5-air-reap-82b, Cerebras, GLM, NVFP4, 41-130B, Spark recipe, conc-32]
+tags: [glm-4-5-air-reap-82b, Cerebras, GLM, NVFP4, 41-130B, Spark recipe, REAP, Self-Quantized, conc-32]
 status: done
 prefill_toks: 163.22
 decode_toks: 158.39

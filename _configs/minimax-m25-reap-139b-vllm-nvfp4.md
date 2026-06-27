@@ -15,7 +15,7 @@ context: 65536
 modalities: [text]
 mm_served: true
 concurrency: 32
-tags: [minimax-m25-reap-139b, Cerebras, MiniMax, NVFP4, 131-260B, Spark recipe, conc-32]
+tags: [minimax-m25-reap-139b, Cerebras, MiniMax, NVFP4, 131-260B, Spark recipe, REAP, Self-Quantized, conc-32]
 status: done
 prefill_toks: 127.93
 decode_toks: 120.0

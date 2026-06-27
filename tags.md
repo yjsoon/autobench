@@ -6,8 +6,9 @@ permalink: /tags/
 
 # Browse by tag
 
-Every configuration is tagged in six kinds. Each kind has its own page, where every tag value lists
-its configurations in a table like the homepage. Pick a kind:
+Every configuration is tagged in seven kinds, plus three provenance tags for models we compressed
+ourselves. Each has its own page, where every tag value lists its configurations in a table like the
+homepage. Pick a kind:
 
 - **[Model]({{ '/tags/model/' | relative_url }})** — a per-model slug (e.g. `gemma-4-31b`). Every run
   of one model shares it, so it groups all of a model's engines, quants, and speculative variants.
@@ -19,6 +20,12 @@ its configurations in a table like the homepage. Pick a kind:
 - **[Concurrency]({{ '/tags/concurrency/' | relative_url }})** — parallel serves per run (e.g.
   `conc-32`); the benchmark's fixed-load axis.
 - **[Spark recipe]({{ '/tags/spark-recipe/' | relative_url }})** — models with native DGX Spark support.
+- **[REAP]({{ '/tags/reap/' | relative_url }})** — base checkpoint pruned with REAP (router-weighted
+  expert-activation pruning).
+- **[Self-REAP]({{ '/tags/self-reap/' | relative_url }})** — models we REAP-pruned ourselves; the page
+  carries the how-to (none pruned yet).
+- **[Self-Quantized]({{ '/tags/self-quantized/' | relative_url }})** — models we quantized ourselves to
+  NVFP4; the page carries the streaming quantizer + full recipe.
 
 <p class="tag-cloud">
   <a class="tag" href="{{ '/tags/model/' | relative_url }}">Model</a>
@@ -28,4 +35,7 @@ its configurations in a table like the homepage. Pick a kind:
   <a class="tag" href="{{ '/tags/size/' | relative_url }}">Size</a>
   <a class="tag" href="{{ '/tags/concurrency/' | relative_url }}">Concurrency</a>
   <a class="tag" href="{{ '/tags/spark-recipe/' | relative_url }}">Spark recipe</a>
+  <a class="tag" href="{{ '/tags/reap/' | relative_url }}">REAP</a>
+  <a class="tag" href="{{ '/tags/self-reap/' | relative_url }}">Self-REAP</a>
+  <a class="tag" href="{{ '/tags/self-quantized/' | relative_url }}">Self-Quantized</a>
 </p>

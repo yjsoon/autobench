@@ -1,0 +1,24 @@
+[project]
+name = "reap-llmc"
+version = "0.1.0"
+description = "Quantize REAP-pruned MoE checkpoints to NVFP4 (W4A16) with LLM Compressor's sequential pipeline (bounded memory) on DGX Spark / GB10."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch>=2.8",
+    "llmcompressor>=0.6",
+    "compressed-tensors>=0.9",
+    "transformers>=4.56",
+    "accelerate>=1.2",
+    "safetensors>=0.4.5",
+    "huggingface-hub>=0.27",
+    "datasets>=3.0",
+]
+
+# Same DGX Spark constraint as the ModelOpt env: torch only ships in cu130 aarch64.
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
