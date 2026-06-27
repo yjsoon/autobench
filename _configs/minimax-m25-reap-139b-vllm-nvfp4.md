@@ -23,6 +23,7 @@ mem_gb: 109
 mem_source: system MemAvailable while serving (used 109/121 GB) — vLLM 0.85 reservation (real weights ~75 GB, rest is KV/activations/CUDA); see Notes
 measured_on: 2026-06-26
 completed_at: 2026-06-26 22:25 +0800
+engine_image: vllm/vllm-openai:nightly-aarch64@sha256:68e23ddd982ad5642e21354c2242a3a86d31a3ea83f5937e5c3867942dc6595b
 run_command: |
   # NVFP4A16 checkpoint produced locally by ~/Desktop/reap-nvfp8/llmc/streaming_quantize.py
   # (compressed-tensors nvfp4-pack-quantized), mounted as a LOCAL path (not an HF id).
