@@ -85,6 +85,20 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   `qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8`. (Same *family* as the Gemma-4-MTP-on-0.22 assert, but
   a different exact assert — KV page size vs attention-head grouping.) int4 AutoRound itself runs fine on
   GB10 via AutoGPTQ `MarlinLinearKernel` + `int_wna16` MARLIN MoE.
+- **GENERALIZES to Qwen3.6-35B-A3B (the SAME wall on a current model).** `AEON-7/Ornith-1.0-35B` (Qwen3.6-35B-A3B
+  base, hybrid GDN+full-attn, NVFP4) on the **AEON `aeon-vllm-ultimate` image** (vLLM `0.23.0+aeon.sm121a.dflash`)
+  hits the identical `assert new_spec.page_size_bytes == max_page_size` (`kv_cache_utils.py:1064`) the instant a
+  DFlash draft is added — base serves fine (decode 422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K), +draft asserts at
+  `_init_minimal_kv_cache_for_profiling`. Measured 2026-06-28, full trace in `ornith-1-0-35b-aeon-vllm-nvfp4-dflash-blocked`.
+  So this is **not a 3.5-only / int4-only quirk** — it's the hybrid+spec KV wall, independent of model gen, quant
+  (int4 vs NVFP4), and engine build (stock nightly vs AEON fork).
+- **The unblock pattern is reusable: pin the draft to a SMALL-PAGE revision.** The block is driven by the
+  *draft's* attention page size (sliding_window × num_kv_heads). Drafters with `sw 4096 / 8 kv-heads` (the 122B's
+  `bce6f76`; `z-lab/Qwen3.6-35B-A3B-DFlash` **`main`** after its "Modal retrain") double the page and won't unify;
+  the older small-page arch (`sw 2048 / 4 kv-heads` for the 122B `6c7242c`; `sw None / 4 kv-heads` at the Ornith
+  drafter's pre-retrain revs `31977fbe13a8` / `f98dc5c2908b`) pads to an equal page and boots. **Before declaring a
+  DFlash config blocked, check the draft `config.json` for sw/kv-heads and try pinning `revision:` to a small-page
+  commit.** (122B = CONFIRMED unblock; Ornith-35B = high-confidence, untested as of 2026-06-28.)
 
 ## SGLang
 
