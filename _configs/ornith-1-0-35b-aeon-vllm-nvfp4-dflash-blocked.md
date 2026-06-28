@@ -36,9 +36,12 @@ run_command: |
     --max-num-seqs 16 --max-num-batched-tokens 16384 \
     --mamba-cache-dtype float32 --enable-prefix-caching --reasoning-parser qwen3 \
     --speculative-config '{"method":"dflash","model":"/drafter","num_speculative_tokens":6}'
-  # LIKELY UNBLOCK (untested): pin the drafter to its pre-"Modal retrain" revision (small-page arch):
+  # PARTIAL UNBLOCK ONLY (dodges the page-size assert, not the real blocker): pin the drafter to its
+  # pre-"Modal retrain" small-page revision (HF-API verified: num_key_value_heads 4, no sliding window):
   #   --speculative-config '{"method":"dflash","model":"z-lab/Qwen3.6-35B-A3B-DFlash",
   #     "revision":"31977fbe13a8...","num_speculative_tokens":6}'
+  # ^ Expected to clear kv_cache_utils.py:1064 but then hit the GDN-rollback wall (vLLM #39273) and/or the
+  #   prefix-cache IndexError on DGX Spark (#41884). External draft speculators don't work on a GDN target.
 ---
 
 **BLOCKED — DFlash + this hybrid MoE trips the same KV-cache page-size unification assert that blocked
@@ -64,25 +67,44 @@ all three into one page size. This is the **identical failure family** documente
 `notes/INCOMPATIBILITIES.md` and confirmed by the base-vs-draft A/B here (base serves, +draft asserts) —
 it is specifically the **draft's KV spec**, not the hybrid base.
 
-**The draft arch is the large-page variant — and that's the unblock lever.** The current
-`z-lab/Qwen3.6-35B-A3B-DFlash` `main` config is `sliding_window: 4096`, `num_key_value_heads: 8`,
+**The page-size assert has a known lever — but it is NOT the real blocker here (correction, 2026-06-28).**
+The current `z-lab/Qwen3.6-35B-A3B-DFlash` `main` config is `sliding_window: 4096`, `num_key_value_heads: 8`,
 `num_hidden_layers: 6` — the *same* big-page shape (sw 4096 / 8 kv-heads) that broke the 122B on its
-`bce6f76` rev. The 122B was **unblocked** by pinning the draft to an older small-page rev (`6c7242c`:
-sw 2048 / 4 kv-heads), which pads to an equal page size. For this drafter the **pre-"Modal retrain"
-revisions** (`31977fbe13a8` "Upload model", `f98dc5c2908b`) have `num_key_value_heads: 4` and **no
-sliding window** — the analogous small-page arch. **Untested hypothesis (high confidence):** pinning the
-DFlash `revision` to `31977fbe13a8` lets the page sizes unify and DFlash boots, exactly as the 122B fix.
-(The retrained `main` weights would not be used — a tradeoff to validate.)
+`bce6f76` rev. The 122B (a **dense** target) was genuinely **unblocked** by pinning the draft to an older
+small-page rev (`6c7242c`: sw 2048 / 4 kv-heads), which pads to an equal page size. For this drafter the
+**pre-"Modal retrain" revisions** (`31977fbe13a8` "Upload model", `f98dc5c2908b`) are HF-API-verified to have
+`num_key_value_heads: 4` and **no sliding window** — the analogous small-page arch, so pinning to them should
+clear the `kv_cache_utils.py:1064` assert.
 
-**Bottom line:** AEON's headline "~1.9× DFlash" does **not** reproduce on this hybrid model with the
-shipped (retrained) drafter — it asserts at boot. The base model is fast and stable without it (decode
-422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K). Until the unblock is validated this config is **blocked**,
-and the trusted recommendation is native MTP or DFlash-off.
+**But Ornith's target is hybrid-GDN, and that's a different, deeper wall than the 122B's.** A web-verified
+upstream review (2026-06-28) shows the page-size assert is only the *first* of four blockers for an external
+DFlash draft on a Gated-DeltaNet model:
+1. **GDN state rollback (vLLM #39273, the root cause):** a GatedDeltaNet layer's recurrent SSM state **cannot
+   be rolled back when a speculative token is rejected**, which architecturally breaks *external* draft
+   speculators (DFlash, EAGLE3, ngram) on any GDN model. MTP is safe because its head runs *after* the verified
+   base step — no draft state to undo. **No drafter revision fixes this.**
+2. **Hybrid DFlash path unmerged in vLLM** — base DFlash merged (#38300), but hybrid GDN+full-attn is an
+   unchecked tracker item (#46105); the page-size assert is the open issue **#43626**.
+3. **Open GB10-specific crash bug #41884** — DFlash + prefix caching → IndexError *specifically on DGX Spark*
+   with this exact `z-lab/Qwen3.6-35B-A3B-DFlash` drafter. (Also #41190: TP MTP/DFlash on Qwen3.6 GDN.)
+4. **NVFP4 acceptance nose-dive** (Vassallo, blog.davidvassallo.me 2026-05-15, tested this exact model): only
+   ~4 of 15 speculative tokens accepted on a quantized target — so even where DFlash boots on NVFP4 the speedup
+   evaporates. DFlash's published ~12–18%-over-MTP edge is **B200/bf16 only**.
 
-> **⏳ PENDING TEST (not yet run):** validating the unblock by pinning the DFlash drafter to its pre-retrain
-> small-page revision (`z-lab/Qwen3.6-35B-A3B-DFlash` @ `31977fbe13a8`, `sw None / 4 kv-heads`). If it
-> boots, this page flips to **done** with real DFlash decode tok/s + acceptance rates. Deferred at the
-> user's request as of 2026-06-28.
+So the revision pin would likely clear assert #1 and then hit #39273/#41884 — it is **not** the high-confidence
+end-to-end unblock the 122B was. This config stays **blocked**.
+
+**Bottom line:** AEON's headline "~1.9× DFlash" does **not** reproduce on this hybrid model — it asserts at
+boot, and even past the assert it is blocked four ways. The base model is fast and stable without it (decode
+422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K), and on this box **MTP is the architecturally correct spec path**
+(it's the only one safe on GDN rollback). Trusted recommendation: native MTP, DFlash-off.
+
+> **✗ NOT A SIMPLE UNBLOCK (was "pending test"):** the deferred experiment was to pin the drafter to its
+> pre-retrain small-page revision (`z-lab/Qwen3.6-35B-A3B-DFlash` @ `31977fbe13a8`, `sw None / 4 kv-heads`).
+> Web-verified upstream evidence now indicates that would only clear the page-size assert and then surface the
+> GDN-rollback wall (#39273) / DGX-Spark prefix-cache IndexError (#41884). Any future attempt should be framed
+> as **"measure the next blocker / confirm the NVFP4 acceptance nose-dive,"** not "unblock DFlash" — external
+> draft speculators are not expected to work on this GDN target regardless of drafter revision.
 
 > Cross-ref: [`qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8`](qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8)
 > (same assert, unblocked by a draft-revision pin) and `notes/INCOMPATIBILITIES.md` (hybrid+spec KV

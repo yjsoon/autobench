@@ -92,13 +92,31 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   `_init_minimal_kv_cache_for_profiling`. Measured 2026-06-28, full trace in `ornith-1-0-35b-aeon-vllm-nvfp4-dflash-blocked`.
   So this is **not a 3.5-only / int4-only quirk** — it's the hybrid+spec KV wall, independent of model gen, quant
   (int4 vs NVFP4), and engine build (stock nightly vs AEON fork).
-- **The unblock pattern is reusable: pin the draft to a SMALL-PAGE revision.** The block is driven by the
-  *draft's* attention page size (sliding_window × num_kv_heads). Drafters with `sw 4096 / 8 kv-heads` (the 122B's
-  `bce6f76`; `z-lab/Qwen3.6-35B-A3B-DFlash` **`main`** after its "Modal retrain") double the page and won't unify;
-  the older small-page arch (`sw 2048 / 4 kv-heads` for the 122B `6c7242c`; `sw None / 4 kv-heads` at the Ornith
-  drafter's pre-retrain revs `31977fbe13a8` / `f98dc5c2908b`) pads to an equal page and boots. **Before declaring a
-  DFlash config blocked, check the draft `config.json` for sw/kv-heads and try pinning `revision:` to a small-page
-  commit.** (122B = CONFIRMED unblock; Ornith-35B = high-confidence, untested as of 2026-06-28.)
+- **The small-page revision pin dodges ONLY the page-size assert — it is NOT a full DFlash unblock on Qwen3.6-35B-A3B.**
+  The assert itself is driven by the *draft's* attention page size (sliding_window × num_kv_heads): drafters with
+  `sw 4096 / 8 kv-heads` (the 122B's `bce6f76`; `z-lab/Qwen3.6-35B-A3B-DFlash` **`main`** after its "Modal retrain")
+  double the page and won't unify; the older small-page arch (`sw 2048 / 4 kv-heads` for the 122B `6c7242c`;
+  `sw None / 4 kv-heads` at the Ornith drafter's pre-retrain revs `31977fbe13a8` / `f98dc5c2908b`, both **HF-API
+  verified** as `num_key_value_heads: 4`, no sliding window) pads to an equal page. For the **dense** 122B target
+  that was a CONFIRMED end-to-end unblock (decode 107.43 tok/s conc-8, +1.26×). **For Qwen3.6-35B-A3B it is NOT
+  expected to work end-to-end** — see the GDN-rollback root cause below — so the Ornith page is **blocked, not
+  "high-confidence unblockable."** Still worth checking the draft `config.json` sw/kv-heads first, but on a hybrid-GDN
+  *target* (vs the 122B's dense draft case) expect the pin to surface the next wall, not serve.
+- **ROOT CAUSE for hybrid-GDN *targets* — external draft speculators are architecturally incompatible, and no
+  revision pin fixes it (verified against upstream, 2026-06-28).** On `nvidia/Qwen3.6-35B-A3B-NVFP4` / Ornith the page-size
+  assert is only the *first* of several walls; the deeper, unfixable-by-config one is **vLLM issue #39273**: a
+  GatedDeltaNet layer's recurrent SSM state **cannot be rolled back when a speculative token is rejected**, which
+  breaks *external* draft speculators (DFlash, EAGLE3, ngram) on any GDN model. **MTP is the only spec-decode method
+  that is structurally safe on GDN** — its head runs *after* the verified base step, so there is no draft state to
+  roll back. Corroborating open upstream issues, all verified: **#43626** (dense draft + hybrid main → the exact
+  `unify_kv_cache_spec_page_size` assert, OPEN/unfixed); **#41884** (DFlash + prefix-caching IndexError specifically on
+  **GB10/DGX Spark** with `z-lab/Qwen3.6-35B-A3B-DFlash`); **#41190** (TP MTP/DFlash on Qwen3.6 GDN illegal-address);
+  **#46105** (hybrid DFlash an unchecked tracker item — base DFlash merged via #38300, SWA-support #40898 OPEN). Plus a
+  quant-quality wall independent of all the above: DFlash's acceptance **nose-dives on quantized (FP8/NVFP4) targets**
+  (Vassallo, blog.davidvassallo.me 2026-05-15: only ~4 of 15 spec tokens accepted on this exact model), so even where
+  it boots on NVFP4 the throughput edge evaporates. DFlash's published ~12–18%-over-MTP edge is **B200/bf16 only**.
+  **Bottom line: keep MTP for any GDN-hybrid target; DFlash is blocked four ways on this box (unmerged hybrid path +
+  open GB10 crash bugs + GDN rollback + NVFP4 acceptance collapse), not by a single fixable assert.**
 
 ## SGLang
 
