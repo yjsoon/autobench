@@ -92,31 +92,32 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   `_init_minimal_kv_cache_for_profiling`. Measured 2026-06-28, full trace in `ornith-1-0-35b-aeon-vllm-nvfp4-dflash-blocked`.
   So this is **not a 3.5-only / int4-only quirk** — it's the hybrid+spec KV wall, independent of model gen, quant
   (int4 vs NVFP4), and engine build (stock nightly vs AEON fork).
-- **The small-page revision pin dodges ONLY the page-size assert — it is NOT a full DFlash unblock on Qwen3.6-35B-A3B.**
-  The assert itself is driven by the *draft's* attention page size (sliding_window × num_kv_heads): drafters with
-  `sw 4096 / 8 kv-heads` (the 122B's `bce6f76`; `z-lab/Qwen3.6-35B-A3B-DFlash` **`main`** after its "Modal retrain")
-  double the page and won't unify; the older small-page arch (`sw 2048 / 4 kv-heads` for the 122B `6c7242c`;
-  `sw None / 4 kv-heads` at the Ornith drafter's pre-retrain revs `31977fbe13a8` / `f98dc5c2908b`, both **HF-API
-  verified** as `num_key_value_heads: 4`, no sliding window) pads to an equal page. For the **dense** 122B target
-  that was a CONFIRMED end-to-end unblock (decode 107.43 tok/s conc-8, +1.26×). **For Qwen3.6-35B-A3B it is NOT
-  expected to work end-to-end** — see the GDN-rollback root cause below — so the Ornith page is **blocked, not
-  "high-confidence unblockable."** Still worth checking the draft `config.json` sw/kv-heads first, but on a hybrid-GDN
-  *target* (vs the 122B's dense draft case) expect the pin to surface the next wall, not serve.
-- **ROOT CAUSE for hybrid-GDN *targets* — external draft speculators are architecturally incompatible, and no
-  revision pin fixes it (verified against upstream, 2026-06-28).** On `nvidia/Qwen3.6-35B-A3B-NVFP4` / Ornith the page-size
-  assert is only the *first* of several walls; the deeper, unfixable-by-config one is **vLLM issue #39273**: a
-  GatedDeltaNet layer's recurrent SSM state **cannot be rolled back when a speculative token is rejected**, which
-  breaks *external* draft speculators (DFlash, EAGLE3, ngram) on any GDN model. **MTP is the only spec-decode method
-  that is structurally safe on GDN** — its head runs *after* the verified base step, so there is no draft state to
-  roll back. Corroborating open upstream issues, all verified: **#43626** (dense draft + hybrid main → the exact
-  `unify_kv_cache_spec_page_size` assert, OPEN/unfixed); **#41884** (DFlash + prefix-caching IndexError specifically on
-  **GB10/DGX Spark** with `z-lab/Qwen3.6-35B-A3B-DFlash`); **#41190** (TP MTP/DFlash on Qwen3.6 GDN illegal-address);
-  **#46105** (hybrid DFlash an unchecked tracker item — base DFlash merged via #38300, SWA-support #40898 OPEN). Plus a
-  quant-quality wall independent of all the above: DFlash's acceptance **nose-dives on quantized (FP8/NVFP4) targets**
-  (Vassallo, blog.davidvassallo.me 2026-05-15: only ~4 of 15 spec tokens accepted on this exact model), so even where
-  it boots on NVFP4 the throughput edge evaporates. DFlash's published ~12–18%-over-MTP edge is **B200/bf16 only**.
-  **Bottom line: keep MTP for any GDN-hybrid target; DFlash is blocked four ways on this box (unmerged hybrid path +
-  open GB10 crash bugs + GDN rollback + NVFP4 acceptance collapse), not by a single fixable assert.**
+- **The small-page revision pin clears the page-size assert AND runs end-to-end — CORRECTED 2026-06-28 by direct
+  measurement.** The assert is driven by the *draft's* attention page size (sliding_window × num_kv_heads): drafters with
+  `sw 4096 / 8 kv-heads` (the 122B's `bce6f76`; `z-lab/Qwen3.6-35B-A3B-DFlash` **`main`** after its "Modal retrain" — the
+  rev AEON's card *requires*) double the page and won't unify; the older small-page arch (`sw 2048 / 4 kv-heads` for the
+  122B `6c7242c`; `sw None / 4 kv-heads` at the pre-retrain revs `31977fbe13a8` / `f98dc5c2908b`, **HF-API verified**
+  `num_key_value_heads: 4`, no sliding window) pads to an equal page. On the **hybrid-GDN** Qwen3.6-35B-A3B target this
+  pin was **measured to boot AND serve cleanly** (heretic-NVFP4 and official `nvidia/Qwen3.6-35B-A3B-NVFP4`, AEON
+  `aeon-vllm-ultimate` image, ctx 40960, n_spec 11, **0 errors** across conc 1/8/32 with prefix-caching ON) — see
+  `qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash` / `qwen3-6-35b-a3b-heretic-aeon-vllm-ultimate-dflash`. So this is a
+  **real end-to-end unblock**, not just an assert dodge. **Note the inversion vs AEON's card:** the card *requires* the
+  post-2026-04-19 `main` drafter, but THAT one asserts on this box; only the *forbidden* pre-retrain small-page rev boots.
+- **CORRECTION: external DFlash on a GDN-hybrid target is NOT architecturally blocked on this box — the earlier
+  "blocked four ways / #39273 makes it impossible" claim was WRONG (refuted by measurement 2026-06-28).** The predicted
+  failure modes did **not** occur on the AEON fork (`0.23.0+aeon.sm121a.dflash`): no GDN-rollback crash (**#39273**), no
+  DGX-Spark prefix-cache IndexError (**#41884** — ran with `--enable-prefix-caching`, 0 errors), and no NVFP4 acceptance
+  collapse (**Vassallo nose-dive overstated**: measured ~22–30% avg draft acceptance / mean accept-len ~3.4–4.3 of 11,
+  and the *more* FP8-quantized official checkpoint drafted *slightly better* than the BF16-gate heretic, since the drafter
+  matches the true base). AEON evidently patched the hybrid-spec path in their fork (PR #40898 SWA etc.); what's "open
+  upstream" (#43626/#41884/#41190/#46105) is **stock-vLLM**, not this image.
+- **The real reason to keep MTP is throughput economics, not a block.** DFlash on the official checkpoint won only at
+  **conc-1 (+8.5%: 101.9 vs 93.9 tok/s)** and **lost under load (conc-8 −7%, conc-32 −26%)**. Cause: MTP drafts 3 tokens
+  at **~66% acceptance, accept-len ~3.0-of-3** (almost no wasted compute); DFlash drafts 11 at **~25% acceptance,
+  accept-len ~3.7-of-11** (≈7 wasted forward passes/step). On this compute-bound MoE that wasted draft compute sinks
+  aggregate throughput exactly when concurrency rises. **Bottom line: keep MTP — it's structurally draft-efficient,
+  needs no external drafter, no forbidden drafter revision, and no untrusted image replacing the pinned vLLM. DFlash
+  *works* here; it just isn't worth it for a mixed-workload gateway.**
 
 ## SGLang
 

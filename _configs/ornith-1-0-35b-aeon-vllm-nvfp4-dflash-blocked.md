@@ -44,9 +44,22 @@ run_command: |
   #   prefix-cache IndexError on DGX Spark (#41884). External draft speculators don't work on a GDN target.
 ---
 
-**BLOCKED — DFlash + this hybrid MoE trips the same KV-cache page-size unification assert that blocked
-the [Qwen3.5-122B-A10B DFlash run](qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8). Same root cause,
-same likely fix (pin the draft to a small-page revision).**
+> **⚠️ CORRECTION (2026-06-28): the "blocked four ways" conclusion on this page is WRONG — refuted by direct
+> measurement on the sibling 35B-A3B checkpoints.** Running the *same* AEON image with the **pre-retrain small-page
+> drafter** (`z-lab/Qwen3.6-35B-A3B-DFlash @31977fbe`, 4 kv-heads / sw null), DFlash **boots AND serves cleanly,
+> 0 errors across conc 1/8/32, with prefix-caching ON** — on both `AEON-7/Qwen3.6-35B-A3B-heretic-NVFP4` and the
+> official `nvidia/Qwen3.6-35B-A3B-NVFP4`. None of the predicted walls fired (no #39273 GDN-rollback crash, no #41884
+> prefix-cache IndexError, no NVFP4 acceptance collapse). The small-page pin is a **real end-to-end unblock**, not just
+> an assert dodge. The Ornith config itself was not re-run, but it is the same image + target family, so the same lever
+> applies. **The real reason to stay on MTP is throughput economics, not a block** — DFlash wins only conc-1 (+8.5% on
+> the official model) and loses under load (MTP's ~66%/3-of-3 draft efficiency beats DFlash's ~25%/3.7-of-11). Measured
+> pages: [`…official…dflash`](qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash),
+> [`…heretic…dflash`](qwen3-6-35b-a3b-heretic-aeon-vllm-ultimate-dflash). The original (now-corrected) analysis follows.
+
+**BLOCKED with AEON's *required* (post-04-19, sw 4096 / 8 kv-heads) drafter — DFlash + this hybrid MoE trips the same
+KV-cache page-size unification assert that blocked the
+[Qwen3.5-122B-A10B DFlash run](qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8). The assert is real and reproduces;
+what was wrong (see banner) is the claim that the small-page-drafter fix only dodges it — it actually serves.**
 
 **Boot gets all the way through drafter load, then asserts during KV setup:**
 - `Resolved architecture: DFlashDraftModel`; `speculative_config=SpeculativeConfig(method='dflash',
@@ -94,17 +107,19 @@ DFlash draft on a Gated-DeltaNet model:
 So the revision pin would likely clear assert #1 and then hit #39273/#41884 — it is **not** the high-confidence
 end-to-end unblock the 122B was. This config stays **blocked**.
 
-**Bottom line:** AEON's headline "~1.9× DFlash" does **not** reproduce on this hybrid model — it asserts at
-boot, and even past the assert it is blocked four ways. The base model is fast and stable without it (decode
-422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K), and on this box **MTP is the architecturally correct spec path**
-(it's the only one safe on GDN rollback). Trusted recommendation: native MTP, DFlash-off.
+**Bottom line (CORRECTED):** AEON's headline "~1.9× DFlash" still doesn't reproduce *with the drafter AEON's card
+requires* (it asserts at boot) — but DFlash is **not** "blocked four ways." With the small-page drafter it boots and
+serves cleanly; the measured truth is that it simply **loses to native MTP on a mixed workload** (wins only conc-1
++8.5%, loses −7%/−26% at conc-8/32) because MTP is far more draft-efficient (~66%/3-of-3 vs ~25%/3.7-of-11). The base
+model is fast and stable either way. Trusted recommendation: **native MTP** — not because DFlash is impossible here,
+but because it isn't worth an external drafter + a forbidden drafter revision + an untrusted image for a single-stream-only edge.
 
-> **✗ NOT A SIMPLE UNBLOCK (was "pending test"):** the deferred experiment was to pin the drafter to its
-> pre-retrain small-page revision (`z-lab/Qwen3.6-35B-A3B-DFlash` @ `31977fbe13a8`, `sw None / 4 kv-heads`).
-> Web-verified upstream evidence now indicates that would only clear the page-size assert and then surface the
-> GDN-rollback wall (#39273) / DGX-Spark prefix-cache IndexError (#41884). Any future attempt should be framed
-> as **"measure the next blocker / confirm the NVFP4 acceptance nose-dive,"** not "unblock DFlash" — external
-> draft speculators are not expected to work on this GDN target regardless of drafter revision.
+> **✓ MEASURED — the small-page pin DOES unblock (corrected from "✗ NOT A SIMPLE UNBLOCK"):** pinning the drafter to
+> `z-lab/Qwen3.6-35B-A3B-DFlash @31977fbe13a8` (`sw None / 4 kv-heads`) cleared the page-size assert **and ran
+> end-to-end with 0 errors** on the sibling 35B-A3B checkpoints (heretic + official). The web-verified upstream walls
+> (#39273 GDN-rollback, #41884 DGX-Spark prefix-cache IndexError, Vassallo NVFP4 nose-dive) **did not materialize on the
+> AEON fork** — evidently patched in their image. External draft speculators *do* work on this GDN target on this box;
+> they're just not throughput-competitive with MTP on mixed prompts.
 
 > Cross-ref: [`qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8`](qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8)
 > (same assert, unblocked by a draft-revision pin) and `notes/INCOMPATIBILITIES.md` (hybrid+spec KV
