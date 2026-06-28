@@ -76,8 +76,13 @@ DFlash `revision` to `31977fbe13a8` lets the page sizes unify and DFlash boots, 
 
 **Bottom line:** AEON's headline "~1.9× DFlash" does **not** reproduce on this hybrid model with the
 shipped (retrained) drafter — it asserts at boot. The base model is fast and stable without it (decode
-422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K). Next step is to test the pinned-small-page-draft unblock;
-until then this config is **blocked**, and the trusted recommendation is native MTP or DFlash-off.
+422 tok/s conc-32, 37.7 tok/s conc-1 @ 256K). Until the unblock is validated this config is **blocked**,
+and the trusted recommendation is native MTP or DFlash-off.
+
+> **⏳ PENDING TEST (not yet run):** validating the unblock by pinning the DFlash drafter to its pre-retrain
+> small-page revision (`z-lab/Qwen3.6-35B-A3B-DFlash` @ `31977fbe13a8`, `sw None / 4 kv-heads`). If it
+> boots, this page flips to **done** with real DFlash decode tok/s + acceptance rates. Deferred at the
+> user's request as of 2026-06-28.
 
 > Cross-ref: [`qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8`](qwen3-5-122b-a10b-vllm-int4-autoround-dflash-c8)
 > (same assert, unblocked by a draft-revision pin) and `notes/INCOMPATIBILITIES.md` (hybrid+spec KV
