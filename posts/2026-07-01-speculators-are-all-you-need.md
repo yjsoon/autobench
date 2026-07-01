@@ -1,42 +1,45 @@
 # On Speculators
 
+TODO: Speculators to Speculative Decoders
+
 A lot of ink and bits get spilled speeding up *datacenter-scale* inference (batching, disaggregation, giant KV pools). Speculative decoding is the rare trick that is particularly effective at speeding up the *small, local, low-concurrency* case — the single RTX or Apple Silicon chip on your lap.
 
----
-
-A **speculator** (a.k.a. draft model, speculative decoder) is a small, cheap predictor that *guesses the next few tokens* the big model is about to produce. The big ("target") model then performs its decode pass, accepting guesses that match; the first disagreement is where normal decoding resumes.
+A **speculator** (a.k.a. draft model, speculative decoder) is a small, cheap predictor that *guesses the next few tokens* the big model is about to produce. The big ("target") model then performs its decode pass, accepting guesses that match; the first disagreement is where normal decoding resumes. When the guesses are good, you get several tokens for the price of one.
 
 This means that tokens where the speculator agrees with the target model are nearly free, but there's a base cost to run the speculator. In the rest of this article we'll explore this tradeoff and ground this in real data.
 
----
+Speculators work well when the next token is easy to guess. Something like this, with one obvious continuation, works well:
 
-- TODO(prose): find an example where the speculator guesses right for a long run (boilerplate/code) vs falls over immediately (a surprising fact/name) — motivates "variable speedup."
+> The quick brown fox jumps *over the lazy dog.*
 
-Speculators work well when the next token is easy to guess.
+Something like this does not:
 
-```
-TODO: A nice example where the tokens are obvious.
-```
+> I saw her duck *under the branch.* \
+> I saw her duck *waddle away.*
+>
 
-```
-I saw her duck behind the rock.
-I saw her duck in the pond.
+- TODO(graphic): schematic — target model + speculator both reading the same KV cache; speculator emits k candidate tokens; target verifies in one pass; accepted prefix in green, first reject in red.
 
-- 
-- Net effect: decode goes from *one expensive forward pass per token* to *one expensive pass per accepted run of tokens*. When the guesses are good, you get several tokens for the price of one.
-- Three flavours appear in this dataset — worth naming up front because they behave very differently:
-  - **MTP (multi-token prediction):** the checkpoint ships *its own* extra prediction head(s). No separate model, no distribution mismatch. (DeepSeek, Qwen3.6, Gemma-4.)
-  - **EAGLE3:** a *separate*, small draft head trained to mimic the target. Quality depends entirely on *which* draft you load.
-  - **DFlash:** an external drafter that speculates *many* tokens (11–12) per step — high ceiling, high fixed cost.
-- TODO(graphic): schematic — target model + speculator both reading the same KV cache; speculator emits k candidate tokens; target verifies in one pass; accepted prefix in green, first reject in red. (Anchors 1a + 2a/2b/2c.)
+## The Options
 
-### 1b. Performance is a trade-off: fixed cost vs. variable speedup
+Speculator research is a fast-moving field, so keep an eye out for new versions.
 
-- Every speculative step pays a **fixed cost** (run the drafter, then verify its guesses) to buy a **variable speedup** (however many tokens got accepted).
-- The trade only pays off when **(spare compute) × (draft acceptance)** clears the fixed cost. Two levers:
-  - **Spare compute** — plentiful at small model size and/or low concurrency; gone once the batch saturates the GPU. This is why the *same* speculator wins single-stream and loses under load.
-  - **Acceptance** — how often the guess is right. MTP's ~66% / ~3-of-3 tokens is structurally efficient; DFlash's ~25% / ~3.7-of-11 wastes ~7 forward passes per step.
-- **The trade-off made literal** — Qwen3.6-35B-A3B, DFlash vs. the model's own MTP head:
+As of right now, there are three flavours that are common (and one emerging).
+
+- **[MTP (multi-token prediction)](https://arxiv.org/abs/2404.19737):** extra prediction heads baked into the model. (DeepSeek, Qwen3.6, Gemma-4.)
+- **[EAGLE3](https://arxiv.org/abs/2503.01840):** a *separate*, small draft head grafted into the model, reads activations at multiple levels to make its predictions. Quality depends entirely on *which* draft you load.
+- **[DFlash](https://github.com/z-lab/dflash):** an external diffusion-based drafter that speculates *many* tokens (11-12) per step — high ceiling, high fixed cost.
+- **[DDTree](https://liranringel.github.io/ddtree/) (emerging):** DFlash with a tree. Not in a serving engine yet (research code only).
+
+TODO: Some table showing the speedups with different models.
+
+## The performance trade-off
+
+The drafter runs first and proposes a short continuation of about 3 tokens for MTP, and maybe 5 for DFlash. This imposes a **fixed cost**, and buys a **variable speedup** depending on how many tokens are accepted. This only pays off when our spare compute and acceptance rates are both good enough.
+
+Once the GPU is saturated, the drafter must compete with real requests for compute, which slows the whole system down. This is the mechanism behind the (ref: chart) result. One way to think about this is that speculation is a way to *spend spare parallelism to cut latency* — and a busy server has none to spend.
+
+TODO: graphic: line chart — x = concurrency (1/8/32), y = decode tok/s, two lines (MTP vs DFlash) for Qwen3.6-35B-A3B, crossover annotated. **This is the money chart for 1b.**
 
   | concurrency | DFlash vs MTP decode |
   |---|---|
@@ -44,60 +47,40 @@ I saw her duck in the pond.
   | 8 | −6.6% |
   | 32 (saturated) | **−25.9%** |
 
-  Same model, same drafter — the sign of the speedup flips with load. That *is* the fixed-cost/variable-speedup curve.
-- TODO(graphic): line chart — x = concurrency (1/8/32), y = decode tok/s, two lines (MTP vs DFlash) for Qwen3.6-35B-A3B, crossover annotated. **This is the money chart for 1b.**
+When model sizes are small and concurrency is low, speculative decoding has enough spare compute to help. Once the batch saturates the GPU, the *same* speculator loses. Heavier drafters (like DFlash) work better at lower compute than the built-in MTP.
 
-### 1c. Speculators are brittle
+### Agreement improves performance
 
-- They depend on **(1) the model**, **(2) its exact training + quantization details**, and **(3) the data/workload** — change any one and the win can evaporate or the launch can fail outright. Concrete failures from the sweep:
-- **(1) Model / architecture walls:**
-  - *Hybrid-attention KV can't absorb a draft's KV spec.* Qwen3.5-122B-A10B and Ornith-1.0-35B (Gated-DeltaNet + full-attn) unify their two KV specs fine — until a DFlash draft adds a *third*, tripping `assert page_size_bytes == max_page_size`. The 122B only ran after pinning a *specific older* drafter revision (small-page: 4 KV-heads, no sliding window); the "correct" newer drafter *asserts on this box*.
-  - *A 32-wide GDN gate isn't FP8-block-128 tileable* → Qwen3.6-35B-A3B NVFP4 is **blocked on SGLang** (base *and* MTP) before speculation is even reached. (Use vLLM.)
-- **(2) Training/quant details:**
-  - *Draft match dominates everything.* gpt-oss-120b, EAGLE3, identical ShareGPT workload: the NVIDIA *throughput*-tuned draft is **−45%** (accepts ~9%); the LMSYS/SpecForge draft is **+22%** (accepts ~60%). Same model, different draft, opposite sign.
-  - *Quant × image standoff.* Gemma-4 E4B NVFP4+MTP is **blocked** by mutually-exclusive images — one loads NVFP4 but is too old for the drafter arch; the newer one runs MTP but regresses NVFP4 loading.
-  - *Fit wall.* DeepSeek-V4-Flash's EAGLE3.1 path is real in the engine now, but the only NVFP4 repo is 168 GB (FP8-sized MIXED_PRECISION) — **can't load on one 121 GB Spark** regardless of the speculator.
-- **(3) Data / workload:**
-  - *Acceptance is workload-driven.* EAGLE3/MTP land ~70–85% on **coding**, lower on **general chat**. gpt-oss EAGLE3's conc-32 "+28%" on gpt-oss-20b is a **scheduling/prefill artifact** — acceptance actually *degrades* with concurrency (~30%→~5%), so it doesn't generalize down the sweep.
-- TODO(graphic): a small "wall of walls" table/figure — 5 brittleness failure modes (KV-unify assert · GDN FP8-block · draft mismatch · image standoff · fit wall), each with the one-line symptom. Reinforces 1c.
+In one target forward pass, the model computes the probability of each speculated token in parallel. Where the target agrees, we **pretend the token was there all along**; at the first disagreement we discard the rest and let the target generate that token normally, then re-speculate.
 
----
+TODO: Link each to the tags-model page (use the full base url gauravmm.github.io/autobench/)
 
-## 2. How do they work?
+- **MTP** ≈ 3.0 of 3 (Qwen3.6), i.e. near-lossless drafting — almost no wasted passes.
+- **EAGLE3** ≈ 2.0-2.4 of 3 (Gemma/gpt-oss) — a separate head, so lower than native MTP.
+- **DFlash** ≈ 3.2-4.4 of **11** — collapses after a few positions, leading to much waste.
 
-### 2a. They *speculate* by guessing the rollout of the next few words
-
-- The drafter runs first and proposes a short candidate continuation (k tokens; k≈3 for MTP, ~5 for the 122B DFlash, 11–12 for the aggressive DFlash configs).
-- Bigger k = higher ceiling *if* accepted, but more wasted compute when rejected — see the acceptance-length numbers below.
-
-### 2b. Verify in the decode phase; accept on agreement, fall back on disagreement
-
-- In one target forward pass, the model computes the probability of each speculated token in parallel. Where the target agrees, we **pretend the token was there all along**; at the first disagreement we discard the rest and let the target generate that token normally, then re-speculate.
-- So a step yields *1 + (accepted draft tokens)* real tokens. **Mean acceptance length** is the headline efficiency number:
-  - **MTP** ≈ 3.0 of 3 (Qwen3.6), i.e. near-lossless drafting — almost no wasted passes.
-  - **EAGLE3** ≈ 2.0–2.4 of 3 (Gemma/gpt-oss) — a separate head, so lower than native MTP.
-  - **DFlash** ≈ 3.2–4.4 of **11** — front-loaded acceptance that collapses by the later positions ⇒ many wasted passes.
 - TODO(graphic): per-position acceptance bar chart (0.84 / 0.66 / 0.51 for MTP-n3 vs the long DFlash-n11 tail decaying to ~0.05). Shows *why* short high-acceptance drafts beat long ones.
 
-### 2c. They connect to the primary model's already-computed KV cache
+### Drafters are brittle
 
-- The drafter doesn't run a separate context — it **reads the target model's existing KV cache** and offers its guess against that state. That's what makes the draft cheap (no re-encoding the prompt) and also what makes hybrid-attention models fragile: the draft's KV spec has to *unify* with the target's page layout (the assert wall in 1c).
+Drafters are being judged by the target model's token choices, and are fed by the target model's own KV cache. That's what makes the draft cheap, but also fragile. Even if the drafter produces a plausible next token, it is only accepted if it is the same next token that the target model would have made.
 
-### 2d. The parallelizability limitation
+This means that the effectiveness depends on the drafter model, the exact training and quantization of the target model, the workload, and the serving software. Change any one and the win can evaporate or the launch can fail outright.
 
-- Verification is one big parallel pass — great when the GPU has spare lanes. But **once concurrency saturates the device, there are no spare lanes left**: the drafter's extra compute now competes with real requests instead of filling idle capacity.
-- This is the mechanism behind every "wins at conc-1, loses at conc-32" result. Speculation is a way to *spend spare parallelism to cut latency* — and a busy server has none to spend.
-- TODO(graphic): reuse/emphasize the 1b concurrency-crossover chart, or a small "GPU lanes" cartoon (idle lanes filled by drafter at conc-1; fully packed at conc-32).
+Concrete failures from autobench:
 
----
+1. With gpt-oss-120b, an EAGLE3 drafter, and identical ShareGPT workload, the NVIDIA drafter slows down inference by **45%** (~9% acceptance); the LMSYS/SpecForge draft speeds up inference by **+22%** (~60% acceptance). Same model, different draft, opposite sign.
+2. With Gemma-4 E4B, NVFP4, and an MTP head, no single container image works: the one that loads NVFP4 is too old for the drafter architecture, and the newer one runs MTP but regresses NVFP4 loading. The config is **blocked** on mutually-exclusive images.
+3. Acceptance is workload-driven: EAGLE3/MTP land ~70–85% on **coding** but lower on **general chat**. gpt-oss-20b EAGLE3's conc-32 "+28%" is a **scheduling/prefill artifact** — acceptance actually *degrades* with concurrency (~30%→~5%), so it doesn't generalize down the sweep.
 
 ## 3. Evidence — the three speculators, measured
 
+TODO: A short two sentences describing the setup. See the repo (link to it via public URL -- this may be published elsewhere)
 > One box, ShareGPT V3, decode tok/s aggregate. "base" = matched non-spec run, same model/engine/quant/concurrency.
 
 ### 3a. MTP — the model drafting for itself (the clean win)
 
-- Native head, no separate model, acceptance ~66–70% / ~3.0-of-3 and **flat across concurrency** (workload-driven, as expected).
+- Native head, no separate model, acceptance ~66-70% / ~3.0-of-3 and **flat across concurrency** (workload-driven, as expected).
 - Consistent double-digit wins on vLLM at conc-32:
 
   | model · quant | base → MTP | speedup |
