@@ -37,16 +37,14 @@ conc-32 base; only `--max-num-seqs` changes.
   cap), **0 errors**; peak mem 108.8 GB.
 - **The base line is clean and monotone:** decode 74.7 (c1) → 113.2 (c2) → 173.8 (c4) → 241.8 (c8) → **332.4
   (c16)** → 430.8 (c32). A textbook throughput-vs-concurrency curve, no anomalies.
-- **MTP-vs-base ratio is non-monotone — but that's an MTP-measurement-window artifact, not a real curve
-  shape.** Ratios: +25.6% (c1) / +42.4% (c2) / +33.8% (c4) / +19.5% (c8) / **+30.3% (c16)** / +25.7% (c32).
-  The base points here are all one clean session (600 s caps); the MTP points mix dates/caps — c1/c8/c32 are
-  the 2026-06-23 runs (c8 used a 300 s / 500-prompt cap), c2/c4/c16 are today. The two **cleanest
-  same-session, same-600 s-cap** comparisons are **c4 (+33.8%) and c16 (+30.3%)**, bracketing ~**+30%**. So
-  the honest takeaway is **MTP wins a robust ~+20–42% across the whole sweep**, centered ~+30%, without a
-  clean monotone decay. For the single-session apples-to-apples decay story, use the DFlash-vs-MTP money
-  chart (all one session) rather than this base-vs-MTP ratio.
-- **To fully clean the #14 curve** would require re-running MTP c1/c8 at the 600 s cap to match; logged as a
-  follow-up rather than smoothed over here.
+- **MTP-vs-base ratio — a robust ~+25–30% across the sweep, with a modest low-batch bump.** Ratios: +25.6%
+  (c1) / +42.4% (c2) / +33.8% (c4) / +25.7% (c8) / **+30.3% (c16)** / +25.7% (c32). The apparent c8 "dip"
+  (+19.5%) in the first pass was a **short-cap artifact**: the June MTP c8 was a 300 s-cap run (289 tok/s); a
+  **matched 600 s-cap recheck gave 304 tok/s → +25.7%**, in line with the rest. So the curve is essentially
+  **flat ~+25–30%** with a small **c2–c4 peak** (+42%/+34%) — a little batching still leaves spare compute for
+  the 3-token draft — NOT a monotone decay. (Least-clean point is c2: base c2 was a 500-prompt run and MTP c2
+  a 900 s run, so the +42% there mixes caps.) For the fully single-session apples-to-apples decay story, the
+  DFlash-vs-MTP money chart is cleaner than this base-vs-MTP ratio.
 - TPOT 0.0 = `qwen3` reasoning-parser client artifact — decode tok/s is the reported metric.
 - Sweep siblings: [`-c1`](qwen3-6-35b-a3b-nvfp4-vllm-c1) · [`-c2`](qwen3-6-35b-a3b-nvfp4-vllm-c2) ·
   [`-c4`](qwen3-6-35b-a3b-nvfp4-vllm-c4) · [`-c8`](qwen3-6-35b-a3b-nvfp4-vllm-c8) ·

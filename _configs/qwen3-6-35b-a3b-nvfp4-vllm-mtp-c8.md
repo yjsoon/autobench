@@ -44,3 +44,7 @@ agg) and the conc-1 sibling.
 - **Acceptance holds:** mean accept-len **~3.0** (2.9–3.2), avg draft acceptance **~67%**, per-position
   0.84 / 0.66 / 0.51 — essentially identical to the conc-32 run (~3.0 / 66–69%). **Acceptance is
   workload-driven, not concurrency-driven** — same conclusion as the 27B sweep.
+- **600 s-cap recheck (2026-07-01):** this page's 289.14 was a 300 s / 500-prompt run; a matched **600 s-cap
+  re-measurement gave decode 304.0 tok/s** (718/1000, 0 err) — the extra samples lift it slightly. Used the
+  600 s value (**+25.7% over the matched base c8**) when drawing the base-vs-MTP curve, which removes the
+  apparent c8 "dip"; see [`-vllm-c16`](qwen3-6-35b-a3b-nvfp4-vllm-c16) Notes.

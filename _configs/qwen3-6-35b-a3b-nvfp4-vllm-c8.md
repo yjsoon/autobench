@@ -35,14 +35,13 @@ base instead of only conc-32. Same NVIDIA ModelOpt NVFP4 recipe as the published
 
 - **Result (conc 8):** prefill 264.33 / decode **241.82** tok/s aggregate; 574/1000 prompts (hit the 600 s
   cap), **0 errors**; peak mem 107.9 GB.
-- **MTP speedup at conc-8:** MTP 289.1 vs this base 241.82 = **+19.5%**. Across the sweep the MTP-vs-base
-  ratio is non-monotone — **+25.6% (c1) → +42.4% (c2) → +33.8% (c4) → +19.5% (c8) → +30.3% (c16) → +25.7%
-  (c32)** — but that wiggle is an **MTP-measurement-window artifact**: the base points are one clean session
-  (600 s caps) while the MTP points mix dates/caps (c1/c8/c32 are 2026-06-23; c8's MTP used a 300 s cap).
-  The cleanest same-session same-cap points (c4 +33.8%, c16 +30.3%) bracket ~+30%. Read as: **MTP wins a
-  robust ~+20–42% across the sweep, centered ~+30%**, no clean monotone decay (see the [`-c16`
-  page](qwen3-6-35b-a3b-nvfp4-vllm-c16) for the full discussion). **DFlash at conc-8** (269.9) = +11.6% over
-  base, still positive but below MTP.
+- **MTP speedup at conc-8:** the original June MTP c8 (289.1, a 300 s-cap run) gave +19.5%, but a **matched
+  600 s-cap recheck (2026-07-01) measured MTP c8 = 304.0**, i.e. **+25.7%** over this base — the +19.5% "dip"
+  was a short-cap sampling artifact. With that correction the MTP-vs-base ratio is a **robust ~+25–30%**
+  across the sweep — +25.6% (c1) / +42.4% (c2) / +33.8% (c4) / **+25.7% (c8)** / +30.3% (c16) / +25.7% (c32)
+  — essentially flat with a modest **low-batch (c2–c4) bump**, NOT a monotone decay (full discussion on the
+  [`-c16` page](qwen3-6-35b-a3b-nvfp4-vllm-c16)). **DFlash at conc-8** (269.9) = +11.6% over base, positive
+  but below MTP.
 - TPOT 0.0 = `qwen3` reasoning-parser client artifact — decode tok/s is the reported metric.
 - Sweep siblings: [`-c1`](qwen3-6-35b-a3b-nvfp4-vllm-c1) · [`-c2`](qwen3-6-35b-a3b-nvfp4-vllm-c2) ·
   [`-c4`](qwen3-6-35b-a3b-nvfp4-vllm-c4) · [`-c16`](qwen3-6-35b-a3b-nvfp4-vllm-c16) ·
