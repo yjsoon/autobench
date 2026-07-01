@@ -214,3 +214,12 @@ prompts). So the conc-32 "+28%" is **acceptance-backed, not a scheduling artifac
 under-accepted at small batch — likely a CUDA-graph/scheduler batch-size effect; mechanism unconfirmed).
 Net: EAGLE3 on gpt-oss-20b is a loss below ~conc-8 and a real win at conc ≥16. Pages
 `gpt-oss-20b-vllm-mxfp4-eagle3-c{2,4,16}` + matched bases `-mxfp4-c{2,4,16}`.
+
+**Prefix-caching-off control (2026-07-01) — #38754 ruled out as the cause.** To exclude vLLM
+[#38754](https://github.com/vllm-project/vllm/issues/38754) (EAGLE3 acceptance→0 via router-GEMM NaNs, which
+*requires* prefix caching), re-ran conc-2 and conc-16 with `--no-enable-prefix-caching`: conc-2 = **~14%**
+(mean-len ~1.45), conc-16 = **~44%** (mean-len ~2.28). The ~3× low-batch depression **persists without prefix
+caching**, so #38754 does not explain it. Prefix caching adds a *secondary* depression at low batch only
+(conc-2: ~5% on → ~14% off; conc-16 unchanged at ~44%). Root cause is the concurrency/batch-size path itself
+(CUDA-graph padding or aux-hidden-state capture at batch 1–8), still unconfirmed. Draft issue write-up for the
+user to file: `spec/vllm-issue-draft-eagle3-lowbatch.md`.
