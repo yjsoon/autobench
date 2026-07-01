@@ -35,10 +35,11 @@ conc-4 rows (EXPERIMENTS.md #4/#14). Same NVIDIA ModelOpt NVFP4 recipe as the pu
 
 - **Result (conc 4):** prefill 181.46 / decode **173.76** tok/s aggregate; 411/1000 prompts (hit the 600 s
   cap), **0 errors**; peak mem 107.7 GB.
-- **MTP speedup at conc-4:** MTP 232.4 vs this base 173.76 = **+33.8%**. With c1/c2 that gives a **non-monotone
-  MTP-speedup curve: +25.6% (c1) → +42.4% (c2) → +33.8% (c4)** — a low-batch peak around conc-2, then decay.
-  The single-stream number is *not* the maximum; MTP helps most when there's a little batching but still spare
-  compute for the draft.
+- **MTP speedup at conc-4:** MTP 232.4 vs this base 173.76 = **+33.8%**. Across the full sweep the MTP-vs-base
+  ratio is non-monotone (+25.6/+42.4/+33.8/+19.5/+30.3/+25.7% at c1/2/4/8/16/32), which turns out to be an
+  MTP-measurement-window artifact rather than a real curve shape — see the [`-c16`
+  page](qwen3-6-35b-a3b-nvfp4-vllm-c16). Net: MTP wins a robust ~+20–42% (centered ~+30%), and the
+  single-stream +25.6% is not the maximum.
 - TPOT 0.0 = `qwen3` reasoning-parser client artifact — decode tok/s is the reported metric.
 - Sweep siblings: [`-c1`](qwen3-6-35b-a3b-nvfp4-vllm-c1) · [`-c2`](qwen3-6-35b-a3b-nvfp4-vllm-c2) ·
   [`-c8`](qwen3-6-35b-a3b-nvfp4-vllm-c8) · [`-c16`](qwen3-6-35b-a3b-nvfp4-vllm-c16) ·
