@@ -70,7 +70,7 @@ docker run --rm --name "$CNAME" --gpus all --ipc=host \
     --max-new-tokens "$MAXNEW" \
     --tree-budget "$BUDGETS" \
     --temperature "$TEMP" \
-    --disable-cpp-compact-cache \
+    ${DDTREE_NO_CPP:+--disable-cpp-compact-cache} \
     --save-path "$SAVE"
 rc=$?
 
