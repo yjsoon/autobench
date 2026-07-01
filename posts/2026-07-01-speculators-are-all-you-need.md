@@ -1,6 +1,6 @@
 # On Speculators
 
-Include a 
+TODO: Include a TL;DR: Use <this Qwen config> or <this Gemma config>.
 
 TODO: Speculators to Speculative Decoders
 
@@ -34,6 +34,12 @@ As of right now, there are three flavours that are common (and one emerging).
 - **[DDTree](https://liranringel.github.io/ddtree/) (emerging):** DFlash with a tree. Not in a serving engine yet (research code only).
 
 TODO: Some table showing the speedups with different models.
+
+We ran an extensive (~number, including the _archive) benchmarks... (give some stats)
+
+TODO: A short two sentences describing the setup. See the repo (link to it via public URL -- this may be published elsewhere)
+
+> One box, ShareGPT V3, decode tok/s aggregate. "base" = matched non-spec run, same model/engine/quant/concurrency.
 
 ## The performance trade-off
 
@@ -71,13 +77,10 @@ This means that the effectiveness depends on the drafter model, the exact traini
 
 With gpt-oss-120b, an EAGLE3 drafter, and identical ShareGPT workload, the NVIDIA drafter slows down inference by **45%** (~9% acceptance); the LMSYS/SpecForge draft speeds up inference by **+22%** (~60% acceptance). Same model, different draft, opposite sign.
 
-## The Benchmarks
+## The Models
 
-TODO: A short two sentences describing the setup. See the repo (link to it via public URL -- this may be published elsewhere)
-
-> One box, ShareGPT V3, decode tok/s aggregate. "base" = matched non-spec run, same model/engine/quant/concurrency.
-
-TODO: Change this to instead show different model families
+TODO: Change this to instead show different model families, highlighting performance differences.
+TODO: Where possible, find evidence for the points above in the data below.
 
 ### 3a. MTP — the model drafting for itself (the clean win)
 
