@@ -200,3 +200,15 @@ here. So: "EAGLE3 is useless on gpt-oss general chat" was really **"the NVIDIA t
 off-distribution"** — a *workload-matched* draft (LMSYS/SpecForge) pays off even on ShareGPT. Always
 prefer the engine's own recipe draft. See `gpt-oss-120b-sglang-mxfp4-eagle3-c1` / `-c32`. (Caveat: needs
 the SGLang nightly for conc-32 — the spark image's eagle3 serving bug, above.)
+
+**UPDATE (2026-07-01) — gpt-oss-20b EAGLE3 acceptance is CONCURRENCY-DRIVEN (rises with batch), reversing the
+"~5% / concurrency-degrading" reading above.** The old low numbers came from **cap-truncated low-conc runs**.
+Fresh vLLM sweep (RedHatAI draft, cu130-nightly, ShareGPT): avg draft acceptance **~5% at conc 2/4/8** but
+**~44% (mean accept-len ~2.3) at conc 16/32** — and decode flips from **−29% (c2) / −33% (c4)** vs base to
+**+27% (c16) / +28% (c32)**. **Controlled diagnostic proves it's concurrency, not sampling:** conc-16
+restricted to the *same first ~150 prompts* as the conc-2 run still gives ~44% (vs ~5% at conc-2 on those very
+prompts). So the conc-32 "+28%" is **acceptance-backed, not a scheduling artifact** — and the rule-of-thumb
+"acceptance is workload-driven, not concurrency-driven" **fails for this vLLM EAGLE3 path** (draft is
+under-accepted at small batch — likely a CUDA-graph/scheduler batch-size effect; mechanism unconfirmed).
+Net: EAGLE3 on gpt-oss-20b is a loss below ~conc-8 and a real win at conc ≥16. Pages
+`gpt-oss-20b-vllm-mxfp4-eagle3-c{2,4,16}` + matched bases `-mxfp4-c{2,4,16}`.
