@@ -41,7 +41,10 @@ echo "==> launch vLLM $MODEL (ctx=$CTX, max-num-seqs=$CONC) extra=[${EXTRA[*]:-}
 # lib fetches it from $TIKTOKEN_ENCODINGS_BASE (default = openaipublic blob). Pre-seed it
 # from a local mount so the load needs NO second egress (the sandbox caps outbound after
 # the first connection, which the HF model download already used). Plain path, not file://.
-VOCAB_DIR="$HOME/models/tiktoken_cache"
+# Harmony vocab dir mounted at /vocab. Default is the historical path; override with VOCAB_DIR=
+# (e.g. VOCAB_DIR=$HOME/tiktoken_encodings) when that path is missing/root-owned — the dir just
+# needs to contain o200k_base.tiktoken (sha256 446a9538…). See notes/INCOMPATIBILITIES.md.
+VOCAB_DIR="${VOCAB_DIR:-$HOME/models/tiktoken_cache}"
 docker run -d --name "$NAME" --gpus all --ipc=host -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
   -v "$HOME/.cache/vllm:/root/.cache/vllm" \

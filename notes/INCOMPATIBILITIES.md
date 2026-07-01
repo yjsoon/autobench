@@ -38,6 +38,13 @@ the server never comes up. Fix (baked into `scripts/bench-vllm-serving.sh`): pre
 fails with "No such file or directory"). No second egress then needed. Same applies to any
 harmony/gpt-oss model on SGLang.
 
+**Vocab-dir gotcha (2026-07-01):** the wrapper's historical `~/models/tiktoken_cache` came up **empty and
+root-owned** (host user can't reseed it), so gpt-oss died at load with `HarmonyError: invalid tiktoken vocab
+file: No such file or directory`. Fix: `bench-vllm-serving.sh` now takes a **`VOCAB_DIR=` override** — the
+verified vocab lives at `~/tiktoken_encodings/o200k_base.tiktoken` (sha256 `446a9538…`), so run gpt-oss with
+`VOCAB_DIR=$HOME/tiktoken_encodings`. (Root-owned dirs are pervasive here — `~/.cache/huggingface`, `~/models`
+— because containers run as root; see BENCHMARKING.md "Model downloads".)
+
 ### Mistral native-format + MLA (Mistral-Small-4-119B-NVFP4)
 The official NVFP4 repo (`mistralai/Mistral-Small-4-119B-2603-NVFP4`) ships **Mistral native format**
 (`params.json`, `consolidated-*.safetensors`, `tekken.json` — no `config.json`), so vLLM needs
