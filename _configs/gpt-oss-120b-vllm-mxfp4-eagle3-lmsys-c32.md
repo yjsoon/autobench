@@ -60,8 +60,9 @@ essentially neutral.** gpt-oss-120b MXFP4 + `lmsys/EAGLE3-gpt-oss-120b-bf16` on 
 - **Caveat on the acceptance gap (vLLM issue [#42508](https://github.com/vllm-project/vllm/issues/42508)):**
   vLLM and SpecForge/SGLang define acceptance differently and disagree by ~6–10 pts (direction varies by
   model), so part of the ~29%-vs-~55% gap may be measurement, not real conversion. The *within-vLLM* trend is
-  solid though: acceptance rose ~20% (c1) → ~29% (c32), consistent with the low-batch EAGLE3 pathology (see
-  the gpt-oss-20b [`-eagle3-c16`](gpt-oss-20b-vllm-mxfp4-eagle3-c16) diagnostic). Related open bug on the same
+  informative though: acceptance is ~20% (c1) → ~48% (c8) → ~29% (c32) — a low-batch depression at c1 (the
+  EAGLE3 pathology, cf. the gpt-oss-20b [`-eagle3-c16`](gpt-oss-20b-vllm-mxfp4-eagle3-c16) diagnostic) then a
+  high-batch decline by c32, peaking at c8 (~48%, near SGLang's ~55%; see [`-lmsys-c8`](gpt-oss-120b-vllm-mxfp4-eagle3-lmsys-c8)). Related open bug on the same
   model: [#38754](https://github.com/vllm-project/vllm/issues/38754) (EAGLE3 acceptance→0 under CUDA
   graphs+prefix-caching+chunked-prefill via router-GEMM NaNs) — a different signature (intermittent zero, not
   a stable low value), but worth ruling out with a prefix-caching-off control.
