@@ -29,6 +29,18 @@ NotImplementedError`) — for that path, drop back to `cu130-nightly`. If a mode
 `nightly-aarch64`, try `cu130-nightly` before declaring it blocked, and note which image worked on the
 config page (record the actual one in `engine_image`).
 
+## Model downloads — let the container pull, don't host-`hf download`
+
+The HF cache `~/.cache/huggingface/hub` is **root-owned** (every model was pulled *inside* a serving
+container running as root with the cache bind-mounted). So a **host-side `hf download` fails with
+`PermissionError: [Errno 13]`** on the root-owned `hub/` — and `huggingface-cli` is now a deprecated no-op
+besides. **Don't pre-download on the host.** Just launch the benchmark: the wrappers pass `HF_TOKEN` and
+mount `~/.cache/huggingface`, so **vLLM/SGLang self-download the model (and any `--speculative-config`
+drafter) on first boot**, as root, into the cache — the health-wait loop covers the pull. Gated repos work
+too (the token is in the container env). First run of a new model is slower (download + load); reruns hit
+the cache. MemAvailable isn't corrupted by the pull — it counts reclaimable page cache as available, and the
+download completes before the mem sampler starts (sampler runs only after `/health` is ready).
+
 ## Workload dataset
 
 Benchmark against the real dataset in **`./benchmark_data/`** —
