@@ -47,8 +47,9 @@ run_command: |
   at ~67% / 3.0. Acceptance stays flat vs conc (workload-driven) — it's the *draft efficiency*, not a drop in
   acceptance, that drives the collapse.
 - **Completes the DFlash money-chart line:** decode 101.9 (c1) → 147.6 (c2) → 213.8 (c4) → 269.9 (c8) →
-  **344.2 (c16)** → 401.2 (c32); vs MTP that's +8.5% → −8.4% → −8.0% → −6.6% → −20.6% → −25.9%. Crossover in
-  1→2, plateau through 8, cliff by 16. **Keep MTP** for a mixed-workload gateway.
+  **344.2 (c16)** → 401.2 (c32); vs MTP that's ~+2.9% → −8.4% → −8.0% → −6.6% → −20.6% → −25.9% (the c1 edge is
+  vs the matched 600 s-cap MTP 99.04; +8.5% was vs the short-cap 93.9). Crossover in 1→2, plateau through 8,
+  cliff by 16 — and the conc-1 lead is marginal. **Keep MTP** for a mixed-workload gateway.
 - One server lifetime for c2/c4/c16 → mem is the single 110.56 GB reservation. TPOT 0.0 = `qwen3`
   reasoning-parser client artifact.
 - Series: [`c1/8/32` (main)](qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash) ·

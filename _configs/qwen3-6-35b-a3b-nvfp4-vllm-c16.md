@@ -37,8 +37,8 @@ conc-32 base; only `--max-num-seqs` changes.
   cap), **0 errors**; peak mem 108.8 GB.
 - **The base line is clean and monotone:** decode 74.7 (c1) → 113.2 (c2) → 173.8 (c4) → 241.8 (c8) → **332.4
   (c16)** → 430.8 (c32). A textbook throughput-vs-concurrency curve, no anomalies.
-- **MTP-vs-base ratio — a robust ~+25–30% across the sweep, with a modest low-batch bump.** Ratios: +25.6%
-  (c1) / +42.4% (c2) / +33.8% (c4) / +25.7% (c8) / **+30.3% (c16)** / +25.7% (c32). The apparent c8 "dip"
+- **MTP-vs-base ratio — a robust ~+25–30% across the sweep, with a modest low-batch bump.** Ratios (MTP c1/c8 at matched
+  600 s cap): +32.5% (c1) / +42.4% (c2) / +33.8% (c4) / +25.7% (c8) / **+30.3% (c16)** / +25.7% (c32). The apparent c8 "dip"
   (+19.5%) in the first pass was a **short-cap artifact**: the June MTP c8 was a 300 s-cap run (289 tok/s); a
   **matched 600 s-cap recheck gave 304 tok/s → +25.7%**, in line with the rest. So the curve is essentially
   **flat ~+25–30%** with a small **c2–c4 peak** (+42%/+34%) — a little batching still leaves spare compute for

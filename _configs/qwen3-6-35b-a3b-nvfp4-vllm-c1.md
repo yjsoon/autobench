@@ -35,12 +35,13 @@ as the published conc-32 base; only `--max-num-seqs` changes.
 
 - **Result (conc 1):** prefill 93.25 / decode **74.74** tok/s aggregate; 176/400 prompts (hit the 600 s cap),
   **0 errors**; peak mem 108.5 GB.
-- **MTP speedup at conc-1:** MTP decode 93.9 vs this base 74.74 = **+25.6%** — MTP's biggest relative win is
-  at single stream, where the GPU has spare compute to spend on the 3-token draft. **DFlash at conc-1** (101.9)
-  = **+36.4%** over base, its only concurrency where the 11-token draft's bandwidth saving beats its wasted
-  compute.
-- Anchors the base line of the speedup-decay curve (#14): base-vs-MTP shrinks from +25.6% (c1) as concurrency
-  rises and spare compute vanishes. TPOT 0.0 = `qwen3` reasoning-parser client artifact — decode tok/s is real.
+- **MTP speedup at conc-1:** against a **matched 600 s-cap MTP recheck (99.04 tok/s)** this base gives
+  **+32.5%** (the published MTP c1 of 93.9 was a 300 s-cap run, ~5% under-measured; see
+  [`-mtp-c1`](qwen3-6-35b-a3b-nvfp4-vllm-mtp-c1)). **DFlash at conc-1** (101.9) = **+36.4%** over base.
+- **Consequence for the money chart:** DFlash's single-stream *edge over MTP* is only **~+2.9%** (101.9 vs the
+  matched MTP 99.04), not the +8.5% quoted against the short-cap MTP — and even that is ctx-confounded (DFlash
+  ran ctx 40960 vs MTP 65536). So DFlash barely leads MTP at conc-1 and loses from conc-2 on. TPOT 0.0 =
+  `qwen3` reasoning-parser client artifact — decode tok/s is real.
 - Sweep siblings: [`-c2`](qwen3-6-35b-a3b-nvfp4-vllm-c2) · [`-c4`](qwen3-6-35b-a3b-nvfp4-vllm-c4) ·
   [`-c8`](qwen3-6-35b-a3b-nvfp4-vllm-c8) · [`-c16`](qwen3-6-35b-a3b-nvfp4-vllm-c16) ·
   [`c32` (main)](qwen3-6-35b-a3b-nvfp4-vllm). MTP counterpart: [`-mtp-c1`](qwen3-6-35b-a3b-nvfp4-vllm-mtp-c1).

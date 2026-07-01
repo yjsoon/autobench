@@ -51,11 +51,17 @@ ctx 40960, DFlash n=11 via the small-page drafter, util 0.85. **0 errors at ever
 
 | conc | prefill tok/s | decode tok/s (agg) | vs MTP decode | TTFT median |
 |------|--------------:|-------------------:|--------------:|------------:|
-| 1    | 118.94 | **101.9** | **+8.5%** (MTP 93.9) | 2472 ms |
+| 1    | 118.94 | **101.9** | **+2.9%** (matched MTP 99.04) † | 2472 ms |
 | 8    | 273.85 | 269.9 | −6.6% (MTP 289.1) | 7415 ms |
 | 32   | 400.87 | 401.2 | −25.9% (MTP 541.3) | 19972 ms |
 
-- **DFlash wins single-stream, loses batched.** The only win is conc-1 (+8.5%) — and even that is partly the shorter
+† **conc-1 vs-MTP corrected 2026-07-01:** originally quoted **+8.5%** against the published MTP c1 (93.9), but
+that was a 300 s-cap run; a **matched 600 s-cap MTP c1 recheck = 99.04 tok/s**, shrinking DFlash's edge to
+**~+2.9%** — and even that is ctx-confounded (DFlash ctx 40960 vs MTP 65536). So DFlash's single-stream
+advantage is marginal, essentially a wash, reinforcing the "keep MTP" verdict below.
+
+- **DFlash wins single-stream, loses batched.** The only win is conc-1 (~+2.9% vs matched-cap MTP; +8.5% vs the
+  original short-cap MTP — see † above) — and even that is partly the shorter
   ctx (40960 vs the MTP baseline's 65536; though ShareGPT sequences are short enough that the gap is mostly real).
   At conc-8/32 it falls behind, sharply at 32. Classic spec-decode shape: it helps the bandwidth-bound single stream and
   hurts the compute-bound batch.

@@ -50,9 +50,10 @@ util 0.85. **0 errors.**
 
 - **Result (conc 2):** prefill 166.18 / decode **147.61** tok/s aggregate; 347/1000 prompts (hit the 600 s
   cap), **0 errors**. **vs MTP conc-2 (161.21): −8.4%.**
-- **The sign flips between conc-1 and conc-2.** DFlash *won* single-stream (+8.5%: 101.9 vs MTP 93.9) but is
-  already **behind by conc-2** — the crossover is in the **1→2** region, sharper than the post's "somewhere
-  between 1 and 8" framing. The loss then stays a shallow ~−7-8% plateau through conc-8 before collapsing at
+- **The sign flips between conc-1 and conc-2.** DFlash *led* single-stream — but only **~+2.9%** (101.9 vs the
+  matched 600 s-cap MTP c1 of 99.04; the +8.5% once quoted used a 300 s-cap MTP of 93.9) — and is already
+  **behind by conc-2**. The crossover is in the **1→2** region, sharper than the post's "somewhere between 1
+  and 8" framing, and the conc-1 lead itself is marginal. The loss then stays a shallow ~−7-8% plateau through conc-8 before collapsing at
   conc-16/32 (see [`-c16`](qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash-c16)).
 - **Why — wasted draft compute.** DFlash drafts **11** tokens at only **~23–31% acceptance / accept-len
   ~3.5–4.4** → ~7 wasted drafter forward passes per step. Even at conc-2 that extra compute already outweighs

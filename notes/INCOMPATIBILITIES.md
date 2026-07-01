@@ -119,7 +119,9 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   matches the true base). AEON evidently patched the hybrid-spec path in their fork (PR #40898 SWA etc.); what's "open
   upstream" (#43626/#41884/#41190/#46105) is **stock-vLLM**, not this image.
 - **The real reason to keep MTP is throughput economics, not a block.** DFlash on the official checkpoint won only at
-  **conc-1 (+8.5%: 101.9 vs 93.9 tok/s)** and **lost under load (conc-8 −7%, conc-32 −26%)**. Cause: MTP drafts 3 tokens
+  **conc-1 — and only ~+2.9%** (101.9 vs a matched 600 s-cap MTP c1 of **99.04**; the once-quoted +8.5% used a
+  300 s-cap MTP of 93.9, ~5% under-measured — same recheck lifted MTP c8 289→304) — and **lost under load
+  (conc-8 −7%, conc-32 −26%)**. The fine-grained sweep pins the DFlash-vs-MTP crossover in **conc 1→2**. Cause: MTP drafts 3 tokens
   at **~66% acceptance, accept-len ~3.0-of-3** (almost no wasted compute); DFlash drafts 11 at **~25% acceptance,
   accept-len ~3.7-of-11** (≈7 wasted forward passes/step). On this compute-bound MoE that wasted draft compute sinks
   aggregate throughput exactly when concurrency rises. **Bottom line: keep MTP — it's structurally draft-efficient,

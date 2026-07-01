@@ -43,5 +43,11 @@ batch contention. Pairs with the conc-32 done run (decode 541 tok/s agg) and the
   workload-driven, not concurrency-driven** — same conclusion across the whole 35B-A3B and 27B sweeps.
 - **Single-stream accepted throughput ~70 tok/s** (SpecDecoding log) vs ~93.9 tok/s client decode — the
   spec head sustains ~70 accepted tokens/s of useful generation per stream at acc-len 3.
+- **600 s-cap recheck (2026-07-01):** this page's 93.91 was a 300 s / 200-prompt run; a matched **600 s-cap
+  re-measurement gave decode 99.04 tok/s** (233/400, 0 err) — ~5% higher (the short cap over-weights warmup;
+  same effect lifted MTP c8 289→304). **This is the money-chart-relevant MTP c1 baseline:** against it,
+  DFlash's conc-1 lead is only **~+2.9%** (101.9 vs 99.04), not the +8.5% quoted against the 93.91 short-cap
+  number — see [`…ultimate-dflash`](qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash) and the base
+  [`-vllm-c1`](qwen3-6-35b-a3b-nvfp4-vllm-c1).
 - **TPOT caveat:** the `qwen3` reasoning-parser zeros the client TPOT median (reads 0.0) — corroborate with
   the in-engine SpecDecoding metrics above.
