@@ -1,5 +1,7 @@
 # On Speculators
 
+Include a 
+
 TODO: Speculators to Speculative Decoders
 
 A lot of ink and bits get spilled speeding up *datacenter-scale* inference (batching, disaggregation, giant KV pools). Speculative decoding is the rare trick that is particularly effective at speeding up the *small, local, low-concurrency* case — the single RTX or Apple Silicon chip on your lap.
@@ -67,16 +69,15 @@ Drafters are being judged by the target model's token choices, and are fed by th
 
 This means that the effectiveness depends on the drafter model, the exact training and quantization of the target model, the workload, and the serving software. Change any one and the win can evaporate or the launch can fail outright.
 
-Concrete failures from autobench:
+With gpt-oss-120b, an EAGLE3 drafter, and identical ShareGPT workload, the NVIDIA drafter slows down inference by **45%** (~9% acceptance); the LMSYS/SpecForge draft speeds up inference by **+22%** (~60% acceptance). Same model, different draft, opposite sign.
 
-1. With gpt-oss-120b, an EAGLE3 drafter, and identical ShareGPT workload, the NVIDIA drafter slows down inference by **45%** (~9% acceptance); the LMSYS/SpecForge draft speeds up inference by **+22%** (~60% acceptance). Same model, different draft, opposite sign.
-2. With Gemma-4 E4B, NVFP4, and an MTP head, no single container image works: the one that loads NVFP4 is too old for the drafter architecture, and the newer one runs MTP but regresses NVFP4 loading. The config is **blocked** on mutually-exclusive images.
-3. Acceptance is workload-driven: EAGLE3/MTP land ~70–85% on **coding** but lower on **general chat**. gpt-oss-20b EAGLE3's conc-32 "+28%" is a **scheduling/prefill artifact** — acceptance actually *degrades* with concurrency (~30%→~5%), so it doesn't generalize down the sweep.
-
-## 3. Evidence — the three speculators, measured
+## The Benchmarks
 
 TODO: A short two sentences describing the setup. See the repo (link to it via public URL -- this may be published elsewhere)
+
 > One box, ShareGPT V3, decode tok/s aggregate. "base" = matched non-spec run, same model/engine/quant/concurrency.
+
+TODO: Change this to instead show different model families
 
 ### 3a. MTP — the model drafting for itself (the clean win)
 
@@ -120,20 +121,21 @@ TODO: A short two sentences describing the setup. See the repo (link to it via p
 - **Verdict from the notes:** DFlash *works* on this box (the earlier "architecturally blocked" claim was refuted by measurement) — it's just not worth it for a mixed-concurrency gateway. Keep MTP: draft-efficient, no external drafter, no forbidden revision, no untrusted image.
 - TODO(graphic): the n=11 per-position acceptance decay curve (the "wasted compute" picture) — pairs with 2b.
 
----
+## So... what should I do?
 
-## Cross-cutting takeaway
+TODO: Turn into prose
 
-- **Speculation buys latency with spare parallelism.** It pays when *spare compute × acceptance* beats the fixed drafter+verify cost:
-  - small model or low concurrency (spare lanes) ✓
-  - high, workload-matched acceptance ✓ (native MTP ≈ 3-of-3 > EAGLE3 ≈ 2-of-3 > DFlash ≈ 3.7-of-11)
-  - a heavy per-token forward pass to hide behind (dense > MoE; big > small) ✓
-- **For a general chat gateway on one Spark, native MTP is the default winner** for the Qwen3.6 / Gemma-4 families; EAGLE3 is competitive *only with the engine's own draft*; DFlash is a single-stream / latency-critical special case.
-- TODO(graphic): 2×2 or quadrant — axes "spare compute (concurrency)" × "acceptance," plotting where each method lands and where speculation stops paying.
+For a general chat gateway on one Spark, native MTP is the default winner.
+for the Qwen3.6 / Gemma-4 families; EAGLE3 is competitive *only with the engine's own draft*; DFlash is a single-stream / latency-critical special case.
 
----
+Remember that **speculation buys latency with spare parallelism.** It only pays when you have spare compute and good acceptance rates.
 
-## The future — DDTree (draft *trees*, not draft *lines*)
+- small model or low concurrency (spare lanes) ✓
+- high, workload-matched acceptance ✓ (native MTP ≈ 3-of-3 > EAGLE3 ≈ 2-of-3 > DFlash ≈ 3.7-of-11)
+
+### The future — DDTree (draft *trees*, not draft *lines*)
+
+TODO: Look at the results and merge this.
 
 > Not benchmarked here yet (no Spark runs — research code, not a serving stack). Included as the direction of travel, and the natural fix for DFlash's weakness (§3c).
 
@@ -149,19 +151,3 @@ TODO: A short two sentences describing the setup. See the repo (link to it via p
   - **Gemma-4 can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculators are EAGLE3 heads, e.g. `thoughtworks/Gemma-4-31B-Eagle3`). No Gemma-4 DFlash drafter = no Gemma-4 DDTree until someone trains one.
 - **TODO(benchmark):** stand up DDTree on the Spark against `Qwen/Qwen3.6-35B-A3B` (drafter `z-lab/Qwen3.6-35B-A3B-DFlash`, already used in the DFlash configs) — measure accept-len and decode tok/s at conc 1/8/32, and put it head-to-head with native MTP *and* single-line DFlash on the §1b concurrency-crossover chart. That closes the loop: does the tree recover DFlash's under-load losses (§3c)?
 - TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
-
----
-
-## External post
-
-1. **The strange duality between speculators and tokenization** — TODO(prose): both are bets about "what usually comes next"; a tokenizer compresses frequent sequences into one symbol ahead of time, a speculator predicts frequent continuations at runtime. Where do they overlap / trade off?
-
----
-
-### Appendix — blocked configs (brittleness receipts)
-
-- `gemma-4-e4b-it-vllm-nvfp4-mtp` — image standoff (NVFP4 load vs. drafter arch).
-- `qwen3-6-35b-a3b-nvfp4-sglang` / `-mtp` — GDN gate not FP8-block-128 tileable.
-- `deepseek-v4-flash-vllm-nvfp4-eagle3` / `-awq` — 168 GB > 121 GB fit wall.
-- `ornith-1-0-35b-aeon-vllm-nvfp4-dflash-blocked` — hybrid + draft KV can't unify (with correction: small-page drafter pin boots on sibling 35B checkpoints).
-- `gemma-4-e4b-it-llamacpp-mtp` — *not* a real MTP regression: forced `-fa off` confounds the −36%; needs an `-fa off` base to compare.
