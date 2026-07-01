@@ -128,6 +128,35 @@ interleaved with **full-attention** layers. vLLM must unify these into one KV pa
   needs no external drafter, no forbidden drafter revision, and no untrusted image replacing the pinned vLLM. DFlash
   *works* here; it just isn't worth it for a mixed-workload gateway.**
 
+### DDTree research harness cannot run Qwen3.6 hybrid-GDN targets (spec rollback vs recurrent state)
+
+- **The method (DDTree, Diffusion Draft Tree; Ringel & Romano 2026, github.com/liranringel/ddtree) is not in
+  any serving engine** — only SGLang discussion #24605. The sole implementation is the paper's PyTorch +
+  transformers harness (`benchmark.py`, batch-1, bf16 target via `AutoModelForCausalLM`). It runs fine inside
+  the trusted **`lmsysorg/sglang:nightly-dev-cu13-*` image** (torch 2.11+cu130 + `flash_attn` + `datasets`,
+  built for GB10 sm_121a — the vLLM images vendor `vllm_flash_attn`, NOT the pip `flash_attn` the harness
+  hard-requires; the SGLang image ships the real one).
+- **But it dies on Qwen3.6 targets.** Qwen3.6-35B-A3B = `qwen3_5_moe`, Qwen3.6-27B = `qwen3_5` — both **hybrid
+  GatedDeltaNet linear-attention + full-attention**. The harness verifies each speculative block by rolling
+  the target KV back to the accepted prefix with `past_key_values.crop(start)`. First decode step raises
+  `ValueError: has_previous_state can only be called on LinearAttention layers, and the current Cache seem to
+  only contain Attention layers` (`transformers/.../qwen3_5_moe/modeling…_update_linear_attn_mask`), because
+  it allocates a plain `DynamicCache`. **Deeper than a cache-class swap:** `crop(start)` cannot rewind a
+  GatedDeltaNet layer to an arbitrary token — linear attention keeps a **recurrent state**, not per-token KV,
+  so rejection-rollback has nothing to slice. Speculative decoding with rejection *requires* rewindable state.
+  This is the same wall AEON's vLLM fork only clears by purpose-building a unified attention page (block 1136);
+  the open harness has no equivalent.
+- **Fix `config.block_size`:** the vendored `model/dflash.py` reads `config.block_size` top-level, but the
+  `z-lab/Qwen3.6-*-DFlash` drafters nest it under `dflash_config` (like `mask_token_id`/`target_layer_ids`).
+  Patch line 162 to `getattr(config,"block_size",None) or config.dflash_config.get("block_size")`. (Needed for
+  the drafter to *load*; the hybrid-target wall above is separate and fatal.)
+- **Consequence:** the money-chart **DDTree line cannot be measured for our Qwen3.6 models on the Spark.** The
+  measurable datapoint is DDTree on the harness's own **non-hybrid** target `Qwen/Qwen3-Coder-30B-A3B-Instruct`
+  (`qwen3_moe`, standard attention) + `z-lab/Qwen3-Coder-30B-A3B-DFlash` — same-size MoE, coding workload. See
+  config pages `qwen3-6-35b-a3b-ddtree-blocked`, `qwen3-6-27b-ddtree-blocked`, `qwen3-coder-30b-a3b-ddtree`.
+  Runner: `scripts/bench-ddtree.sh` (batch-1, bf16 — records baseline vs DFlash vs DDTree accept-len +
+  single-stream tok/s in one pass; NOT comparable in absolute tok/s to the NVFP4 serving rows).
+
 ## SGLang
 
 - **`lmsysorg/sglang:spark` is too old for the Qwen3.6 (`qwen3_5`) arch — FIXED by a newer nightly.**
@@ -214,3 +243,12 @@ prompts). So the conc-32 "+28%" is **acceptance-backed, not a scheduling artifac
 under-accepted at small batch — likely a CUDA-graph/scheduler batch-size effect; mechanism unconfirmed).
 Net: EAGLE3 on gpt-oss-20b is a loss below ~conc-8 and a real win at conc ≥16. Pages
 `gpt-oss-20b-vllm-mxfp4-eagle3-c{2,4,16}` + matched bases `-mxfp4-c{2,4,16}`.
+
+**Prefix-caching-off control (2026-07-01) — #38754 ruled out as the cause.** To exclude vLLM
+[#38754](https://github.com/vllm-project/vllm/issues/38754) (EAGLE3 acceptance→0 via router-GEMM NaNs, which
+*requires* prefix caching), re-ran conc-2 and conc-16 with `--no-enable-prefix-caching`: conc-2 = **~14%**
+(mean-len ~1.45), conc-16 = **~44%** (mean-len ~2.28). The ~3× low-batch depression **persists without prefix
+caching**, so #38754 does not explain it. Prefix caching adds a *secondary* depression at low batch only
+(conc-2: ~5% on → ~14% off; conc-16 unchanged at ~44%). Root cause is the concurrency/batch-size path itself
+(CUDA-graph padding or aux-hidden-state capture at batch 1–8), still unconfirmed. Draft issue write-up for the
+user to file: `spec/vllm-issue-draft-eagle3-lowbatch.md`.
