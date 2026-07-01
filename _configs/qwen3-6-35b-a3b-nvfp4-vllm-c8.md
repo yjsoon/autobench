@@ -38,7 +38,7 @@ base instead of only conc-32. Same NVIDIA ModelOpt NVFP4 recipe as the published
 - **MTP speedup at conc-8:** the original June MTP c8 (289.1, a 300 s-cap run) gave +19.5%, but a **matched
   600 s-cap recheck (2026-07-01) measured MTP c8 = 304.0**, i.e. **+25.7%** over this base — the +19.5% "dip"
   was a short-cap sampling artifact. With that correction the MTP-vs-base ratio is a **robust ~+25–30%**
-  across the sweep — +25.6% (c1) / +42.4% (c2) / +33.8% (c4) / **+25.7% (c8)** / +30.3% (c16) / +25.7% (c32)
+  across the sweep — +32.5% (c1) / +42.4% (c2) / +33.8% (c4) / **+25.7% (c8)** / +30.3% (c16) / +25.7% (c32)
   — essentially flat with a modest **low-batch (c2–c4) bump**, NOT a monotone decay (full discussion on the
   [`-c16` page](qwen3-6-35b-a3b-nvfp4-vllm-c16)). **DFlash at conc-8** (269.9) = +11.6% over base, positive
   but below MTP.
