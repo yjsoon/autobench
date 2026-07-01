@@ -1,0 +1,17 @@
+concurrency,method,decode,source_url
+1,MTP,93.91,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp-c1/
+2,MTP,161.21,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp-c2/
+4,MTP,232.43,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp-c4/
+8,MTP,289.14,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp-c8/
+16,MTP,433.28,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp-c16/
+32,MTP,541.26,configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/
+1,DFlash,101.9,configs/qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash/
+2,DFlash,147.61,configs/qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash-c2/
+4,DFlash,213.81,configs/qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash-c4/
+16,DFlash,344.22,configs/qwen3-6-35b-a3b-nvfp4-vllm-ultimate-dflash-c16/
+1,base,74.74,configs/qwen3-6-35b-a3b-nvfp4-vllm-c1/
+2,base,113.19,configs/qwen3-6-35b-a3b-nvfp4-vllm-c2/
+4,base,173.76,configs/qwen3-6-35b-a3b-nvfp4-vllm-c4/
+8,base,241.82,configs/qwen3-6-35b-a3b-nvfp4-vllm-c8/
+16,base,332.42,configs/qwen3-6-35b-a3b-nvfp4-vllm-c16/
+32,base,430.76,configs/qwen3-6-35b-a3b-nvfp4-vllm/

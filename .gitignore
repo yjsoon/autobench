@@ -21,3 +21,6 @@ vendor/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# generated charts (regenerate via assets/make_plots.py)
+posts/assets/plots/
