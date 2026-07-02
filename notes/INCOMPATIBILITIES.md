@@ -93,12 +93,24 @@ two sizes**: `RedHatAI/gemma-4-26B-A4B-it-speculator.eagle3` and `RedHatAI/gemma
 `RedHatAI/gemma-4-{E4B,12B}-it-speculator.eagle3` are **404**. HF-wide search (2026-07-02):
 - **E4B EAGLE3 = nothing, anywhere** → `gemma-4-e4b-it-vllm-fp8-eagle3` is **blocked on sourcing a draft**
   (not the harness — the FP8 target serves fine; MTP already covers E4B spec-decode at 1261.5 tok/s).
-- **12B EAGLE3 = only third-party heads:** `deepseek-ai/eagle3_gemma4_12b_ttt7` (trusted lab) and
-  `BCCard/MoAI-gemma-4-12B-it-speculator.eagle3` (small org). No RedHatAI 12B head. Running 12B EAGLE3
-  therefore means substituting a community draft (deepseek at user request) — footnote it in any post,
-  since it's not an official RedHatAI head like the 26B-A4B/31B rows.
-**Lesson:** the RedHatAI EAGLE3 naming convention does NOT extend to every size — verify the exact speculator
-repo exists (HTTP 200) before assuming an EAGLE3 row is runnable.
+- **12B EAGLE3 = BLOCKED on vLLM by draft PACKAGING, not just availability.** Two third-party 12B heads
+  exist, but neither is a trusted + vLLM-compatible option:
+  - `deepseek-ai/eagle3_gemma4_12b_ttt7` (trusted lab) is packaged as a **raw transformers/SpecForge draft**
+    — `architectures: ["Gemma4Eagle3Model"]`, no `speculators_config`. vLLM's spec-decode path has no such
+    class and **rejects it at config validation**: `ValidationError … Model architectures
+    ['Gemma4Eagle3Model'] are not supported for now`. No flag adds it (likely SGLang/SpecForge-native).
+  - `BCCard/MoAI-gemma-4-12B-it-speculator.eagle3` **is** in the vLLM-consumable format, but is untrusted
+    (0 dl / 0 likes, raw training dump) → blocked per trusted-repo policy.
+  So `gemma-4-12b-it-redhatai-vllm-nvfp4-eagle3` is blocked; MTP (782.4) already covers 12B spec-decode.
+
+**vLLM EAGLE3 draft-FORMAT requirement (the reusable lesson):** vLLM only loads an EAGLE3 head packaged in the
+**`speculators` library format** — config with `architectures: ["Eagle3DraftModel"]` + a `speculators_config`
+block (+ `auto_map` → `config.Eagle3SpeculatorConfig`). That is what the working RedHatAI 26B-A4B/31B heads
+ship. A head that instead declares a bespoke transformers class (e.g. `Gemma4Eagle3Model`, common for
+SpecForge/SGLang-native drafts) will fail vLLM's `SpeculativeConfig` validation regardless of image. **Before
+assuming an EAGLE3 row is runnable on vLLM, check the draft's `config.json`: (1) the repo exists (HTTP 200),
+AND (2) `architectures == ["Eagle3DraftModel"]` with `speculators_config` present** — not just that some
+"eagle3" head exists for the model.
 
 ### Hybrid GDN+full-attn KV unifies on its own, but NOT with a third (spec-decode draft) KV spec
 Qwen3.5-122B-A10B is a **hybrid** model — Gated-DeltaNet **linear-attention** (mamba-style state cache)
