@@ -90,7 +90,7 @@ Change any one and the win can evaporate or the launch can fail outright.
 
 The starkest case: **gpt-oss-120b on vLLM, one ShareGPT workload — swap only the EAGLE3 draft**, and the result moves 43 points.
 
-| draft | decode tok/s | speedup | acceptance |
+| draft | decode tok/s | Δ | acceptance |
 |---|--:|--:|--:|
 | none (baseline) | 252.8 | 0% | — |
 | NVIDIA EAGLE3 | 138.5 | **−45%** | 1.5~9% |
@@ -105,7 +105,7 @@ Same model, same engine, same workload — the draft alone is the whole differen
 
 The costlier the target's forward pass, the more idle bandwidth the drafter hides behind — so the *relative* speedup runs inversely to base speed. Two knobs move that cost: **quant** (a slower FP8 base gains more than the same model on faster NVFP4) and **architecture** (a dense model gains more than a comparable MoE, whose lighter per-token pass leaves less to amortize). Sort the four Qwen3.6 MTP runs from slowest base to fastest and the relative win falls straight down the table:
 
-| model · quant | base → MTP | speedup |
+| model · quant | base → MTP | Δ |
 |---|---|--:|
 | Qwen3.6-27B · FP8 | 154.7 → 240.9 | **+56%** |
 | Qwen3.6-27B · NVFP4 | 187.7 → 274.1 | **+46%** |
@@ -167,7 +167,7 @@ Gemma-4 is the only family here with *both* a native assistant-MTP path and graf
 
 We compare MTP and EAGLE3 drafters, and find that MTP wins the two head-to-head rows outright:
 
-| model · quant | base | + MTP | Δ vs base | + EAGLE3 | Δ vs base |
+| model · quant | base | → MTP | Δ | → EAGLE3 | Δ |
 |---|--:|--:|--:|--:|--:|
 | E4B · FP8 | 869.7 | **[1261.5](https://gauravmm.github.io/autobench/configs/gemma-4-e4b-it-vllm-fp8-mtp/)** | +45% | [—](https://gauravmm.github.io/autobench/configs/gemma-4-e4b-it-vllm-fp8-eagle3/) | — |
 | 12B · NVFP4 | 503.8 | **[782.4](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-mtp/)** | +55% | [—](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-eagle3/) | — |
@@ -183,7 +183,7 @@ Because it hands us both drafters across four sizes, Gemma-4 is the cleanest ill
 
 **[Rule 3 — Drafters are brittle](#drafters-are-brittle),** and the engine bites hardest. Hold the model, quant, and MTP drafter fixed at Gemma-4-12B, swap only the engine, and the win swings from huge to nil:
 
-| engine · quant | base → MTP | speedup | why |
+| engine · quant | base → MTP | Δ | why |
 |---|--:|--:|---|
 | vLLM · NVFP4 | 503.8 → **[782.4](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-mtp/)** | **+55%** | overlap scheduler on ✅ |
 | SGLang · NVFP4 | 386.6 → **[399.8](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-axionml-sglang-nvfp4-mtp/)** | +3.4% | overlap scheduler off ❌ |
@@ -200,19 +200,30 @@ The overlap scheduler runs work concurrently instead of sequentially, allowing t
 
 No native MTP head, so EAGLE3 is the only option — and gpt-oss is where the *draft-is-everything* rule is sharpest:
 
-| model · engine · draft | base → EAGLE3 | speedup | note |
+| engine · draft | base → EAGLE3 | Δ | note |
 |---|---|---|---|
-| gpt-oss-20b · vLLM MXFP4 | 535.3 → 686.5 | **+28%** (c32) | but a **−29% / −33%** *loss* at c2 / c4 → below |
-| gpt-oss-120b · SGLang · LMSYS draft | 140.3 → 171.9 | **+22%** | mixed engine images; direction solid, % approximate |
-| gpt-oss-120b · vLLM · LMSYS draft | 252.8 → 246.7 | **−2.4%** | better draft → neutral |
-| gpt-oss-120b · vLLM · NVIDIA draft | 252.8 → 138.5 | **−45%** | wrong draft, saturated model |
+| SGLang · LMSYS draft | 140.3 → 171.9 | **+22%** | mixed engine images |
+| vLLM · LMSYS draft | 252.8 → 246.7 | **−2.4%** | neutral |
+| vLLM · NVIDIA draft | 252.8 → 138.5 | **−45%** | wrong draft, saturated model |
 
-**Table 6 — gpt-oss EAGLE3, engine × draft.** The draft dominates: on vLLM the same model swings from −45% (NVIDIA draft) to −2.4% (LMSYS), and no spec config beats vLLM's no-spec baseline (252.8).
+**Table 6 — gpt-oss-120b EAGLE3, engine × draft.** The draft dominates: on vLLM the same model swings from −45% (NVIDIA draft) to −2.4% (LMSYS), and no spec config beats vLLM's no-spec baseline (252.8).
 {: .figcaption}
 
 **The draft alone moves 43 points** (rule 3). Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral. And spec can't rescue a bad config (rule 5): SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
 
-**Brittleness can masquerade as a concurrency effect.** gpt-oss-20b EAGLE3 *loses* at c2/c4 (−29% / −33%, acceptance ~5%) then wins **+28%** by c32 (~44% accept). Our controls (same prompts, prefix caching off) didn't remove the collapse, so it reads as a low-batch vLLM EAGLE3 pathology (suspected CUDA-graph padding), not a draft property. The +28% is a high-batch number, not an everywhere number.
+| concurrency | base → EAGLE3 | Δ | draft acceptance |
+|---|--:|--:|--:|
+| c1 | [45.6](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c1/) → [38.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c1/) | −15% | ~25% |
+| c2 | [83.4](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c2/) → [59.0](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c2/) | **−29%** | ~6% |
+| c4 | [127.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c4/) → [85.4](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c4/) | **−33%** | ~5% |
+| c8 | [212.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c8/) → [126.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c8/) | **−41%** | ~5–8% |
+| c16 | [340.7](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c16/) → [431.8](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c16/) | **+27%** | ~44% |
+| c32 | [535.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4/) → [686.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3/) | **+28%** | not captured |
+
+**Table 7 — gpt-oss-20b EAGLE3 across concurrency.** vLLM MXFP4, matched base at every point; a loss at every batch size through c8, flipping to a win between c8 and c16 as draft acceptance jumps from ~5% to ~44%.
+{: .figcaption}
+
+**Brittleness can masquerade as a concurrency effect.** gpt-oss-20b EAGLE3 *loses* at every batch through c8 (−15% to −41%, acceptance ~5%) then wins **+27–28%** at c16/c32 (~44% accept). Our controls (same prompts, prefix caching off) didn't remove the collapse, so it reads as a low-batch vLLM EAGLE3 pathology (suspected CUDA-graph padding), not a draft property. The +28% is a high-batch number, not an everywhere number.
 
 - TODO(graphic): the two *vLLM* gpt-oss-120b bars (−45% NVIDIA draft vs −2.4% LMSYS draft) side by side — the draft alone flips the sign; the single most persuasive brittleness visual.
 
@@ -226,7 +237,14 @@ The one setup where DFlash was the best available config: this model has **no MT
 
 ### DDTree (draft *trees*, not draft *lines*)
 
-DFlash bets everything on *one* long draft line, and we saw that line's acceptance decay almost to nothing by the tail (§3c) — most of the drafted compute wasted. [DDTree](https://liranringel.github.io/ddtree/) (Block Diffusion Draft Trees, arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) spends that *same* verify budget differently: instead of collapsing the drafter's per-position distributions into one path, it builds a **tree** of likely continuations (best-first heap) and the target verifies the *whole tree* in a single pass via **tree attention**. "One long bet that usually breaks early" becomes "many short bets, keep the best."
+DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) spends that *same* verify budget differently: instead of collapsing the drafter's per-position distributions into one path, it builds a **tree** of likely continuations (best-first heap) and the target verifies the *whole tree* in a single pass via **tree attention**. "One long bet that usually breaks early" becomes "many short bets, keep the best."
+
+<p class="token-stream fork">
+<span class="ctx"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span></span>
+<span class="guess"><span class="ell">…</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c0">branch</span><span class="tok c1">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">waddle</span><span class="tok c5">away</span><span class="tok c0">.</span></span>
+</p>
 
 **We measured it.** DDTree isn't in vLLM or SGLang, so it only runs in the paper's PyTorch harness (batch-1, bf16). Our own Qwen3.6 targets are hybrid GatedDeltaNet, which the harness can't roll back for spec verification (blocked) — so we ran the harness's own validated proxy, Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention), on identical prompts:
 
@@ -241,7 +259,7 @@ DFlash bets everything on *one* long draft line, and we saw that line's acceptan
 | | **DDTree (budget 64)** | **49.34** | 9.74 | **2.79×** |
 | | DDTree (budget 256) | 41.30 | 10.50 | 2.34× |
 
-**Table 7 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; rebuilt as a tree, the same block-diffusion draft turns chat's −8.4% DFlash loss into a +12.1% win, while code holds ~2.8×.
+**Table 8 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; rebuilt as a tree, the same block-diffusion draft turns chat's −8.4% DFlash loss into a +12.1% win, while code holds ~2.8×.
 {: .figcaption}
 
 **The tree recovers DFlash's loss** — §3c's open question, answered. On chat, single-line DFlash is a *net loss* at batch-1 (−8.4%: a 2.25-of-16 accept-len doesn't repay the draft+verify). Rebuilt as a tree, the *same* draft becomes a **+12.1% win** — a +22% decode swing, off a **+43% jump in accept-len** (2.25 → 3.22). On this box the block-diffusion draft only pays off *as a tree*.
