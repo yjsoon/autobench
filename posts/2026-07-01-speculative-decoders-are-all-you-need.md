@@ -1,6 +1,6 @@
 # On Speculative Decoders
 
-**TL;DR:** run native MTP. On one DGX Spark the best configs we measured are [Qwen3.6-35B-A3B NVFP4 + MTP on vLLM](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b) (541 tok/s aggregate decode at conc-32) and [Gemma-4-E4B FP8 + MTP on vLLM](https://gauravmm.github.io/autobench/tags/model/#gemma-4-e4b) (1262 tok/s — the fastest run in the whole sweep).
+**TL;DR:** run native MTP where the model has it, EAGLE3 where it doesn't. On one DGX Spark two different big chat MoEs land on effectively the same conc-32 decode ceiling, via different draft methods: [Qwen3.6-35B-A3B NVFP4 + MTP on vLLM](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b) at **541.3 tok/s**, and — since the Gemma-4 MoE has no MTP head — [Gemma-4-26B-A4B NVFP4 + EAGLE3 on vLLM](https://gauravmm.github.io/autobench/tags/model/#gemma-4-26b-a4b) at **541.0 tok/s**.
 
 A lot of ink and bits get spilled speeding up *datacenter-scale* inference (batching, disaggregation, giant KV pools). Speculative decoding is the rare trick that is particularly effective at speeding up the *small, local, low-concurrency* case — the single RTX or Apple Silicon chip on your lap.
 
@@ -43,9 +43,11 @@ TODO: A short two sentences describing the setup. See the repo (link to it via p
 
 The drafter runs first and proposes a short continuation — 3 tokens for MTP, 5-16 for DFlash depending on the config. This imposes a **fixed cost**, and buys a **variable speedup** depending on how many tokens are accepted. This only pays off when our spare compute and acceptance rates are both good enough.
 
-Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are nearly-free and win at every measured concurrency. It's the heavy external drafters (DFlash) that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
+Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are almost free and provide fantastic tradeoff. It's the heavy external drafters (DFlash) that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
 
 ![Decode throughput vs concurrency for Qwen3.6-35B-A3B NVFP4 on vLLM, log-log, three lines: no-spec base, MTP, and DFlash. MTP leads at every concurrency (541 tok/s at conc-32); DFlash beats base only at low batch and dips below the no-spec baseline by conc-32 (407 vs base 431).](assets/plots/mtp_vs_dflash_35b.svg)
+
+TODO: Add numbers for conc-1 like the conc-32, set horizontal lines at every 100.
 
 Even with spare compute, the heavy drafter barely beats the built-in MTP; once the batch saturates the GPU it loses badly, even slipping below the no-drafter baseline at conc-32 (407 vs 431). The trade-off curve belongs to the *drafter's cost*, not to speculation itself.
 
