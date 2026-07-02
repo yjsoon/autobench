@@ -17,7 +17,13 @@
 .token-stream .tok.c4 { background: var(--tok-4); }
 .token-stream .tok.c5 { background: var(--tok-5); }
 
-/* Split into what's already generated (current) and what the drafter guesses (proposed). */
-.token-stream .row { display: block; }
-.token-stream .proposed { padding-left: 2.5em; }
+/* Split the already-generated context (column 1) from the drafter's guesses (column 2).
+   A grid pins every guessed continuation to one column, so alternative continuations
+   fork from the shared prefix and line up with each other. */
+.token-stream.fork {
+  display: grid; grid-template-columns: max-content 1fr;
+  align-items: baseline; row-gap: 0.15em; column-gap: 0.35em;
+}
+.token-stream .ctx { grid-column: 1; grid-row: 1; }
+.token-stream .guess { grid-column: 2; }
 .token-stream .ell { color: #b7b3ac; padding: 0 0.15em; letter-spacing: 0.12em; }

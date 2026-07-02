@@ -16,17 +16,19 @@ Speculative decoders work well when the next token is easy to guess. Something l
 
 <link rel="stylesheet" href="assets/token-stream.css">
 
-<p class="token-stream">
-<span class="row current"><span class="tok c0">The</span><span class="tok c1">quick</span><span class="tok c2">brown</span><span class="tok c3">fox</span> <span class="ell">…</span></span>
-<span class="row proposed"><span class="ell">…</span> <span class="tok c4">jumps</span><span class="tok c5">over</span><span class="tok c0">the</span><span class="tok c1">lazy</span><span class="tok c2">dog</span><span class="tok c3">.</span></span>
+<p class="token-stream fork">
+<span class="ctx"><span class="tok c0">The</span><span class="tok c1">quick</span><span class="tok c2">brown</span><span class="tok c3">fox</span></span>
+<span class="guess"><span class="ell">…</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">jumps</span><span class="tok c5">over</span><span class="tok c0">the</span><span class="tok c1">lazy</span><span class="tok c2">dog</span><span class="tok c3">.</span></span>
 </p>
 
 Something like this does not:
 
-<p class="token-stream">
-<span class="row current"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span> <span class="ell">…</span></span>
-<span class="row proposed"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c0">branch</span><span class="tok c1">.</span></span>
-<span class="row proposed"><span class="ell">…</span> <span class="tok c4">waddle</span><span class="tok c5">away</span><span class="tok c0">.</span></span>
+<p class="token-stream fork">
+<span class="ctx"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span></span>
+<span class="guess"><span class="ell">…</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c0">branch</span><span class="tok c1">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">waddle</span><span class="tok c5">away</span><span class="tok c0">.</span></span>
 </p>
 
 - TODO(graphic): schematic — target model + speculative decoder both reading the same KV cache; speculative decoder emits k candidate tokens; target verifies in one pass; accepted prefix in green, first reject in red.
@@ -48,11 +50,11 @@ The numbers below come from 138 benchmark configs run on an NVIDIA DGX Spark. Th
 
 The drafter runs first and proposes a short continuation — 3 tokens for MTP, 5-16 for DFlash depending on the config. This imposes a **fixed cost**, and buys a **variable speedup** depending on how many tokens are accepted. This only pays off when our spare compute and acceptance rates are both good enough.
 
-Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are almost free and provide fantastic tradeoff. It's the heavy external drafters (DFlash) that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
+Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are almost free and provide fantastic tradeoff. It's the heavy external DFlash drafters that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
 
 ![Decode throughput vs concurrency for Qwen3.6-35B-A3B NVFP4 on vLLM, log-log, three lines: no-spec base, MTP, and DFlash. At conc-1 the three cluster (base 75, MTP 94, DFlash 100); MTP then leads at every concurrency (541 tok/s at conc-32); DFlash beats base only at low batch and dips below the no-spec baseline by conc-32 (407 vs base 431).](assets/plots/mtp_vs_dflash_35b.svg)
 
-Even with spare compute, the heavy drafter barely beats the built-in MTP; once the batch saturates the GPU it loses badly, even slipping below the no-drafter baseline at conc-32 (407 vs 431). The trade-off curve belongs to the *drafter's cost*, not to speculation itself.
+Even with spare compute, the heavy DFlash drafter barely beats the built-in MTP; once the batch saturates the GPU it loses badly, even slipping below the no-drafter baseline at conc-32 (407 vs 431). The trade-off curve belongs to the *drafter's cost*, not to speculation itself.
 
 As with everything in LLMs, the exact tradeoff curve is a fingerprint of the method, not a universal law. Later on we'll discuss other trends that confound this simple rule.
 
@@ -80,12 +82,13 @@ Change any one and the win can evaporate or the launch can fail outright.
 
 The starkest case: **gpt-oss-120b on vLLM, one ShareGPT workload — swap only the EAGLE3 draft**, and the result moves 43 points.
 
-| EAGLE3 draft | decode vs no-spec | acceptance |
-|---|--:|--:|
-| NVIDIA | **−45%** | ~9% @ conc-1 → ~1.5% @ conc-8 |
-| LMSYS / SpecForge | **−2.4%** (≈ neutral) | ~29% |
+| draft | decode tok/s | speedup | acceptance |
+|---|--:|--:|--:|
+| none (baseline) | 252.8 | 0% | — |
+| NVIDIA EAGLE3 | 138.5 | **−45%** | ~9% @ conc-1 → ~1.5% @ conc-8 |
+| LMSYS / SpecForge EAGLE3 | 246.7 | **−2.4%** (≈ neutral) | ~29% |
 
-Same model, same engine, same workload — the draft alone is the whole difference. (Acceptance is engine-relative: SGLang logs ~55-60% for the very same LMSYS draft vLLM reports at ~29%, so never compare acceptance across engines.)
+Same model, same engine, same workload — the draft alone is the whole difference. Before picking a drafter, test it in the exact configuration you will be using it.
 
 ### Slower target, bigger relative win
 
@@ -93,7 +96,14 @@ The costlier the target's forward pass, the more idle bandwidth the drafter hide
 
 ### Speculation can't rescue a bad config
 
-A speculative decoder is a multiplier, not a fix — get the engine and quant right first. As we'll see, a fast quant with *no* drafter can out-decode a slow one *with* MTP, and the right engine with no speculation can beat the wrong engine running the best available draft. Speculation compounds a good setup; it can't paper over a bad one.
+A speculative decoder is a multiplier, not a fix. In both of these, the plainer setup with **no speculation at all** out-decodes a fancier one running its best available draft (decode tok/s):
+
+| model | best config, no drafter (tok/s) | worse config + best drafter (tok/s) |
+|---|--:|--:|
+| Qwen3.6-35B-A3B | NVFP4 - **430.8** | FP8 + MTP - 407.9 |
+| gpt-oss-120b MXFP4 | vLLM - **252.8** | SGLang + LMSYS - 171.9 |
+
+Get the quant and engine right *first*; speculation compounds a good setup, it can't paper over a bad one.
 
 ## The Models
 
@@ -157,13 +167,9 @@ The one setup where DFlash was the best available config: this model has **no MT
 
 - TODO(graphic): the n=11 per-position acceptance decay curve (the "wasted compute" picture) — pairs with *Agreement improves performance*.
 
-## So... what should I do?
+## The future
 
-For a general chat gateway on one Spark, native MTP is the default winner for the Qwen3.6 / Gemma-4 families — it won at *every* concurrency we measured, +26-56% even with the batch full. EAGLE3 is competitive only with a validated, workload-matched draft; DFlash is a single-stream / latency-critical special case.
-
-Two rules fall out of the data. First, **the drafter's cost decides the curve**: a near-free drafter (native MTP, ~67% acceptance) wins everywhere, while a heavy one (DFlash, ~3.7-of-11) buys low-concurrency latency with spare parallelism and gives it back under load. Second, **speculative decoding can't fix a bad config**: 35B-A3B NVFP4 with no speculative decoder out-decodes FP8 with MTP (430.8 vs 407.9), and vLLM with no speculative decoder out-decodes SGLang with the best draft (252.8 vs 171.9). Pick the right engine and quant first — the speculative decoder is a multiplier, not a rescue.
-
-### The future — DDTree (draft *trees*, not draft *lines*)
+### DDTree (draft *trees*, not draft *lines*)
 
 DFlash bets everything on *one* long draft line, and we saw that line's acceptance decay almost to nothing by the tail (§3c) — most of the drafted compute wasted. [DDTree](https://liranringel.github.io/ddtree/) (Block Diffusion Draft Trees, arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) spends that *same* verify budget differently: instead of collapsing the drafter's per-position distributions into one path, it builds a **tree** of likely continuations (best-first heap) and the target verifies the *whole tree* in a single pass via **tree attention**. "One long bet that usually breaks early" becomes "many short bets, keep the best."
 
@@ -188,3 +194,17 @@ DFlash bets everything on *one* long draft line, and we saw that line's acceptan
 
 - **Gemma-4 and our Qwen3.6 hybrids can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculative decoders are EAGLE3 heads, e.g. `RedHatAI/gemma-4-31B-it-speculator.eagle3`), and Qwen3.6-27B/35B-A3B are hybrid-GDN, which the harness can't roll back. The proxy above is standard-attention Qwen3-Coder.
 - TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
+
+### Drafter-assisted prefill
+
+Everything above speeds up **decode** — emitting tokens one at a time. But the *first* token has its own cost: **prefill**, where the model reads your entire prompt before it says anything. For long prompts that read is the dominant latency (the "time to first token"), and ordinary speculation does nothing for it.
+
+**Drafter-assisted prefill points the small model at the prompt instead of the output.** The drafter skims the whole prompt cheaply and flags which tokens actually matter; the big model then prefills only that important subset rather than every token. Fewer tokens through the expensive model means a faster first token — [SpecPrefill](https://arxiv.org/abs/2502.02789) (ICML 2025) reports up to **~7.7× faster time-to-first-token** on a 405B model, and it needs no training. It can even reuse the *same* drafter you already run for decode-time speculation, so the extra cost is small; follow-ups extend the idea to [cross-family draft models for long-context compression](https://arxiv.org/abs/2603.02631).
+
+We didn't benchmark this on the Spark — it's a separate lever from the decode speedups above — but for long-context, low-concurrency work (exactly the Spark's niche) it's the natural next thing to try.
+
+## So... what should I do?
+
+For a general chat gateway on one Spark, native MTP is the default winner for the Qwen3.6 / Gemma-4 families — it won at *every* concurrency we measured, +26-56% even with the batch full. EAGLE3 is competitive only with a validated, workload-matched draft; DFlash is a single-stream / latency-critical special case.
+
+Two rules fall out of the data. First, **the drafter's cost decides the curve**: a near-free drafter (native MTP, ~67% acceptance) wins everywhere, while a heavy one (DFlash, ~3.7-of-11) buys low-concurrency latency with spare parallelism and gives it back under load. Second, **speculative decoding can't fix a bad config**: 35B-A3B NVFP4 with no speculative decoder out-decodes FP8 with MTP (430.8 vs 407.9), and vLLM with no speculative decoder out-decodes SGLang with the best draft (252.8 vs 171.9). Pick the right engine and quant first — the speculative decoder is a multiplier, not a rescue.
