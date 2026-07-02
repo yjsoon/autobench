@@ -66,17 +66,25 @@ def mtp_vs_dflash():
     ax.set_xscale("log", base=2)
     ax.set_yscale("log", base=10)
     ax.set_xticks(sorted(df.concurrency.unique()))
-    ax.set_yticks([100, 150, 200, 300, 400, 500])
+    ax.set_yticks([100, 200, 300, 400, 500])  # horizontal gridlines every 100
     ax.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.yaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.grid(True, axis="y", which="major")
 
-    # direct end labels instead of relying on the legend (aqua is sub-3:1 → relief rule)
+    # direct value labels at both ends instead of relying on the legend (aqua is sub-3:1 → relief rule).
+    # conc-1 points cluster (base 75 · MTP 94 · DFlash 100), so nudge the two close ones apart vertically.
+    left_dy = {"base": 0, "MTP": -6, "DFlash": 6}
     for method, color in (("base", BASE), ("MTP", MTP), ("DFlash", AQUA)):
-        end = df[df.method == method].sort_values("concurrency").iloc[-1]
+        pts = df[df.method == method].sort_values("concurrency")
+        end = pts.iloc[-1]
         ax.annotate(f"{method} {end.decode:.0f}", (end.concurrency, end.decode),
                     xytext=(6, 0), textcoords="offset points", va="center",
                     fontsize=9, color=color, fontweight="bold")
+        start = pts.iloc[0]
+        ax.annotate(f"{start.decode:.0f}", (start.concurrency, start.decode),
+                    xytext=(-7, left_dy[method]), textcoords="offset points",
+                    ha="right", va="center", fontsize=9, color=color, fontweight="bold")
 
     # crossover: DFlash leads only at conc-1 (101.9 > 93.9); MTP is ahead from conc-2 on.
     ax.annotate("MTP overtakes\nby conc-2", (2, 154), xytext=(2.9, 110),
