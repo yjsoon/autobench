@@ -132,30 +132,32 @@ Which method you even *get* is largely decided by the family — so we picked ou
 **Figure 2 — Native MTP across the family.** Decode tok/s, base vs +MTP at conc-32 on vLLM, across six Qwen3.6 and Gemma-4 configs; MTP adds +26% to +56%.
 {: .figcaption}
 
-### Qwen3.6 — native MTP, the model drafts for itself {#qwen36-native-mtp}
+### Qwen3.6 — native MTP, maxes out at a blazing 541.3 tok/s {#qwen36-native-mtp}
 
-This family owns the top of the board: the **[35B-A3B MoE on NVFP4 + MTP hits 541.3 tok/s](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)** — the fastest decode we measured on the box, where a light per-token MoE pass and a near-free built-in drafter compound.
+This family owns the top of the board: the **[35B-A3B MoE on NVFP4 + MTP hits 541.3 tok/s](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)**. The decode is so quick because it lands on the right side of each of our five rules:
 
-Native MTP has great acceptance of ~66%. Because it is built-in, the overhead is miniscule, and so the performance gain is **nearly flat across concurrency** (the MTP line in [Figure 1](#fig-concurrency-crossover)).
+1. **[Cheap drafter](#drafters-trade-compute-for-speed).** Native MTP is nearly free, so it wins at *every* concurrency (see the MTP line in [Figure 1](#fig-concurrency-crossover)). DFlash is much heavier, and performance degrades over time.
+2. **[High agreement](#agreement-is-critical-to-performance).** ~66% acceptance, ~3.0 of 4 including the free bonus token.
+3. **[Robust, not brittle](#drafters-are-brittle).** The MTP head ships with the model, so it's matched by construction.
+4. **[Fast base, modest multiplier](#slower-target-bigger-relative-win).** A light MoE pass on fast NVFP4 leaves little to amortize, so MTP adds "only" **[+26%](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)** — the small end of the curve.
+5. **[Builds on a great config](#speculation-cant-rescue-a-bad-config).** That +26% rides on the fastest quant-and-engine we measured, so the absolute number still tops the board. Speculation compounds a good config; here it compounds the best one.
 
-The per-run numbers sit in [*Slower target, bigger relative win*](#slower-target-bigger-relative-win) above; two family-specific wrinkles ride on top of that trend:
-
-- **Engine matters** (rule 3): the same 27B NVFP4 MTP is +46% on vLLM but only **+10.5% on SGLang**, whose hybrid scheduler runs the GDN/mamba bookkeeping alongside the NEXTN drafter and eats most of the win.
-- **DFlash beats base but loses to MTP.** The concurrency chart in *The performance trade-off* shows it: DFlash tops the no-spec base at low batch (+33% / +34% / +21% at conc-1/2/4), fades to +2% by conc-16, and actually goes *negative* by conc-32 (407 vs base 431) — spending compute it no longer has. MTP stays clear on top throughout. DFlash isn't a loser against nothing — it's a loser against MTP.
-- TODO(graphic): the vLLM-vs-SGLang same-model callout (+46% vs +10.5%) as a two-bar figure — "the engine, not the method."
+One interesting discovery we made is that minor engine details can greatly affect performance ([Rule 3](#drafters-are-brittle)). On the dense 27B NVFP4 + MTP, the **[+46% gain on vLLM](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-vllm-mtp/)** is only **[+10.5% on SGLang](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-sglang-mtp/)**. This seems to be due to scheduling decisions in the engine.
 
 ### Gemma-4 — MTP *and* EAGLE3; dense beats MoE
 
-The only family here with both a native assistant-MTP path and grafted EAGLE3 heads, across four sizes (E4B, 12B, 26B-A4B, 31B). The MTP headliners are in the bar chart above (12B NVFP4 **+55%**, E4B FP8 **+45%** — the sweep's fastest decode). EAGLE3, a bolt-on head, runs a lower accept-len (~2.0-2.4 of 3) but still wins big when the draft matches the workload:
+Gemma-4 is the only family here with *both* a native assistant-MTP path and grafted EAGLE3 heads, across four sizes (E4B, 12B, 26B-A4B, 31B) — so it exercises the widest spread of the rules. It puts a config right at the top of the board: **[26B-A4B NVFP4 + EAGLE3 co-leads the sweep at 541.0 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)**, a hair behind Qwen's 541.3 — and with MTP it takes the fastest decode we measured anywhere, **[E4B FP8 + MTP at 1261.5 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-e4b-it-vllm-fp8-mtp/)** (+45%). The EAGLE3 heads are a bolt-on, but still win big when the draft matches the workload:
 
 | model · quant | base → EAGLE3 | speedup |
 |---|---|---|
 | Gemma-4-31B · NVFP4 | 167.0 → 264.7 | **+59%** (biggest EAGLE3 win) |
 | Gemma-4-26B-A4B · NVFP4 | 384.1 → 541.0 | **+41%** |
 
-- **Dense out-gains MoE** (rule 4): 31B (+59%) beats 26B-A4B (+41%) — the heavier dense forward pass gives speculation more to hide behind. (One pair, so directional.)
-- **Engine matters** (rule 3), and hard: identical Gemma-4-12B NVFP4 assistant-MTP runs **782 tok/s on vLLM vs 400 on SGLang** — a full 2× — because SGLang disables its overlap scheduler on the Frozen-KV MTP path (only **+3.4%** there).
-- **Batch saturation** (llama.cpp): fast small models barely gain (12B Q4 **+3.5%**), the slow big one gains more (31B Q4 **+18.5%**) — more expensive forward pass, more to amortize. Acceptance also scales with size (E4B ~2.88 → 12B ~3.21 → 31B ~3.41 accept-len; one engine, one family, so directional). (Caveat: llama.cpp serves MTP through its generic `--model-draft` path — classic draft-then-verify, not vLLM's fused verify — part of why its gains are smaller.)
+Because it hands us both drafters across four sizes, Gemma-4 is the cleanest illustration of three of our rules:
+
+- **[Rule 2 — Agreement](#agreement-is-critical-to-performance).** EAGLE3 runs a lower accept-len (~2.0-2.4 of 3) than native MTP, yet still lands the wins above — and acceptance climbs with model size (E4B ~2.88 → 12B ~3.21 → 31B ~3.41 accept-len on llama.cpp; one family, so directional).
+- **[Rule 3 — Drafters are brittle](#drafters-are-brittle)**, and the engine bites hardest: identical Gemma-4-12B NVFP4 assistant-MTP runs **[782 tok/s on vLLM](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-mtp/)** but only **[400 on SGLang](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-axionml-sglang-nvfp4-mtp/)** — a full 2×, just **+3.4%** there — because SGLang disables its overlap scheduler on the Frozen-KV MTP path.
+- **[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** Dense **[31B (+59%)](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-eagle3/)** out-gains MoE **[26B-A4B (+41%)](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)** on the same draft, and on llama.cpp the slow big model gains more (**[31B Q4 +18.5%](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-llamacpp-mtp/)**) than a fast small one (**[12B Q4 +3.5%](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-llamacpp-mtp/)**). (Caveat: llama.cpp serves MTP through its generic `--model-draft` path — classic draft-then-verify, not vLLM's fused verify — part of why its gains are smaller.)
 
 ### gpt-oss — EAGLE3 only, the draft is everything
 
