@@ -1,3 +1,5 @@
+spec/
+
 # Jekyll build output
 _site/
 .jekyll-cache/
