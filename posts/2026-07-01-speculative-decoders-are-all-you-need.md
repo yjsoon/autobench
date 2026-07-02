@@ -45,9 +45,9 @@ The drafter runs first and proposes a short continuation — 3 tokens for MTP, 5
 
 Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are nearly-free and win at every measured concurrency. It's the heavy external drafters (DFlash) that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
 
-![Decode throughput vs concurrency for Qwen3.6-35B-A3B NVFP4 on vLLM, log-log, three lines: no-spec base, MTP, and DFlash. MTP leads at every concurrency (541 tok/s at conc-32); DFlash beats base only at low batch and collapses back toward the baseline by conc-16 (344 vs base 332).](assets/plots/mtp_vs_dflash_35b.svg)
+![Decode throughput vs concurrency for Qwen3.6-35B-A3B NVFP4 on vLLM, log-log, three lines: no-spec base, MTP, and DFlash. MTP leads at every concurrency (541 tok/s at conc-32); DFlash beats base only at low batch and dips below the no-spec baseline by conc-32 (407 vs base 431).](assets/plots/mtp_vs_dflash_35b.svg)
 
-Even with spare compute, the heavy drafter barely beats the built-in MTP; once the batch saturates the GPU it loses badly, even slipping below the no-drafter baseline (TODO: Check this). The trade-off curve belongs to the *drafter's cost*, not to speculation itself.
+Even with spare compute, the heavy drafter barely beats the built-in MTP; once the batch saturates the GPU it loses badly, even slipping below the no-drafter baseline at conc-32 (407 vs 431). The trade-off curve belongs to the *drafter's cost*, not to speculation itself.
 
 As with everything in LLMs, the exact tradeoff curve is a fingerprint of the method, not a universal law. Later on we'll discuss other trends that confound this simple rule.
 
@@ -95,7 +95,7 @@ Hybrid GatedDeltaNet with a built-in MTP head (27B dense, 35B-A3B MoE); also the
 
 - **Slower quant, bigger win** (rule 2): each model gains more on its FP8 build than its faster NVFP4 build (27B +56% vs +46%; 35B-A3B +43% vs +26%). The flip side (rule 4): NVFP4 *without* a speculator (430.8) still out-decodes FP8 *with* MTP (407.9) — pick the fast quant first.
 - **Engine matters** (rule 1): the same 27B NVFP4 MTP is +46% on vLLM but only **+10.5% on SGLang**, whose hybrid scheduler runs the GDN/mamba bookkeeping alongside the NEXTN drafter and eats most of the win.
-- **DFlash beats base but loses to MTP.** The concurrency chart in *The performance trade-off* shows it: DFlash tops the no-spec base at low batch (+36% / +30% / +23% at conc-1/2/4) but collapses back toward the baseline by conc-16, while MTP stays clear on top. DFlash isn't a loser against nothing — it's a loser against MTP.
+- **DFlash beats base but loses to MTP.** The concurrency chart in *The performance trade-off* shows it: DFlash tops the no-spec base at low batch (+33% / +34% / +21% at conc-1/2/4), fades to +2% by conc-16, and actually goes *negative* by conc-32 (407 vs base 431) — spending compute it no longer has. MTP stays clear on top throughout. DFlash isn't a loser against nothing — it's a loser against MTP.
 - TODO(graphic): the vLLM-vs-SGLang same-model callout (+46% vs +10.5%) as a two-bar figure — "the engine, not the method."
 
 ### Gemma-4 — MTP *and* EAGLE3; dense beats MoE

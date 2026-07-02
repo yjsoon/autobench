@@ -91,9 +91,6 @@ def mtp_vs_dflash():
     # ponytail: DFlash conc-8/32 not measured — footnote it rather than hide the gap.
     sns.despine(ax=ax)
     fig.tight_layout()
-    fig.subplots_adjust(bottom=0.22)
-    fig.text(0.12, 0.02, "DFlash: conc-8/32 pending; ctx 40960 vs MTP 65536. 4→16 segment interpolated.",
-             fontsize=7, color="#898781")
     fig.savefig(OUT / "mtp_vs_dflash_35b.svg")
     plt.close(fig)
     print("wrote", OUT / "mtp_vs_dflash_35b.svg")
