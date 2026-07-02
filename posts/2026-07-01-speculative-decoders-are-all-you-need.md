@@ -240,41 +240,35 @@ DFlash bets everything on *one* long draft line, which quickly decays to nothing
 <span class="sub"><span class="ell">…</span> <span class="tok c5">across</span><span class="tok c0">the</span><span class="tok c1">pond</span><span class="tok c2">.</span></span>
 </p>
 
-This is new technology, hot off the presses, so it isn't in vLLM or SGLang. We ran Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention) using the research-grade code and found:
+We ran Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention) using the research-grade code on our single DGX Spark and obtained a 2.8× speedup. The authors report a 8.22× speedup on their datacenter GPUs.
 
-| workload | method | decode tok/s | accept-len | vs base |
-|---|---|--:|--:|--:|
-| chat (mt-bench) | autoregressive | 18.52 | 1.00 | — |
-| | DFlash (single line) | 16.95 | 2.25 | **−8.4%** |
-| | **DDTree (budget 64)** | **20.75** | 3.22 | **+12.1%** |
-| | DDTree (budget 256) | 17.32 | 3.69 | −6.5% |
-| code (HumanEval) | autoregressive | 17.66 | 1.00 | — |
-| | DFlash (single line) | 47.87 | 7.96 | **2.7×** |
-| | **DDTree (budget 64)** | **49.34** | 9.74 | **2.8×** |
-| | DDTree (budget 256) | 41.30 | 10.50 | 2.3× |
+| workload | method | decode tok/s | accept-len | vs base | paper vs base |
+|---|---|--:|--:|--:|--:|
+| chat (mt-bench) | autoregressive | 18.52 | 1.00 | — | — |
+| | DFlash (single line) | 16.95 | 2.25 | **0.92×** | 2.04× |
+| | **DDTree (budget 64)** | **20.75** | 3.22 | **1.12×** | 3.27× |
+| | DDTree (budget 256) | 17.32 | 3.69 | 0.94× | |
+| code (HumanEval) | autoregressive | 17.66 | 1.00 | — | — |
+| | DFlash (single line) | 47.87 | 7.96 | **2.7×** | 6.09× |
+| | **DDTree (budget 64)** | **49.34** | 9.74 | **2.8×** | 8.22× |
+| | DDTree (budget 256) | 41.30 | 10.50 | 2.3× | |
 
-**Table 7 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; rebuilt as a tree, the same block-diffusion draft turns chat's −8.4% DFlash loss into a +12.1% win, while code holds ~2.8×.
+**Table 7 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; the paper reports 8.22× lossless on HumanEval; we measure ~2.8×. Paper columns: [DDTree paper](https://arxiv.org/abs/2604.12989) Table 1, Qwen3-Coder-30B, temp 0.
 {: .figcaption}
 
-Where the workload already suits DFlash (code), DDTree performs about the same. On the hard workfloads where DFlash fails, DDTree can rescue its performance.
+Where the workload already suits DFlash (code), DDTree performs about the same. On the HumanEval workload, where DFlash fails, DDTree can rescue its performance.
 
-**Bigger tree isn't better — there's a budget optimum.** Budget 256 has the *highest* acceptance (3.69 / 10.50) but is *slower* than budget 64 both times: past ~64 nodes the extra acceptance costs more to verify than it saves.
+Even with the tree, there's a tradeoff between the tree budget and time. Even though budget 256 has the *highest* acceptance (3.69 / 10.50), it is *slower* than budget 64 both times. The extra acceptance costs more to verify than it saves.
 
-**The tree earns its keep on HARD workloads.** DDTree beats the single line by **+22% on chat** but only **+3.1% on code** — once DFlash already accepts ~8-of-16 (templated code) there's little headroom left; on high-entropy chat the extra branches matter.
-
-**Two honest caveats.** The paper reports **8.22× lossless** on HumanEval; we see 2.7-2.8× — but that is our number on a **single DGX Spark (GB10)**, not the authors' datacenter GPUs, and it is smaller because this is batch-1, unquantized bf16, with a tree-attention mask that forces the slow torch-SDPA verify kernel (flash-attn can't express it), over only 12 problems. The *shape* transfers (tree > line, budget optimum, workload-driven); the absolute multiple doesn't. And **concurrency is still open** — the harness doesn't batch, so whether the tree still pays once the batch saturates the GB10 (the trade-off question above) is unmeasured. Serving-engine support is the blocker: DDTree is not merged into vLLM or SGLang (only [SGLang discussion #24605](https://github.com/sgl-project/sglang/discussions/24605)); a batched run needs an implementation like [CaDDTree](https://github.com/ZhangShuai1230/CaDDTree) to land in an engine first.
-
-**Gemma-4 and our Qwen3.6 hybrids can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculative decoders are EAGLE3 heads, e.g. `RedHatAI/gemma-4-31B-it-speculator.eagle3`), and Qwen3.6-27B/35B-A3B are hybrid-GDN, which the harness can't roll back. The proxy above is standard-attention Qwen3-Coder.
-
-> TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
+This is new technology, hot off the presses, so it isn't in vLLM or [SGLang](https://github.com/sgl-project/sglang/discussions/24605). Watch this closely, its likely going to be a huge part of the future.
 
 ### Drafter-assisted prefill
 
-Everything above speeds up **decode** — emitting tokens one at a time. But the *first* token has its own cost: **prefill**, where the model reads your entire prompt before it says anything. For long prompts that read is the dominant latency (the "time to first token"), and ordinary speculation does nothing for it.
+Everything we've discussed here speeds up token output, but there may also be a way to accelerate the prefill stage (where the model reads your entire prompt before it says anything) with a drafter.
 
-**Drafter-assisted prefill points the small model at the prompt instead of the output.** The drafter skims the whole prompt cheaply and flags which tokens actually matter; the big model then prefills only that important subset rather than every token. Fewer tokens through the expensive model means a faster first token — [SpecPrefill](https://arxiv.org/abs/2502.02789) (ICML 2025) reports up to **~7.7× faster time-to-first-token** on a 405B model, and it needs no training. It can even reuse the *same* drafter you already run for decode-time speculation, so the extra cost is small; follow-ups extend the idea to [cross-family draft models for long-context compression](https://arxiv.org/abs/2603.02631).
+**Drafter-assisted prefill** is an area under active research. The basic concept is for the small model to skim the whole prompt and flag which tokens actually matter; the big model prefills only those important tokens. Fewer tokens through the expensive model means a faster first token, up to ~7.7× faster time-to-first-token on a 405B model ([SpecPrefill](https://arxiv.org/abs/2502.02789), ICML 2025) using potentially the same *same* drafter for decode.
 
-We didn't benchmark this on the Spark — it's a separate lever from the decode speedups above — but for long-context, low-concurrency work (exactly the Spark's niche) it's the natural next thing to try.
+For long-context, low-concurrency work (exactly the Spark's niche) it's the natural next thing to try.
 
 ## So... what should I do?
 
