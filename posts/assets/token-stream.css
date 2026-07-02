@@ -1,32 +1,87 @@
 /* Pastel token palette — cycles across the token stream. */
 .token-stream {
-  --tok-0: #ffd6e0; --tok-1: #ffe9c7; --tok-2: #fff5ba;
-  --tok-3: #d6f5d6; --tok-4: #cdeffd; --tok-5: #e4d6fb;
+  --tok-0: #ffd6e0;
+  --tok-1: #ffe9c7;
+  --tok-2: #fff5ba;
+  --tok-3: #d6f5d6;
+  --tok-4: #cdeffd;
+  --tok-5: #e4d6fb;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 1.05rem; line-height: 2.1; letter-spacing: 0.01em;
+  font-size: 1.05rem;
+  line-height: 2.1;
+  letter-spacing: 0.01em;
 }
+
 .token-stream .tok {
-  padding: 0.12em 0.4em; margin: 0 0.08em; border-radius: 0.35em;
-  white-space: pre; color: #333;
-  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  padding: 0.12em 0.4em;
+  margin: 0 0.08em;
+  border-radius: 0.35em;
+  white-space: pre;
+  color: #333;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.token-stream .tok.c0 { background: var(--tok-0); }
-.token-stream .tok.c1 { background: var(--tok-1); }
-.token-stream .tok.c2 { background: var(--tok-2); }
-.token-stream .tok.c3 { background: var(--tok-3); }
-.token-stream .tok.c4 { background: var(--tok-4); }
-.token-stream .tok.c5 { background: var(--tok-5); }
+
+.token-stream .tok.c0 {
+  background: var(--tok-0);
+}
+
+.token-stream .tok.c1 {
+  background: var(--tok-1);
+}
+
+.token-stream .tok.c2 {
+  background: var(--tok-2);
+}
+
+.token-stream .tok.c3 {
+  background: var(--tok-3);
+}
+
+.token-stream .tok.c4 {
+  background: var(--tok-4);
+}
+
+.token-stream .tok.c5 {
+  background: var(--tok-5);
+}
 
 /* Split the already-generated context (column 1) from the drafter's guesses (column 2).
    A grid pins every guessed continuation to one column, so alternative continuations
    fork from the shared prefix and line up with each other. */
 .token-stream.fork {
-  display: grid; grid-template-columns: max-content 1fr;
-  align-items: baseline; row-gap: 0.15em; column-gap: 0.35em;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: baseline;
+  row-gap: 0.15em;
+  column-gap: 0.35em;
 }
-.token-stream .ctx { grid-column: 1; grid-row: 1; }
-.token-stream .guess { grid-column: 2; }
-.token-stream .ell { color: #b7b3ac; padding: 0 0.15em; letter-spacing: 0.12em; }
+
+.token-stream .ctx {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.token-stream .guess {
+  grid-column: 2;
+}
+
+.token-stream .ell {
+  color: #b7b3ac;
+  padding: 0 0.15em;
+  letter-spacing: 0.12em;
+}
+
+/* Draft tree (DDTree section): a third column acts as the branch rail.
+   A branch row ends with a bare .sub ellipsis at the rail; each sub-branch
+   is a .sub row whose leading ellipsis aligns exactly under it. */
+.token-stream.tree {
+  grid-template-columns: max-content max-content 1fr;
+}
+
+.token-stream .sub {
+  grid-column: 3;
+}
 
 /* Figure captions — the paragraph tagged {: .figcaption} under each figure/image.
    Centered, muted, and smaller than body text; the "Figure N —" label stays dark. */
@@ -39,4 +94,7 @@
   text-align: center;
   text-wrap: balance;
 }
-.figcaption strong { color: #24292f; }
+
+.figcaption strong {
+  color: #24292f;
+}

@@ -135,7 +135,7 @@ Get the quant and engine right *first*; speculation compounds a good setup, it c
 
 ## The Models
 
-Which method you even *get* is largely decided by the family — so we picked our native family and
+Which method you even *get* is largely decided by the family — MTP only exists where the lab baked in a head, EAGLE3 only where someone has trained a draft for that exact model. So the walk below goes family by family: Qwen3.6 and Gemma-4 with native MTP, then gpt-oss with EAGLE3 only.
 
 ![Grouped bar chart of decode tok/s, base vs +MTP at conc-32 on vLLM, for eight Qwen3.6 and Gemma-4 configs; MTP adds +26% to +94%, peaking at Gemma-4-E4B FP8 at 1262 tok/s.](assets/plots/base_vs_mtp.svg)
 {: #fig-base-vs-mtp}
@@ -143,7 +143,7 @@ Which method you even *get* is largely decided by the family — so we picked ou
 **Figure 2 — Native MTP across the family.** Decode tok/s, base vs +MTP at conc-32 on vLLM, across eight Qwen3.6 and Gemma-4 configs; MTP adds +26% to +94%.
 {: .figcaption}
 
-### Qwen3.6 — native MTP{#qwen36-native-mtp}
+### Qwen3.6 — native MTP {#qwen36-native-mtp}
 
 This family runs a close second on the board: the **[35B-A3B MoE on NVFP4 + MTP hits 541.3 tok/s](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)** — bettered only by Gemma-4-26B-A4B's native MTP (below). The decode is so quick because it lands on the right side of each of our five rules.
 
@@ -209,44 +209,38 @@ No native MTP head, so EAGLE3 is the only option — and gpt-oss is where the *d
 **Table 6 — gpt-oss-120b EAGLE3, engine × draft.** The draft dominates: on vLLM the same model swings from −45% (NVIDIA draft) to −2.4% (LMSYS), and no spec config beats vLLM's no-spec baseline (252.8).
 {: .figcaption}
 
-**The draft alone moves 43 points** (rule 3). Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral. And spec can't rescue a bad config (rule 5): SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
+**[Rule 3 — Drafters are brittle](#drafters-are-brittle).** The draft alone moves 43 points. Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral.
 
-| concurrency | base → EAGLE3 | Δ | draft acceptance |
-|---|--:|--:|--:|
-| c1 | [45.6](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c1/) → [38.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c1/) | −15% | ~25% |
-| c2 | [83.4](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c2/) → [59.0](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c2/) | **−29%** | ~6% |
-| c4 | [127.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c4/) → [85.4](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c4/) | **−33%** | ~5% |
-| c8 | [212.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c8/) → [126.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c8/) | **−41%** | ~5–8% |
-| c16 | [340.7](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-c16/) → [431.8](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3-c16/) | **+27%** | ~44% |
-| c32 | [535.3](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4/) → [686.5](https://gauravmm.github.io/autobench/configs/gpt-oss-20b-vllm-mxfp4-eagle3/) | **+28%** | not captured |
+**[Rule 5 — Speculation can't rescue a bad config](#speculation-cant-rescue-a-bad-config).** SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
 
-**Table 7 — gpt-oss-20b EAGLE3 across concurrency.** vLLM MXFP4, matched base at every point; a loss at every batch size through c8, flipping to a win between c8 and c16 as draft acceptance jumps from ~5% to ~44%.
-{: .figcaption}
+### Qwen3-Coder-30B-A3B + DFlash — the exception
 
-**Brittleness can masquerade as a concurrency effect.** gpt-oss-20b EAGLE3 *loses* at every batch through c8 (−15% to −41%, acceptance ~5%) then wins **+27–28%** at c16/c32 (~44% accept). Our controls (same prompts, prefix caching off) didn't remove the collapse, so it reads as a low-batch vLLM EAGLE3 pathology (suspected CUDA-graph padding), not a draft property. The +28% is a high-batch number, not an everywhere number.
+DFlash is redeemed by the *workload*, not the configuration. Qwen3-Coder-30B-A3B only accepts 2.25 of 16 tokens on chat datasets, which is disappointingly low for a high-cost drafter like DFlash.
 
-- TODO(graphic): the two *vLLM* gpt-oss-120b bars (−45% NVIDIA draft vs −2.4% LMSYS draft) side by side — the draft alone flips the sign; the single most persuasive brittleness visual.
-
-### The exception — Qwen3.5-122B-A10B (where DFlash wins)
-
-The one setup where DFlash was the best available config: this model has **no MTP head to compete against**. int4, conc-8: **85.5 → 107.4 = +26%** (accept ~44%, len ~3.2-of-5) — and only after pinning the older small-page drafter revision so its KV spec would unify. DFlash *works* on this box (the earlier "architecturally blocked" claim was refuted by measurement); it just earns its keep only where there's no native drafter to beat it.
-
-- TODO(graphic): the n=11 per-position acceptance decay curve (the "wasted compute" picture) — pairs with *Agreement improves performance*.
+**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** On templated, low-entropy code (HumanEval), the same Qwen3-Coder-30B-A3B drafter nails long spans: **[7.96 of 16](https://gauravmm.github.io/autobench/configs/qwen3-coder-30b-a3b-ddtree-humaneval/)**, a 2.7× decode win. A drafter that's dead weight on hard, high-entropy text can be the fastest thing on the box when the continuation is easy to guess.
 
 ## The future
 
+Its early days yet, so we're waiting
+
 ### DDTree (draft *trees*, not draft *lines*)
 
-DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) spends that *same* verify budget differently: instead of collapsing the drafter's per-position distributions into one path, it builds a **tree** of likely continuations (best-first heap) and the target verifies the *whole tree* in a single pass via **tree attention**. "One long bet that usually breaks early" becomes "many short bets, keep the best."
+DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) builds a tree of likely continuations and verifies it in a single pass.
 
-<p class="token-stream fork">
+<p class="token-stream fork tree">
 <span class="ctx"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span></span>
 <span class="guess"><span class="ell">…</span></span>
-<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c0">branch</span><span class="tok c1">.</span></span>
-<span class="guess"><span class="ell">…</span> <span class="tok c4">waddle</span><span class="tok c5">away</span><span class="tok c0">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span></span>
+<span class="sub"><span class="ell">…</span></span>
+<span class="sub"><span class="ell">…</span> <span class="tok c0">branch</span><span class="tok c1">.</span></span>
+<span class="sub"><span class="ell">…</span> <span class="tok c0">table</span><span class="tok c1">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">waddle</span></span>
+<span class="sub"><span class="ell">…</span></span>
+<span class="sub"><span class="ell">…</span> <span class="tok c5">away</span><span class="tok c0">.</span></span>
+<span class="sub"><span class="ell">…</span> <span class="tok c5">across</span><span class="tok c0">the</span><span class="tok c1">pond</span><span class="tok c2">.</span></span>
 </p>
 
-**We measured it.** DDTree isn't in vLLM or SGLang, so it only runs in the paper's PyTorch harness (batch-1, bf16). Our own Qwen3.6 targets are hybrid GatedDeltaNet, which the harness can't roll back for spec verification (blocked) — so we ran the harness's own validated proxy, Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention), on identical prompts:
+This is new technology, hot off the presses, so it isn't in vLLM or SGLang. We ran Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention) using the research-grade code and found:
 
 | workload | method | decode tok/s | accept-len | vs base |
 |---|---|--:|--:|--:|
@@ -255,24 +249,24 @@ DFlash bets everything on *one* long draft line, which quickly decays to nothing
 | | **DDTree (budget 64)** | **20.75** | 3.22 | **+12.1%** |
 | | DDTree (budget 256) | 17.32 | 3.69 | −6.5% |
 | code (HumanEval) | autoregressive | 17.66 | 1.00 | — |
-| | DFlash (single line) | 47.87 | 7.96 | **2.71×** |
-| | **DDTree (budget 64)** | **49.34** | 9.74 | **2.79×** |
-| | DDTree (budget 256) | 41.30 | 10.50 | 2.34× |
+| | DFlash (single line) | 47.87 | 7.96 | **2.7×** |
+| | **DDTree (budget 64)** | **49.34** | 9.74 | **2.8×** |
+| | DDTree (budget 256) | 41.30 | 10.50 | 2.3× |
 
-**Table 8 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; rebuilt as a tree, the same block-diffusion draft turns chat's −8.4% DFlash loss into a +12.1% win, while code holds ~2.8×.
+**Table 7 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; rebuilt as a tree, the same block-diffusion draft turns chat's −8.4% DFlash loss into a +12.1% win, while code holds ~2.8×.
 {: .figcaption}
 
-**The tree recovers DFlash's loss** — §3c's open question, answered. On chat, single-line DFlash is a *net loss* at batch-1 (−8.4%: a 2.25-of-16 accept-len doesn't repay the draft+verify). Rebuilt as a tree, the *same* draft becomes a **+12.1% win** — a +22% decode swing, off a **+43% jump in accept-len** (2.25 → 3.22). On this box the block-diffusion draft only pays off *as a tree*.
+Where the workload already suits DFlash (code), DDTree performs about the same. On the hard workfloads where DFlash fails, DDTree can rescue its performance.
 
 **Bigger tree isn't better — there's a budget optimum.** Budget 256 has the *highest* acceptance (3.69 / 10.50) but is *slower* than budget 64 both times: past ~64 nodes the extra acceptance costs more to verify than it saves.
 
-**The tree earns its keep on HARD workloads.** DDTree beats the single line by **+22% on chat** but only **+3.1% on code** — once DFlash already accepts ~8-of-16 (templated code) there's little headroom left; on high-entropy chat the extra branches matter. And the workload effect dwarfs the method: chat→code lifts accept-len ~3.5× and flips spec from a batch-1 loss to a 2.7-2.8× win.
+**The tree earns its keep on HARD workloads.** DDTree beats the single line by **+22% on chat** but only **+3.1% on code** — once DFlash already accepts ~8-of-16 (templated code) there's little headroom left; on high-entropy chat the extra branches matter.
 
 **Two honest caveats.** The paper reports **8.22× lossless** on HumanEval; we see 2.7-2.8× — but that is our number on a **single DGX Spark (GB10)**, not the authors' datacenter GPUs, and it is smaller because this is batch-1, unquantized bf16, with a tree-attention mask that forces the slow torch-SDPA verify kernel (flash-attn can't express it), over only 12 problems. The *shape* transfers (tree > line, budget optimum, workload-driven); the absolute multiple doesn't. And **concurrency is still open** — the harness doesn't batch, so whether the tree still pays once the batch saturates the GB10 (the trade-off question above) is unmeasured. Serving-engine support is the blocker: DDTree is not merged into vLLM or SGLang (only [SGLang discussion #24605](https://github.com/sgl-project/sglang/discussions/24605)); a batched run needs an implementation like [CaDDTree](https://github.com/ZhangShuai1230/CaDDTree) to land in an engine first.
 
 **Gemma-4 and our Qwen3.6 hybrids can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculative decoders are EAGLE3 heads, e.g. `RedHatAI/gemma-4-31B-it-speculator.eagle3`), and Qwen3.6-27B/35B-A3B are hybrid-GDN, which the harness can't roll back. The proxy above is standard-attention Qwen3-Coder.
 
-- TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
+> TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
 
 ### Drafter-assisted prefill
 
