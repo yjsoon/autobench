@@ -24,10 +24,13 @@ footprint — dig the resident breakdown out of the engine logs for the Notes.
 jit-cache 0.6.12). The old pin `cu130-nightly` is **outdated** (abandoned ~2 months, no new pushes) —
 use it only as a fallback. Override the wrapper's image with `VLLM_IMAGE=`.
 
-Known fallback case: `nightly-aarch64` **regresses Gemma-4 NVFP4 loading** (`gemma4.py tie_weights →
-NotImplementedError`) — for that path, drop back to `cu130-nightly`. If a model fails to load on
-`nightly-aarch64`, try `cu130-nightly` before declaring it blocked, and note which image worked on the
-config page (record the actual one in `engine_image`).
+Known fallback case: `nightly-aarch64` **regresses loading of the E4B *elastic* Gemma-4 NVFP4 checkpoint**
+(`gemma4.py tie_weights → NotImplementedError`, fires on E4B's tied+quantized `lm_head`) — drop back to
+`cu130-nightly` for *that* checkpoint. This is **not** a blanket Gemma-4 NVFP4 regression: non-elastic
+Gemma-4 NVFP4 (12B dense confirmed; 26B-A4B/31B) loads fine on `nightly-aarch64` (see
+`notes/INCOMPATIBILITIES.md` → Gemma-4 MTP). If a model fails to load on `nightly-aarch64`, try
+`cu130-nightly` before declaring it blocked, and note which image worked on the config page (record the
+actual one in `engine_image`).
 
 ## Model downloads — let the container pull, don't host-`hf download`
 

@@ -72,10 +72,45 @@ declaring a model-level block.** The history, for reference:
   **mixed `{8,4}` heads** (head_dim 256/512) which *force-pin* it to TRITON_ATTN; with MTP's draft layer
   the 0.22 metadata builder grouped differing head counts → `AssertionError`. **0.23.1 still forces
   TRITON_ATTN** (logs the heterogeneous-head message) but its metadata builder no longer trips the assert.
-- **Caveat — NVFP4+MTP not yet on this image:** `nightly-aarch64` **regresses Gemma-4 NVFP4 *loading***
-  (`gemma4.py tie_weights → NotImplementedError`, see image policy), so the NVFP4+MTP config can't simply
-  ride it — needs retest when NVFP4 loading is fixed on a 0.23+ image. **llama.cpp** (`--spec-type
-  draft-mtp`, unsloth merged-GGUF drafter; E-series needs `-fa off`) remains a working path for both.
+- **NVFP4+MTP DOES work on `nightly-aarch64` — the `tie_weights` block is CHECKPOINT-specific to the E4B
+  elastic quant, NOT an image-wide regression (CORRECTED 2026-07-02).** The earlier "NVFP4+MTP not yet on
+  this image" caveat over-generalized from the one E4B failure. In fact **`RedHatAI/gemma-4-12B-it-NVFP4`
+  loads AND runs the `google/gemma-4-12B-it-assistant` MTP drafter cleanly on `nightly-aarch64`** (done
+  2026-06-23, decode 782.4 tok/s, 0 errors, `Gemma4UnifiedForConditionalGeneration` +
+  `FlashInferCutlassNvFp4LinearKernel` — see `gemma-4-12b-it-redhatai-vllm-nvfp4-mtp`). The
+  `lm_head.tie_weights → quant_method.tie_weights → NotImplementedError` fires **only** on the E4B
+  `cosmicproc` checkpoint, which is elastic/MatFormer with a **tied *and* quantized `lm_head`** — the tie
+  step then calls the unimplemented quant hook. Non-elastic Gemma-4 NVFP4 checkpoints (12B dense; 26B-A4B
+  MoE / 31B dense, verification in progress 2026-07-02) don't tie a quantized head, so they load. **So:
+  try NVFP4+MTP on `nightly-aarch64` FIRST for any non-E4B Gemma-4** — no custom image needed. Only the
+  E4B NVFP4+MTP stays image-blocked (its tie_weights hook); **llama.cpp** (`--spec-type draft-mtp`,
+  unsloth merged-GGUF drafter; E-series needs `-fa off`) remains the E4B fallback.
+
+### Gemma-4 EAGLE3 heads exist for ONLY 26B-A4B and 31B — E4B/12B are draft-sourcing-blocked (2026-07-02)
+The EAGLE3 rows depend on a size-matched speculator, and RedHatAI publishes gemma-4 EAGLE3 heads for **only
+two sizes**: `RedHatAI/gemma-4-26B-A4B-it-speculator.eagle3` and `RedHatAI/gemma-4-31B-it-speculator.eagle3`
+(both HTTP 200, both benchmarked; there's also a `.dflash` variant of the 31B). The inferred smaller names
+`RedHatAI/gemma-4-{E4B,12B}-it-speculator.eagle3` are **404**. HF-wide search (2026-07-02):
+- **E4B EAGLE3 = nothing, anywhere** → `gemma-4-e4b-it-vllm-fp8-eagle3` is **blocked on sourcing a draft**
+  (not the harness — the FP8 target serves fine; MTP already covers E4B spec-decode at 1261.5 tok/s).
+- **12B EAGLE3 = BLOCKED on vLLM by draft PACKAGING, not just availability.** Two third-party 12B heads
+  exist, but neither is a trusted + vLLM-compatible option:
+  - `deepseek-ai/eagle3_gemma4_12b_ttt7` (trusted lab) is packaged as a **raw transformers/SpecForge draft**
+    — `architectures: ["Gemma4Eagle3Model"]`, no `speculators_config`. vLLM's spec-decode path has no such
+    class and **rejects it at config validation**: `ValidationError … Model architectures
+    ['Gemma4Eagle3Model'] are not supported for now`. No flag adds it (likely SGLang/SpecForge-native).
+  - `BCCard/MoAI-gemma-4-12B-it-speculator.eagle3` **is** in the vLLM-consumable format, but is untrusted
+    (0 dl / 0 likes, raw training dump) → blocked per trusted-repo policy.
+  So `gemma-4-12b-it-redhatai-vllm-nvfp4-eagle3` is blocked; MTP (782.4) already covers 12B spec-decode.
+
+**vLLM EAGLE3 draft-FORMAT requirement (the reusable lesson):** vLLM only loads an EAGLE3 head packaged in the
+**`speculators` library format** — config with `architectures: ["Eagle3DraftModel"]` + a `speculators_config`
+block (+ `auto_map` → `config.Eagle3SpeculatorConfig`). That is what the working RedHatAI 26B-A4B/31B heads
+ship. A head that instead declares a bespoke transformers class (e.g. `Gemma4Eagle3Model`, common for
+SpecForge/SGLang-native drafts) will fail vLLM's `SpeculativeConfig` validation regardless of image. **Before
+assuming an EAGLE3 row is runnable on vLLM, check the draft's `config.json`: (1) the repo exists (HTTP 200),
+AND (2) `architectures == ["Eagle3DraftModel"]` with `speculators_config` present** — not just that some
+"eagle3" head exists for the model.
 
 ### Hybrid GDN+full-attn KV unifies on its own, but NOT with a third (spec-decode draft) KV spec
 Qwen3.5-122B-A10B is a **hybrid** model — Gated-DeltaNet **linear-attention** (mamba-style state cache)
