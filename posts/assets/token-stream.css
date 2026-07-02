@@ -27,3 +27,16 @@
 .token-stream .ctx { grid-column: 1; grid-row: 1; }
 .token-stream .guess { grid-column: 2; }
 .token-stream .ell { color: #b7b3ac; padding: 0 0.15em; letter-spacing: 0.12em; }
+
+/* Figure captions — the paragraph tagged {: .figcaption} under each figure/image.
+   Centered, muted, and smaller than body text; the "Figure N —" label stays dark. */
+.figcaption {
+  margin: 0.5em auto 2em;
+  max-width: 34rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #6a737d;
+  text-align: center;
+  text-wrap: balance;
+}
+.figcaption strong { color: #24292f; }
