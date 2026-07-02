@@ -9,8 +9,11 @@ RUN apt-get update \
 WORKDIR /site
 
 # Install gems at image-build time so they survive the source bind-mount at run time.
-COPY Gemfile ./
-RUN bundle install
+# Copy the lockfile too so the image installs EXACTLY the pinned versions — otherwise the
+# image re-resolves independently and drifts from the host Gemfile.lock (e.g. a missing
+# json-2.19.9 broke `bundle exec` at run time). --frozen keeps image and lock in lockstep.
+COPY Gemfile Gemfile.lock ./
+RUN bundle install --frozen
 
 EXPOSE 4000 35729
 CMD ["bundle", "exec", "jekyll", "serve", \
