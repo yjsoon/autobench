@@ -186,8 +186,10 @@ No native MTP head, so EAGLE3 is the only option — and gpt-oss is where the *d
 | gpt-oss-120b · vLLM · LMSYS draft | 252.8 → 246.7 | **−2.4%** | better draft → neutral |
 | gpt-oss-120b · vLLM · NVIDIA draft | 252.8 → 138.5 | **−45%** | wrong draft, saturated model |
 
-- **The draft alone moves 43 points** (rule 3). Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral. And spec can't rescue a bad config (rule 5): SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
-- **Brittleness can masquerade as a concurrency effect.** gpt-oss-20b EAGLE3 *loses* at c2/c4 (−29% / −33%, acceptance ~5%) then wins **+28%** by c32 (~44% accept). Our controls (same prompts, prefix caching off) didn't remove the collapse, so it reads as a low-batch vLLM EAGLE3 pathology (suspected CUDA-graph padding), not a draft property. The +28% is a high-batch number, not an everywhere number.
+**The draft alone moves 43 points** (rule 3). Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral. And spec can't rescue a bad config (rule 5): SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
+
+**Brittleness can masquerade as a concurrency effect.** gpt-oss-20b EAGLE3 *loses* at c2/c4 (−29% / −33%, acceptance ~5%) then wins **+28%** by c32 (~44% accept). Our controls (same prompts, prefix caching off) didn't remove the collapse, so it reads as a low-batch vLLM EAGLE3 pathology (suspected CUDA-graph padding), not a draft property. The +28% is a high-batch number, not an everywhere number.
+
 - TODO(graphic): the two *vLLM* gpt-oss-120b bars (−45% NVIDIA draft vs −2.4% LMSYS draft) side by side — the draft alone flips the sign; the single most persuasive brittleness visual.
 
 ### The exception — Qwen3.5-122B-A10B (where DFlash wins)
@@ -215,13 +217,16 @@ DFlash bets everything on *one* long draft line, and we saw that line's acceptan
 | | **DDTree (budget 64)** | **49.34** | 9.74 | **2.79×** |
 | | DDTree (budget 256) | 41.30 | 10.50 | 2.34× |
 
-- **The tree recovers DFlash's loss** — §3c's open question, answered. On chat, single-line DFlash is a *net loss* at batch-1 (−8.4%: a 2.25-of-16 accept-len doesn't repay the draft+verify). Rebuilt as a tree, the *same* draft becomes a **+12.1% win** — a +22% decode swing, off a **+43% jump in accept-len** (2.25 → 3.22). On this box the block-diffusion draft only pays off *as a tree*.
-- **Bigger tree isn't better — there's a budget optimum.** Budget 256 has the *highest* acceptance (3.69 / 10.50) but is *slower* than budget 64 both times: past ~64 nodes the extra acceptance costs more to verify than it saves.
-- **The tree earns its keep on HARD workloads.** DDTree beats the single line by **+22% on chat** but only **+3.1% on code** — once DFlash already accepts ~8-of-16 (templated code) there's little headroom left; on high-entropy chat the extra branches matter. And the workload effect dwarfs the method: chat→code lifts accept-len ~3.5× and flips spec from a batch-1 loss to a 2.7-2.8× win.
+**The tree recovers DFlash's loss** — §3c's open question, answered. On chat, single-line DFlash is a *net loss* at batch-1 (−8.4%: a 2.25-of-16 accept-len doesn't repay the draft+verify). Rebuilt as a tree, the *same* draft becomes a **+12.1% win** — a +22% decode swing, off a **+43% jump in accept-len** (2.25 → 3.22). On this box the block-diffusion draft only pays off *as a tree*.
+
+**Bigger tree isn't better — there's a budget optimum.** Budget 256 has the *highest* acceptance (3.69 / 10.50) but is *slower* than budget 64 both times: past ~64 nodes the extra acceptance costs more to verify than it saves.
+
+**The tree earns its keep on HARD workloads.** DDTree beats the single line by **+22% on chat** but only **+3.1% on code** — once DFlash already accepts ~8-of-16 (templated code) there's little headroom left; on high-entropy chat the extra branches matter. And the workload effect dwarfs the method: chat→code lifts accept-len ~3.5× and flips spec from a batch-1 loss to a 2.7-2.8× win.
 
 **Two honest caveats.** The paper reports **8.22× lossless** on HumanEval; we see 2.7-2.8× — but that is our number on a **single DGX Spark (GB10)**, not the authors' datacenter GPUs, and it is smaller because this is batch-1, unquantized bf16, with a tree-attention mask that forces the slow torch-SDPA verify kernel (flash-attn can't express it), over only 12 problems. The *shape* transfers (tree > line, budget optimum, workload-driven); the absolute multiple doesn't. And **concurrency is still open** — the harness doesn't batch, so whether the tree still pays once the batch saturates the GB10 (the trade-off question above) is unmeasured. Serving-engine support is the blocker: DDTree is not merged into vLLM or SGLang (only [SGLang discussion #24605](https://github.com/sgl-project/sglang/discussions/24605)); a batched run needs an implementation like [CaDDTree](https://github.com/ZhangShuai1230/CaDDTree) to land in an engine first.
 
-- **Gemma-4 and our Qwen3.6 hybrids can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculative decoders are EAGLE3 heads, e.g. `RedHatAI/gemma-4-31B-it-speculator.eagle3`), and Qwen3.6-27B/35B-A3B are hybrid-GDN, which the harness can't roll back. The proxy above is standard-attention Qwen3-Coder.
+**Gemma-4 and our Qwen3.6 hybrids can't play — yet.** DDTree needs a *block-diffusion* drafter; Gemma-4 has none (its speculative decoders are EAGLE3 heads, e.g. `RedHatAI/gemma-4-31B-it-speculator.eagle3`), and Qwen3.6-27B/35B-A3B are hybrid-GDN, which the harness can't roll back. The proxy above is standard-attention Qwen3-Coder.
+
 - TODO(graphic): draft-*line* (DFlash, one decaying path) vs draft-*tree* (DDTree, branching, verified in one pass) side-by-side schematic — the single clearest "what changed" visual.
 
 ### Drafter-assisted prefill
