@@ -39,7 +39,7 @@ def base_vs_mtp():
                    var_name="config", value_name="decode")
     long["config"] = long["config"].map({"base": "base", "mtp": "+ MTP"})
 
-    fig, ax = plt.subplots(figsize=(8, 4.2))
+    fig, ax = plt.subplots(figsize=(10, 4.2))
     sns.barplot(long, x="label", y="decode", hue="config",
                 palette={"base": BASE, "+ MTP": MTP}, saturation=1, ax=ax)
     label_bars(ax)
