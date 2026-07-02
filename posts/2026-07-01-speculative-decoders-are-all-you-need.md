@@ -144,20 +144,36 @@ This family owns the top of the board: the **[35B-A3B MoE on NVFP4 + MTP hits 54
 
 One interesting discovery we made is that minor engine details can greatly affect performance ([Rule 3](#drafters-are-brittle)). On the dense 27B NVFP4 + MTP, the **[+46% gain on vLLM](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-vllm-mtp/)** is only **[+10.5% on SGLang](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-sglang-mtp/)**. This seems to be due to scheduling decisions in the engine.
 
-### Gemma-4 — MTP *and* EAGLE3; dense beats MoE
+### Gemma-4 — 26B-A4B NVFP4 + EAGLE3 also hits 541.0 tok/s
 
-Gemma-4 is the only family here with *both* a native assistant-MTP path and grafted EAGLE3 heads, across four sizes (E4B, 12B, 26B-A4B, 31B) — so it exercises the widest spread of the rules. It puts a config right at the top of the board: **[26B-A4B NVFP4 + EAGLE3 co-leads the sweep at 541.0 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)**, a hair behind Qwen's 541.3 — and with MTP it takes the fastest decode we measured anywhere, **[E4B FP8 + MTP at 1261.5 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-e4b-it-vllm-fp8-mtp/)** (+45%). The EAGLE3 heads are a bolt-on, but still win big when the draft matches the workload:
+Gemma-4 is the only family here with *both* a native assistant-MTP path and grafted EAGLE3 heads, across four sizes (E4B, 12B, 26B-A4B, 31B) — so it exercises the widest spread of the rules. It puts a config right at the top of the board: **[26B-A4B NVFP4 + EAGLE3 co-leads the sweep at 541.0 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)**, right alongside Qwen.
 
-| model · quant | base → EAGLE3 | speedup |
-|---|---|---|
-| Gemma-4-31B · NVFP4 | 167.0 → 264.7 | **+59%** (biggest EAGLE3 win) |
-| Gemma-4-26B-A4B · NVFP4 | 384.1 → 541.0 | **+41%** |
+We have the chance to compare MTP and EAGLE3 drafters here:
 
-Because it hands us both drafters across four sizes, Gemma-4 is the cleanest illustration of three of our rules:
+| model · quant | base | + MTP | + EAGLE3 |
+|---|--:|--:|--:|
+| E4B · FP8 | 869.7 | 1261.5 | *TBD* |
+| 12B · NVFP4 | 503.8 | 782.4 | *TBD* |
+| 26B-A4B · NVFP4 | 384.1 | *TBD* | 541.0 |
+| 31B · NVFP4 | 167.0 | *TBD* | 264.7 |
 
-- **[Rule 2 — Agreement](#agreement-is-critical-to-performance).** EAGLE3 runs a lower accept-len (~2.0-2.4 of 3) than native MTP, yet still lands the wins above — and acceptance climbs with model size (E4B ~2.88 → 12B ~3.21 → 31B ~3.41 accept-len on llama.cpp; one family, so directional).
-- **[Rule 3 — Drafters are brittle](#drafters-are-brittle)**, and the engine bites hardest: identical Gemma-4-12B NVFP4 assistant-MTP runs **[782 tok/s on vLLM](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-mtp/)** but only **[400 on SGLang](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-axionml-sglang-nvfp4-mtp/)** — a full 2×, just **+3.4%** there — because SGLang disables its overlap scheduler on the Frozen-KV MTP path.
-- **[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** Dense **[31B (+59%)](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-eagle3/)** out-gains MoE **[26B-A4B (+41%)](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)** on the same draft, and on llama.cpp the slow big model gains more (**[31B Q4 +18.5%](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-llamacpp-mtp/)**) than a fast small one (**[12B Q4 +3.5%](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-llamacpp-mtp/)**). (Caveat: llama.cpp serves MTP through its generic `--model-draft` path — classic draft-then-verify, not vLLM's fused verify — part of why its gains are smaller.)
+TODO: fill the `_TBD_` cells once the pending vLLM runs land (see `spec/EXPERIMENTS.md`) — small models still need EAGLE3, the heavier NVFP4 models still need MTP (blocked on an image that loads NVFP4 *and* the `gemma4_assistant` drafter).
+
+Because it hands us both drafters across four sizes, Gemma-4 is the cleanest illustration of three of our rules.
+
+**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** EAGLE3 runs a lower accept-len (~2.0-2.4 of 3) than native MTP, yet still lands the wins above. TODO: Update when the benchmarks come back.
+
+**[Rule 3 — Drafters are brittle](#drafters-are-brittle),** and the engine bites hardest. Hold the model, quant, and MTP drafter fixed at Gemma-4-12B, swap only the engine, and the win swings from huge to nil:
+
+| engine · quant | base → MTP | speedup | why |
+|---|--:|--:|---|
+| vLLM · NVFP4 | 503.8 → **[782.4](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-redhatai-vllm-nvfp4-mtp/)** | **+55%** | fused verify, overlap scheduler on |
+| SGLang · NVFP4 | 386.6 → **[399.8](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-axionml-sglang-nvfp4-mtp/)** | +3.4% | overlap scheduler off on the Frozen-KV MTP path |
+| llama.cpp · Q4 | 195.3 → **[202.2](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-llamacpp-mtp/)** | +3.5% | generic `--model-draft` — draft-then-verify, not fused |
+
+llama.cpp's gain does grow on a slower target (31B Q4 **[+18.5%](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-llamacpp-mtp/)**, accept-len ~3.2 → ~3.4), but that draft-then-verify path keeps it capped.
+
+**[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** Dense **[31B (+59%)](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-eagle3/)** out-gains MoE **[26B-A4B (+41%)](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)** on the same draft.
 
 ### gpt-oss — EAGLE3 only, the draft is everything
 
