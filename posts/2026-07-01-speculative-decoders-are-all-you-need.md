@@ -134,13 +134,17 @@ Which method you even *get* is largely decided by the family — so we picked ou
 
 ### Qwen3.6 — native MTP, maxes out at a blazing 541.3 tok/s {#qwen36-native-mtp}
 
-This family owns the top of the board: the **[35B-A3B MoE on NVFP4 + MTP hits 541.3 tok/s](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)**. The decode is so quick because it lands on the right side of each of our five rules:
+This family owns the top of the board: the **[35B-A3B MoE on NVFP4 + MTP hits 541.3 tok/s](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)**. The decode is so quick because it lands on the right side of each of our five rules.
 
-1. **[Cheap drafter](#drafters-trade-compute-for-speed).** Native MTP is nearly free, so it wins at *every* concurrency (see the MTP line in [Figure 1](#fig-concurrency-crossover)). DFlash is much heavier, and performance degrades over time.
-2. **[High agreement](#agreement-is-critical-to-performance).** ~66% acceptance, ~3.0 of 4 including the free bonus token.
-3. **[Robust, not brittle](#drafters-are-brittle).** The MTP head ships with the model, so it's matched by construction.
-4. **[Fast base, modest multiplier](#slower-target-bigger-relative-win).** A light MoE pass on fast NVFP4 leaves little to amortize, so MTP adds "only" **[+26%](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)** — the small end of the curve.
-5. **[Builds on a great config](#speculation-cant-rescue-a-bad-config).** That +26% rides on the fastest quant-and-engine we measured, so the absolute number still tops the board. Speculation compounds a good config; here it compounds the best one.
+**[Rule 1 — Drafters trade compute for speed](#drafters-trade-compute-for-speed).** Native MTP is nearly free — it wins at *every* concurrency (the MTP line in [Figure 1](#fig-concurrency-crossover)), with none of the spare-compute tax that makes heavy DFlash fade under load.
+
+**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** High acceptance — ~66%, ~3.0 of 4 including the free bonus token.
+
+**[Rule 3 — Drafters are brittle](#drafters-are-brittle).** Robust here by construction: the MTP head ships with the model, so draft and target are matched.
+
+**[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** A light MoE pass on fast NVFP4 leaves little to amortize, so MTP adds "only" **[+26%](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm-mtp/)** — the small end of the curve.
+
+**[Rule 5 — Speculation can't rescue a bad config](#speculation-cant-rescue-a-bad-config).** That +26% rides on the fastest quant-and-engine we measured, so the absolute number still tops the board. Speculation compounds a good config; here it compounds the best one.
 
 One interesting discovery we made is that minor engine details can greatly affect performance ([Rule 3](#drafters-are-brittle)). On the dense 27B NVFP4 + MTP, the **[+46% gain on vLLM](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-vllm-mtp/)** is only **[+10.5% on SGLang](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-sglang-mtp/)**. This seems to be due to scheduling decisions in the engine.
 
