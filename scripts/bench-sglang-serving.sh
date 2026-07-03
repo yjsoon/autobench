@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
-# Serving benchmark for one HF model via SGLang (lmsysorg/sglang:spark image),
-# driven by scripts/bench-serving.py against the ShareGPT workload.
+# Serving benchmark for one HF model via SGLang, driven by scripts/bench-serving.py
+# against the ShareGPT workload.
+#
+# Strix Halo port: default image is the locally-built strix-halo-sglang:dev
+# (https://github.com/JeremiahM37/strix-halo-sglang — build it first). ROCm devices
+# are passed through (/dev/kfd + /dev/dri) instead of --gpus all. On gfx1151 you
+# generally need: --mem-fraction-static 0.5 --attention-backend triton --disable-cuda-graph
+# (pass as extra args). The tunableop cache mount matters: without it single-stream
+# throughput roughly halves.
 #
 # SGLang exposes an OpenAI-compatible API on :30000, so the same client works as for
 # llama.cpp / vLLM. Headline memory = system MemAvailable delta from idle (10s sampling).
 #
 # Usage: bench-sglang-serving.sh <hf-model-path> [ctx] [conc] [num_prompts] [max_seconds] [max_tokens] [extra sglang args...]
-#   e.g. bench-sglang-serving.sh openai/gpt-oss-20b 65536 32 1000 900 256 --reasoning-parser gpt-oss --tool-call-parser gpt-oss
+#   e.g. bench-sglang-serving.sh Qwen/Qwen3.5-4B 8192 8 1000 900 256 \
+#          --mem-fraction-static 0.5 --attention-backend triton --disable-cuda-graph
 set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env 2>/dev/null || true; set +a
 
 DATASET="$(pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(pwd)/scripts/bench-serving.py"
-# Default to the spark image; override with SGLANG_IMAGE (e.g. a newer nightly that supports a
-# newer model arch — the spark tag's transformers can lag, see notes/INCOMPATIBILITIES.md).
-IMAGE="${SGLANG_IMAGE:-lmsysorg/sglang:spark}"
+# Default to the locally-built Strix Halo image; override with SGLANG_IMAGE.
+IMAGE="${SGLANG_IMAGE:-strix-halo-sglang:dev}"
 PORT=30000
 
 MODEL="${1:?need an HF model path, e.g. openai/gpt-oss-20b}"
@@ -29,11 +36,12 @@ base_avail=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 echo "==> launch SGLang $MODEL (ctx=$CTX) extra=[${EXTRA[*]:-}]"
-docker run -d --name "$NAME" --gpus all --ipc=host --shm-size 32g -p "$PORT:$PORT" \
+docker run -d --name "$NAME" --device /dev/kfd --device /dev/dri \
+  --ipc=host --shm-size 32g --security-opt seccomp=unconfined -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-  -v "$HOME/tiktoken_encodings:/tiktoken_encodings" \
+  -v "$HOME/.cache/strix-halo-sglang-tunableop:/root/.tunableop" \
   --env "HF_TOKEN=${HF_TOKEN:-}" \
-  --env "TIKTOKEN_ENCODINGS_BASE=/tiktoken_encodings" \
+  --env "SGLANG_FORCE_NATIVE_LAYERNORM=1" \
   "$IMAGE" python3 -m sglang.launch_server --model-path "$MODEL" \
   --host 0.0.0.0 --port "$PORT" --context-length "$CTX" "${EXTRA[@]}" >/dev/null
 

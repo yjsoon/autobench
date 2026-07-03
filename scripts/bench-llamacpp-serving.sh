@@ -3,19 +3,22 @@
 # drive it with the ShareGPT workload via scripts/bench-serving.py, sample memory.
 #
 # Headline memory = system MemAvailable delta from an idle baseline (10s sampling) —
-# nvidia-smi gives no memory on the GB10 (unified) and docker stats undercounts CUDA
-# unified allocations.
+# Strix Halo is unified memory; cross-check GPU-side usage via
+# /sys/class/drm/card*/device/mem_info_vram_used.
 #
-# Usage: bench-llamacpp-serving.sh <model.gguf under /home/gauravmm/models> \
+# Strix Halo port: Vulkan (RADV) llama.cpp image, /dev/dri + /dev/kfd instead of
+# --gpus all. Override MODELS_DIR / LLAMACPP_IMAGE via env.
+#
+# Usage: bench-llamacpp-serving.sh <model.gguf under $MODELS_DIR> \
 #          [ctx] [concurrency] [num_prompts] [max_seconds] [max_tokens] [ngl] [extra llama-server args...]
 #   Extra args pass straight to llama-server — e.g. speculative decoding (Gemma 4 MTP drafter):
 #     ... 99 --model-draft /models/MTP/gemma-4-12b-it-Q8_0-MTP.gguf --spec-type draft-mtp --spec-draft-n-max 4 -fa on
 set -euo pipefail
 
-MODELS_DIR=/home/gauravmm/models
+MODELS_DIR="${MODELS_DIR:-$HOME/.lmstudio/models}"
 DATASET="$(cd "$(dirname "$0")/.." && pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(cd "$(dirname "$0")" && pwd)/bench-serving.py"
-IMAGE=ghcr.io/ggml-org/llama.cpp:full-cuda
+IMAGE="${LLAMACPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:full-vulkan}"
 PORT=8081
 
 FILE="${1:?need a gguf filename under $MODELS_DIR}"
@@ -29,7 +32,7 @@ base_avail=$(awk '/MemAvailable/{print $2}' /proc/meminfo)   # kB, idle baseline
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 echo "==> launch llama-server $FILE (ctx=$CTX ngl=$NGL) extra=[${EXTRA[*]:-}]"
-docker run -d --name "$NAME" --gpus all -p "$PORT:$PORT" \
+docker run -d --name "$NAME" --device /dev/dri --device /dev/kfd -p "$PORT:$PORT" \
   -v "$MODELS_DIR":/models:ro "$IMAGE" \
   --server -m "/models/$FILE" -ngl "$NGL" -c "$CTX" \
   --parallel "$CONC" -cb --host 0.0.0.0 --port "$PORT" "${EXTRA[@]}" >/dev/null

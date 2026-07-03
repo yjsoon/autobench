@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# Serving benchmark for one HF model via vLLM (default vllm/vllm-openai:nightly-aarch64
-# — the maintained DGX Spark GB10 image; cu130-nightly is the outdated fallback),
-# driven by scripts/bench-serving.py against the ShareGPT workload.
+# Serving benchmark for one HF model via vLLM, driven by scripts/bench-serving.py
+# against the ShareGPT workload.
+#
+# Strix Halo port — EXPERIMENTAL: gfx1151 is not in upstream vLLM's supported list.
+# Default image is rocm/vllm:latest; expect to need HSA_OVERRIDE_GFX_VERSION=11.5.1
+# (exported before running, it is passed through) or a custom gfx1151 build
+# (see https://blog.epheo.eu/notes/strix-halo/index.html). Get llama.cpp and SGLang
+# working first; treat failures here as expected until the stack matures.
 #
 # vLLM exposes an OpenAI-compatible API on :8000, so the same client works as for
 # llama.cpp / SGLang. Headline memory = system MemAvailable delta from idle (10s sampling).
@@ -18,10 +23,8 @@ set -a; source .env 2>/dev/null || true; set +a
 
 DATASET="$(pwd)/benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json"
 BENCH="$(pwd)/scripts/bench-serving.py"
-# Default to the maintained nightly image; override with VLLM_IMAGE to fall back to
-# cu130-nightly (e.g. Gemma-4 NVFP4 loading) or a custom-transformers build (gemma4_unified
-# 12B — see scripts/Dockerfile.vllm-tf). See notes/BENCHMARKING.md "vLLM image policy".
-IMAGE="${VLLM_IMAGE:-vllm/vllm-openai:nightly-aarch64}"
+# Default to AMD's ROCm vLLM image; override with VLLM_IMAGE (e.g. a custom gfx1151 build).
+IMAGE="${VLLM_IMAGE:-rocm/vllm:latest}"
 PORT=8000
 
 MODEL="${1:?need an HF model path, e.g. nvidia/NVIDIA-Nemotron-Labs-3-Elastic-30B-A3B-NVFP4}"
@@ -45,12 +48,15 @@ echo "==> launch vLLM $MODEL (ctx=$CTX, max-num-seqs=$CONC) extra=[${EXTRA[*]:-}
 # (e.g. VOCAB_DIR=$HOME/tiktoken_encodings) when that path is missing/root-owned — the dir just
 # needs to contain o200k_base.tiktoken (sha256 446a9538…). See notes/INCOMPATIBILITIES.md.
 VOCAB_DIR="${VOCAB_DIR:-$HOME/models/tiktoken_cache}"
-docker run -d --name "$NAME" --gpus all --ipc=host -p "$PORT:$PORT" \
+VOCAB_ARGS=()
+[ -d "$VOCAB_DIR" ] && VOCAB_ARGS=(-v "$VOCAB_DIR:/vocab:ro" --env "TIKTOKEN_ENCODINGS_BASE=/vocab")
+docker run -d --name "$NAME" --device /dev/kfd --device /dev/dri \
+  --ipc=host --security-opt seccomp=unconfined -p "$PORT:$PORT" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
   -v "$HOME/.cache/vllm:/root/.cache/vllm" \
-  -v "$VOCAB_DIR:/vocab:ro" \
+  "${VOCAB_ARGS[@]}" \
   --env "HF_TOKEN=${HF_TOKEN:-}" \
-  --env "TIKTOKEN_ENCODINGS_BASE=/vocab" \
+  --env "HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION:-}" \
   "$IMAGE" "$MODEL" \
   --host 0.0.0.0 --port "$PORT" \
   --max-model-len "$CTX" --gpu-memory-utilization 0.85 --max-num-seqs "$CONC" \

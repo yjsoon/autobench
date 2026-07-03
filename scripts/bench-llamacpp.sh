@@ -3,14 +3,18 @@
 #
 # Reports prefill (pp) and decode (tg) tok/s, and peak memory via the container's
 # cgroup-v2 memory.peak (primary) plus a 10s-sampled docker-stats max and the system
-# MemAvailable delta (cross-checks). nvidia-smi gives no memory on the GB10 (unified).
+# MemAvailable delta (cross-checks). Strix Halo is unified memory: no discrete-GPU
+# meter; cross-check with /sys/class/drm/card*/device/mem_info_vram_used.
 #
-# Usage: scripts/bench-llamacpp.sh <model.gguf-under-/home/gauravmm/models> [pp] [tg] [ngl]
-#   e.g. scripts/bench-llamacpp.sh SmolLM3-Q4_K_M.gguf 512 128 99
+# Strix Halo port: uses the Vulkan (RADV) llama.cpp image with /dev/dri + /dev/kfd
+# passed through instead of --gpus all. Override MODELS_DIR / LLAMACPP_IMAGE via env.
+#
+# Usage: scripts/bench-llamacpp.sh <model.gguf-under-$MODELS_DIR> [pp] [tg] [ngl]
+#   e.g. scripts/bench-llamacpp.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf 512 128 99
 set -euo pipefail
 
-MODELS_DIR=/home/gauravmm/models
-IMAGE=ghcr.io/ggml-org/llama.cpp:full-cuda
+MODELS_DIR="${MODELS_DIR:-$HOME/.lmstudio/models}"
+IMAGE="${LLAMACPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:full-vulkan}"
 FILE="${1:?need a gguf filename under $MODELS_DIR}"
 PP="${2:-512}"; TG="${3:-128}"; NGL="${4:-99}"
 NAME="bench-$(echo "$FILE" | tr -c 'A-Za-z0-9' '-')"
@@ -23,7 +27,7 @@ docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 echo "==> llama-bench $FILE  (pp=$PP tg=$TG ngl=$NGL)"
 # NB: this image uses a dispatcher entrypoint — llama-bench is invoked via --bench.
-docker run -d --name "$NAME" --gpus all \
+docker run -d --name "$NAME" --device /dev/dri --device /dev/kfd \
   -v "$MODELS_DIR":/models:ro "$IMAGE" \
   --bench -m "/models/$FILE" -p "$PP" -n "$TG" -ngl "$NGL" >/dev/null
 

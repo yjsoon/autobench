@@ -23,3 +23,6 @@ vendor/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Benchmark workload dataset — never commit
+benchmark_data/
