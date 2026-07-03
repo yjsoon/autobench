@@ -1,6 +1,12 @@
-# Autobench
+# Autobench (Strix Halo fork)
 
-Auto-benchmark harness + results site for running LLMs on an **NVIDIA DGX Spark**.
+Auto-benchmark harness + results site for running LLMs on an **AMD Strix Halo** box
+(GMKtec EVO X2, Ryzen AI Max+ 395, Radeon 8060S, 96 GiB UMA VRAM).
+
+Forked from [gauravmm/autobench](https://github.com/gauravmm/autobench), which benchmarks the
+**NVIDIA DGX Spark** — the existing `_configs/` results are Spark numbers, kept as the comparison
+baseline. The scripts here are ported to Vulkan (llama.cpp, LM Studio) and ROCm (SGLang, vLLM);
+see `CLAUDE.md` for the machine notes.
 
 For each model we download it, run it across engines/quants/contexts, and record the
 **full run command, context window, and tok/s (prefill + decode)**. Results are published
@@ -17,7 +23,8 @@ as a Jekyll site — one page per configuration, tagged by model family, company
 | `_layouts/`, `index.md`, `tags.md`, `assets/` | Jekyll site (config spec sheets + tag browser). |
 | `scripts/new-config.sh` | Scaffold a new config page (used by the harness). |
 | `scripts/seed-stubs.sh` | Seed pending stub pages for all runnable models in `MODELLIST.md`. |
-| `scripts/bench-llamacpp.sh` | Run llama-bench + 10s memory sampling for one GGUF. |
+| `scripts/bench-llamacpp.sh` | Run llama-bench (Vulkan container) + 10s memory sampling for one GGUF. |
+| `scripts/bench-lmstudio-serving.sh` | Drive an already-running LM Studio server with the ShareGPT workload. |
 | `Dockerfile.site`, `serve.sh`, `build.sh` | Dockerized Ruby/Jekyll — **no Ruby on the host**. |
 | `.github/workflows/jekyll.yml` | Builds & deploys the site to GitHub Pages on push to `main`. |
 
