@@ -2,7 +2,7 @@
 
 ---
 
-**TL;DR:** run native MTP where the model has it, EAGLE3 where it doesn't. On one DGX Spark the fastest config we measured is [Gemma-4-26B-A4B NVFP4 + MTP](https://gauravmm.github.io/autobench/tags/model/#gemma-4-26b-a4b) at **692.1 tok/s**, with [Qwen3.6-35B-A3B NVFP4 + MTP](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b) close behind at **541.3 tok/s**
+**TL;DR:** run native MTP where the model has it; test EAGLE3 where it doesn't. On one DGX Spark the fastest config we measured is [Gemma-4-26B-A4B NVFP4 + MTP](https://gauravmm.github.io/autobench/tags/model/#gemma-4-26b-a4b) at **692.1 tok/s**, with [Qwen3.6-35B-A3B NVFP4 + MTP](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b) close behind at **541.3 tok/s**.
 
 ---
 
@@ -22,16 +22,16 @@ Speculative decoders work well when the next token is easy to guess. Something l
 <span class="guess"><span class="ell">…</span> <span class="tok c4">jumps</span><span class="tok c5">over</span><span class="tok c0">the</span><span class="tok c1">lazy</span><span class="tok c2">dog</span><span class="tok c3">.</span></span>
 </p>
 
-Something like this does not:
+Something like this does not. The drafter bets on one continuation, and the target's single verify pass **accepts** the tokens it agrees with, **rejects** the first disagreement, and discards everything after it:
 
 <p class="token-stream fork">
 <span class="ctx"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span></span>
 <span class="guess"><span class="ell">…</span></span>
-<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c0">branch</span><span class="tok c1">.</span></span>
-<span class="guess"><span class="ell">…</span> <span class="tok c4">waddle</span><span class="tok c5">away</span><span class="tok c0">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok acc">under</span><span class="tok acc">the</span><span class="tok rej">table</span><span class="tok dis">.</span></span>
+<span class="guess"><span class="ell">…</span> <span class="tok c4">under</span><span class="tok c5">the</span><span class="tok c2">branch</span></span>
 </p>
 
-> TODO(graphic): schematic — target model + speculative decoder both reading the same KV cache; speculative decoder emits k candidate tokens; target verifies in one pass; accepted prefix in green, first reject in red.
+Top row: the draft as verified — **under the** is accepted (green) and now costs nearly nothing, **table** is rejected (red), and the tail is thrown away (grey). Bottom row: the target generates *branch* in the same pass and decoding resumes from there.
 
 ## The Options
 
@@ -44,17 +44,15 @@ As of right now, there are three flavours that are common (and one emerging).
 - **[DFlash](https://github.com/z-lab/dflash):** an external diffusion-based drafter that speculates many (up to 16) tokens per step. High fixed cost, with the chance for huge speedups.
 - **[DDTree](https://liranringel.github.io/ddtree/) (emerging):** DFlash with a tree instead of a single draft line. Amazingly quick when it works.
 
-> TODO: Update 138 after the next round of benchmarks come back.
+The numbers below come from 149 benchmark configs run on an NVIDIA DGX Spark, generously provided by [Ray Aun Fan](https://www.linkedin.com/in/rayaunfan) — thank you, Ray! These benchmarks were run semi-autonomously by an Opus 4.8 agent over about a week. Full results are [on the autobench website](https://gauravmm.github.io/autobench/).
 
-The numbers below come from 138 benchmark configs run on an NVIDIA DGX Spark. These benchmarks were run semi-autonomously by an Opus 4.8 agent over about a week. Full results are [on the autobench website](https://gauravmm.github.io/autobench/).
-
-## The performance trade-off
+## Five rules of speculation
 
 The drafter runs first and proposes a short continuation — 3 tokens for MTP, 5-16 for DFlash depending on the config. This imposes a **fixed cost**, and buys a **variable speedup** depending on how many tokens are accepted. This only pays off when our spare compute and acceptance rates are both good enough.
 
 ### Rule 1 — Drafters trade compute for speed {#drafters-trade-compute-for-speed}
 
-Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are almost free and provide fantastic tradeoff. It's the heavy external DFlash drafters that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
+Once the GPU is saturated, the drafter must compete with real requests for compute. Native MTP drafters are almost free and provide a fantastic tradeoff. It's the heavy external DFlash drafters that *spend spare compute to buy low-concurrency throughput* — and a busy server has none to spend.
 
 ![Decode throughput vs concurrency for Qwen3.6-35B-A3B NVFP4 on vLLM, log-log, three lines: no-spec base, MTP, and DFlash. At conc-1 the three cluster (base 75, MTP 94, DFlash 100); MTP then leads at every concurrency (541 tok/s at conc-32); DFlash beats base only at low batch and dips below the no-spec baseline by conc-32 (407 vs base 431).](assets/plots/mtp_vs_dflash_35b.svg)
 {: #fig-concurrency-crossover}
@@ -70,10 +68,10 @@ As with everything in LLMs, the exact tradeoff curve is a fingerprint of the met
 
 In one target forward pass, the model computes the probability of each speculated token in parallel. Where the target agrees, we **pretend the token was there all along**; at the first disagreement we discard the rest and let the target generate that token normally, then re-speculate.
 
-- **MTP** ≈ 3.0 of 4([Qwen3.6-27B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-27b), [35B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b)) — that's ~2 of 3 drafted tokens accepted plus the one free "bonus" token from the verify pass. Very efficient.
-- **EAGLE3** ≈ 2.0-2.4 of 4 ([Gemma-4](https://gauravmm.github.io/autobench/tags/model/#gemma-4-31b); [gpt-oss](https://gauravmm.github.io/autobench/tags/model/#gpt-oss-120b) only with a workload-matched draft.
-- **DFlash** ≈ 3.2-4.4 of 11 ([Qwen3.6-35B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b)) collapses after a few positions, leading to much waste.
-- **DDTree** ≈ **9.7 of 16 on code**, as low as 3.2 of 16 on chat ([Qwen3-Coder-30B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-coder-30b-a3b)) — DFlash's block draft rebuilt as a *tree* of candidate continuations, verified together so more of each block survives. Full numbers in the  DDTree section below.
+- **MTP** ≈ 3.0 of 4 ([Qwen3.6-27B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-27b), [35B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b)) — that's ~2 of 3 drafted tokens accepted plus the one free "bonus" token from the verify pass. Very efficient.
+- **EAGLE3** ≈ 2.0-2.4 of 4 ([Gemma-4](https://gauravmm.github.io/autobench/tags/model/#gemma-4-31b); [gpt-oss](https://gauravmm.github.io/autobench/tags/model/#gpt-oss-120b) only with a workload-matched draft).
+- **DFlash** ≈ 3.2-4.4 of 11 serving [Qwen3.6-35B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-6-35b-a3b) — collapses after a few positions, leading to much waste.
+- **DDTree** ≈ **9.7 of 16 on code**, as low as 3.2 of 16 on chat ([Qwen3-Coder-30B-A3B](https://gauravmm.github.io/autobench/tags/model/#qwen3-coder-30b-a3b), research harness) — DFlash's block draft rebuilt as a *tree* of candidate continuations, verified together so more of each block survives. Full numbers in the Qwen3-Coder section below.
 
 ### Rule 3 — Drafters are brittle {#drafters-are-brittle}
 
@@ -88,18 +86,7 @@ This means that the effectiveness depends on:
 
 Change any one and the win can evaporate or the launch can fail outright.
 
-The starkest case: **gpt-oss-120b on vLLM, one ShareGPT workload — swap only the EAGLE3 draft**, and the result moves 43 points.
-
-| draft | decode tok/s | Δ | acceptance |
-|---|--:|--:|--:|
-| none (baseline) | 252.8 | 0% | — |
-| NVIDIA EAGLE3 | 138.5 | **−45%** | 1.5~9% |
-| LMSYS / SpecForge EAGLE3 | 246.7 | −2.4% | ~29% |
-
-**Table 1 — The draft is the whole story.** gpt-oss-120b on vLLM, one ShareGPT workload; swap only the EAGLE3 draft and decode moves 43 points — from −45% (NVIDIA draft) to −2.4% (LMSYS/SpecForge).
-{: .figcaption}
-
-Same model, same engine, same workload — the draft alone is the whole difference. Before picking a drafter, test it in the exact configuration you will be using it.
+The starkest case: **gpt-oss-120b on vLLM, one ShareGPT workload — swap only the EAGLE3 draft**, and decode moves 43 points, from −45% to roughly neutral (Table 4, in the gpt-oss section below). Before picking a drafter, test it in the exact configuration you will be using.
 
 ### Rule 4 — Slower target, bigger relative win {#slower-target-bigger-relative-win}
 
@@ -112,7 +99,7 @@ The costlier the target's forward pass, the more idle bandwidth the drafter hide
 | Qwen3.6-35B-A3B · FP8 | 286.0 → 407.9 | **+43%** |
 | Qwen3.6-35B-A3B · NVFP4 | 430.8 → 541.3 | **+26%** |
 
-**Table 2 — Slower base, bigger relative win.** Four Qwen3.6 MTP runs at conc-32 on vLLM, sorted slowest base to fastest; the MTP speedup falls monotonically from +56% to +26%.
+**Table 1 — Slower base, bigger relative win.** Four Qwen3.6 MTP runs at conc-32 on vLLM, sorted slowest base to fastest; the MTP speedup falls monotonically from +56% to +26%.
 {: .figcaption}
 
 Each model gains more on its slower FP8 quant than its faster NVFP4 quant, and the 27B dense architecture gains more than the 35B-A3B MoE architecture.
@@ -121,21 +108,13 @@ The flip side (rule 5): NVFP4 *without* a speculator (430.8) still out-decodes F
 
 ### Rule 5 — Speculation can't rescue a bad config {#speculation-cant-rescue-a-bad-config}
 
-A speculative decoder is a multiplier, not a fix. In both of these, the plainer setup with **no speculation at all** out-decodes a fancier one running its best available draft (decode tok/s):
-
-| model | best config, no drafter | tok/s | worse config + best drafter | tok/s |
-|---|---|--:|---|--:|
-| Qwen3.6-35B-A3B | `NVFP4` quant | [**430.8**](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm/) | `FP8` quant + MTP | [407.9](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-vllm-fp8-mtp/) |
-| gpt-oss-120b `MXFP4` | vLLM engine | [**252.8**](https://gauravmm.github.io/autobench/configs/gpt-oss-120b-vllm-mxfp4/) | SGLang engine + LMSYS | [171.9](https://gauravmm.github.io/autobench/configs/gpt-oss-120b-sglang-mxfp4-eagle3-c32/) |
-
-**Table 3 — Speculation can't rescue a bad config.** In both pairs the plainer no-drafter setup out-decodes a fancier one running its best available draft.
-{: .figcaption}
+A speculative decoder is a multiplier, not a fix. Twice in our data, the plainer setup with **no speculation at all** out-decodes a fancier one running its best available draft: Qwen3.6-35B-A3B on NVFP4 with no drafter ([430.8](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-nvfp4-vllm/)) beats FP8 + MTP ([407.9](https://gauravmm.github.io/autobench/configs/qwen3-6-35b-a3b-vllm-fp8-mtp/)), and gpt-oss-120b MXFP4 on vLLM with no drafter ([252.8](https://gauravmm.github.io/autobench/configs/gpt-oss-120b-vllm-mxfp4/)) beats SGLang running the best EAGLE3 draft ([171.9](https://gauravmm.github.io/autobench/configs/gpt-oss-120b-sglang-mxfp4-eagle3-c32/)).
 
 Get the quant and engine right *first*; speculation compounds a good setup, it can't paper over a bad one.
 
 ## The Models
 
-Which method you even *get* is largely decided by the family — MTP only exists where the lab baked in a head, EAGLE3 only where someone has trained a draft for that exact model. So the walk below goes family by family: Qwen3.6 and Gemma-4 with native MTP, then gpt-oss with EAGLE3 only.
+Which method you even *get* is largely decided by the family — MTP only exists where the lab baked in a head, EAGLE3 only where someone has trained a draft for that exact model. So the walk below goes family by family: Qwen3.6 and Gemma-4 with native MTP, gpt-oss with EAGLE3 only, then Qwen3-Coder with DFlash and DDTree.
 
 ![Grouped bar chart of decode tok/s, base vs +MTP at conc-32 on vLLM, for eight Qwen3.6 and Gemma-4 configs; MTP adds +26% to +94%, peaking at Gemma-4-E4B FP8 at 1262 tok/s.](assets/plots/base_vs_mtp.svg)
 {: #fig-base-vs-mtp}
@@ -174,12 +153,12 @@ We compare MTP and EAGLE3 drafters, and find that MTP wins the two head-to-head 
 | 26B-A4B · NVFP4 | 384.1 | **[692.1](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-mtp/)** | +80% | [541.0](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/) | +41% |
 | 31B · NVFP4 | 167.0 | **[323.5](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-mtp/)** | +94% | [264.7](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-eagle3/) | +59% |
 
-**Table 4 — MTP vs EAGLE3 across Gemma-4.** Decode tok/s at conc-32 on vLLM, base vs each drafter. MTP wins both head-to-head rows; the two small models have no usable EAGLE3 head (dashes link to why).
+**Table 2 — MTP vs EAGLE3 across Gemma-4.** Decode tok/s at conc-32 on vLLM, base vs each drafter. MTP wins both head-to-head rows; the two small models have no usable EAGLE3 head (dashes link to why).
 {: .figcaption}
 
 Because it hands us both drafters across four sizes, Gemma-4 is the cleanest illustration of three of our rules.
 
-**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** Native MTP posts a higher accept-len (~2.7-2.8 of 3, ~55-65% draft acceptance) than EAGLE3 (~2.0-2.4 of 3), and that decides the head-to-head: MTP beats EAGLE3 by **[+28%](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-mtp/)** on 26B-A4B (692.1 vs 541.0) and **[+22%](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-mtp/)** on 31B (323.5 vs 264.7).
+**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** Native MTP posts a higher accept-len (~2.7-2.8 of 4, ~55-65% draft acceptance) than EAGLE3 (~2.0-2.4 of 4), and that decides the head-to-head: MTP beats EAGLE3 by **[+28%](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-mtp/)** on 26B-A4B (692.1 vs 541.0) and **[+22%](https://gauravmm.github.io/autobench/configs/gemma-4-31b-it-vllm-nvfp4-mtp/)** on 31B (323.5 vs 264.7).
 
 **[Rule 3 — Drafters are brittle](#drafters-are-brittle),** and the engine bites hardest. Hold the model, quant, and MTP drafter fixed at Gemma-4-12B, swap only the engine, and the win swings from huge to nil:
 
@@ -189,7 +168,7 @@ Because it hands us both drafters across four sizes, Gemma-4 is the cleanest ill
 | SGLang · NVFP4 | 386.6 → **[399.8](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-axionml-sglang-nvfp4-mtp/)** | +3.4% | overlap scheduler off ❌ |
 | llama.cpp · Q4 | 195.3 → **[202.2](https://gauravmm.github.io/autobench/configs/gemma-4-12b-it-llamacpp-mtp/)** | +3.5% | overlap scheduler off ❌ |
 
-**Table 5 — Same drafter, three engines.** Gemma-4-12B NVFP4 + MTP held fixed, only the engine changes; vLLM's overlap scheduler turns a +55% win into +3–4% on SGLang and llama.cpp.
+**Table 3 — Same drafter, three engines.** Gemma-4-12B NVFP4 + MTP held fixed, only the engine changes; vLLM's overlap scheduler turns a +55% win into +3–4% on SGLang and llama.cpp.
 {: .figcaption}
 
 The overlap scheduler runs work concurrently instead of sequentially, allowing the drafter (and CPU) overhead to be hidden. This is not available on llama.cpp, and disabled for this model under the current SGLang, hence the poor performance gain.
@@ -206,26 +185,26 @@ No native MTP head, so EAGLE3 is the only option — and gpt-oss is where the *d
 | vLLM · LMSYS draft | 252.8 → 246.7 | **−2.4%** | neutral |
 | vLLM · NVIDIA draft | 252.8 → 138.5 | **−45%** | wrong draft, saturated model |
 
-**Table 6 — gpt-oss-120b EAGLE3, engine × draft.** The draft dominates: on vLLM the same model swings from −45% (NVIDIA draft) to −2.4% (LMSYS), and no spec config beats vLLM's no-spec baseline (252.8).
+**Table 4 — gpt-oss-120b EAGLE3, engine × draft.** The draft dominates: on vLLM the same model swings from −45% (NVIDIA draft) to −2.4% (LMSYS), and no spec config beats vLLM's no-spec baseline (252.8).
 {: .figcaption}
 
 **[Rule 3 — Drafters are brittle](#drafters-are-brittle).** The draft alone moves 43 points. Same model, workload, and engine (vLLM): swapping NVIDIA's throughput-tuned draft (~9% accept) for LMSYS/SpecForge (~29% accept) rescues −45% to roughly neutral.
 
 **[Rule 5 — Speculation can't rescue a bad config](#speculation-cant-rescue-a-bad-config).** SGLang *with* the best draft (171.9) is still ~32% below vLLM with **no speculation at all** (252.8). The fastest gpt-oss-120b we measured is vLLM, no spec.
 
-### Qwen3-Coder-30B-A3B + DFlash — the exception
+### Qwen3-Coder-30B-A3B — DFlash and DDTree
+
+So far, we have seen DFlash lag behind MTP and EAGLE3, due to its weight and low acceptance. Qwen3-Coder-30B-A3B redeems DFlash on coding tasks, and a brand-new technique called DDTree promises...
+
+DFlash (and DDTree) use diffusion 
+
+Even so, DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) builds a tree of likely continuations and verifies it in a single pass.
 
 DFlash is redeemed by the *workload*, not the configuration. Qwen3-Coder-30B-A3B only accepts 2.25 of 16 tokens on chat datasets, which is disappointingly low for a high-cost drafter like DFlash.
 
 **[Rule 2 — Agreement](#agreement-is-critical-to-performance).** On templated, low-entropy code (HumanEval), the same Qwen3-Coder-30B-A3B drafter nails long spans: **[7.96 of 16](https://gauravmm.github.io/autobench/configs/qwen3-coder-30b-a3b-ddtree-humaneval/)**, a 2.7× decode win. A drafter that's dead weight on hard, high-entropy text can be the fastest thing on the box when the continuation is easy to guess.
 
-## The future
-
-Its early days yet, so we're waiting
-
-### DDTree (draft *trees*, not draft *lines*)
-
-DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) builds a tree of likely continuations and verifies it in a single pass.
+Even so, DFlash bets everything on *one* long draft line, which quickly decays to nothing, wasting most of the draft compute. [Block Diffusion Draft Trees](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989), Ringel & Romano) builds a tree of likely continuations and verifies it in a single pass.
 
 <p class="token-stream fork tree">
 <span class="ctx"><span class="tok c0">I</span><span class="tok c1">saw</span><span class="tok c2">her</span><span class="tok c3">duck</span></span>
@@ -240,33 +219,35 @@ DFlash bets everything on *one* long draft line, which quickly decays to nothing
 <span class="sub"><span class="ell">…</span> <span class="tok c5">across</span><span class="tok c0">the</span><span class="tok c1">pond</span><span class="tok c2">.</span></span>
 </p>
 
-We ran Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention) using the research-grade code on our single DGX Spark and obtained a 2.8× speedup. The authors report a 8.22× speedup on their datacenter GPUs.
+We ran Qwen3-Coder-30B-A3B (same-size 30B-A3B MoE, standard attention) using the research-grade code on our single DGX Spark and obtained a 2.8× speedup. The authors report an 8.22× speedup on their datacenter GPUs.
 
 | workload | method | decode tok/s | accept-len | vs base | paper vs base |
 |---|---|--:|--:|--:|--:|
-| chat (mt-bench) | autoregressive | 18.52 | 1.00 | — | — |
+| chat (mt-bench) | none | 18.52 | 1.00 | — | — |
 | | DFlash (single line) | 16.95 | 2.25 | **0.92×** | 2.04× |
 | | **DDTree (budget 64)** | **20.75** | 3.22 | **1.12×** | 3.27× |
 | | DDTree (budget 256) | 17.32 | 3.69 | 0.94× | |
-| code (HumanEval) | autoregressive | 17.66 | 1.00 | — | — |
+| code (HumanEval) | none | 17.66 | 1.00 | — | — |
 | | DFlash (single line) | 47.87 | 7.96 | **2.7×** | 6.09× |
 | | **DDTree (budget 64)** | **49.34** | 9.74 | **2.8×** | 8.22× |
 | | DDTree (budget 256) | 41.30 | 10.50 | 2.3× | |
 
-**Table 7 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; the paper reports 8.22× lossless on HumanEval; we measure ~2.8×. Paper columns: [DDTree paper](https://arxiv.org/abs/2604.12989) Table 1, Qwen3-Coder-30B, temp 0.
+**Table 5 — DDTree recovers DFlash's loss.** Qwen3-Coder-30B-A3B at batch-1 in the paper's PyTorch harness; the paper reports 8.22× lossless on HumanEval; we measure ~2.8×. Paper columns: [DDTree paper](https://arxiv.org/abs/2604.12989) Table 1, Qwen3-Coder-30B, temp 0.
 {: .figcaption}
 
-Where the workload already suits DFlash (code), DDTree performs about the same. On the HumanEval workload, where DFlash fails, DDTree can rescue its performance.
+Where the workload already suits DFlash (code), DDTree performs about the same. On the chat workload, where DFlash fails, DDTree rescues its performance.
 
 Even with the tree, there's a tradeoff between the tree budget and time. Even though budget 256 has the *highest* acceptance (3.69 / 10.50), it is *slower* than budget 64 both times. The extra acceptance costs more to verify than it saves.
 
-This is new technology, hot off the presses, so it isn't in vLLM or [SGLang](https://github.com/sgl-project/sglang/discussions/24605). Watch this closely, its likely going to be a huge part of the future.
+This is new technology, hot off the presses, so it isn't in vLLM or [SGLang](https://github.com/sgl-project/sglang/discussions/24605). Watch this closely; it's likely going to be a huge part of the future.
 
-### Drafter-assisted prefill
+## The future
+
+It's early days yet, but one idea stands out.
 
 Everything we've discussed here speeds up token output, but there may also be a way to accelerate the prefill stage (where the model reads your entire prompt before it says anything) with a drafter.
 
-**Drafter-assisted prefill** is an area under active research. The basic concept is for the small model to skim the whole prompt and flag which tokens actually matter; the big model prefills only those important tokens. Fewer tokens through the expensive model means a faster first token, up to ~7.7× faster time-to-first-token on a 405B model ([SpecPrefill](https://arxiv.org/abs/2502.02789), ICML 2025) using potentially the same *same* drafter for decode.
+**Drafter-assisted prefill** is an area under active research. The basic concept is for the small model to skim the whole prompt and flag which tokens actually matter; the big model prefills only those important tokens. Fewer tokens through the expensive model means a faster first token, up to ~7.7× faster time-to-first-token on a 405B model ([SpecPrefill](https://arxiv.org/abs/2502.02789), ICML 2025) potentially using the *same* drafter as decode.
 
 For long-context, low-concurrency work (exactly the Spark's niche) it's the natural next thing to try.
 
@@ -274,4 +255,6 @@ For long-context, low-concurrency work (exactly the Spark's niche) it's the natu
 
 For a general chat gateway on one Spark, native MTP is the default winner for the Qwen3.6 / Gemma-4 families — it won at *every* concurrency we measured, +26-56% even with the batch full. EAGLE3 is competitive only with a validated, workload-matched draft; DFlash is a single-stream / latency-critical special case.
 
-Two rules fall out of the data. First, **the drafter's cost decides the curve**: a near-free drafter (native MTP, ~67% acceptance) wins everywhere, while a heavy one (DFlash, ~3.7-of-11) buys low-concurrency latency with spare parallelism and gives it back under load. Second, **speculative decoding can't fix a bad config**: 35B-A3B NVFP4 with no speculative decoder out-decodes FP8 with MTP (430.8 vs 407.9), and vLLM with no speculative decoder out-decodes SGLang with the best draft (252.8 vs 171.9). Pick the right engine and quant first — the speculative decoder is a multiplier, not a rescue.
+Two rules fall out of the data. First, **the drafter's cost decides the curve**: a near-free drafter (native MTP, ~66% acceptance) wins everywhere, while a heavy one (DFlash, ~3.7-of-11) buys low-concurrency latency with spare parallelism and gives it back under load. Second, **speculative decoding can't fix a bad config**: 35B-A3B NVFP4 with no speculative decoder out-decodes FP8 with MTP (430.8 vs 407.9), and vLLM with no speculative decoder out-decodes SGLang with the best draft (252.8 vs 171.9). Pick the right engine and quant first — the speculative decoder is a multiplier, not a rescue.
+
+And if your workload is *code*, the block-diffusion drafter is the sleeper: 2.7× at batch-1 in the research harness today, and more once DDTree lands in a serving engine.

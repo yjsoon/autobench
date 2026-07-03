@@ -66,6 +66,20 @@
   grid-column: 2;
 }
 
+/* Verify outcome (intro schematic): accepted prefix, first reject, discarded tail. */
+.token-stream .tok.acc {
+  background: #b9e6b9;
+}
+
+.token-stream .tok.rej {
+  background: #ffb8b8;
+}
+
+.token-stream .tok.dis {
+  background: #ececec;
+  color: #999;
+}
+
 .token-stream .ell {
   color: #b7b3ac;
   padding: 0 0.15em;
