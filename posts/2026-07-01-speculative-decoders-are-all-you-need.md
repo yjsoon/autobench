@@ -104,7 +104,7 @@ The costlier the target's forward pass, the more idle bandwidth the drafter hide
 
 Each model gains more on its slower FP8 quant than its faster NVFP4 quant, and the 27B dense architecture gains more than the 35B-A3B MoE architecture.
 
-The flip side (rule 5): NVFP4 *without* a speculator (430.8) still out-decodes FP8 *with* MTP (407.9) — pick the fast quant first, then add the drafter.
+The flip side ([Rule 5](#speculation-cant-rescue-a-bad-config)): NVFP4 *without* a speculator (430.8) still out-decodes FP8 *with* MTP (407.9) — pick the fast quant first, then add the drafter.
 
 ### Rule 5 — Speculation can't rescue a bad config {#speculation-cant-rescue-a-bad-config}
 
@@ -138,9 +138,9 @@ This family runs a close second on the board: the **[35B-A3B MoE on NVFP4 + MTP 
 
 One interesting discovery we made is that minor engine details can greatly affect performance ([Rule 3](#drafters-are-brittle)). On the dense 27B NVFP4 + MTP, the **[+46% gain on vLLM](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-vllm-mtp/)** is only **[+10.5% on SGLang](https://gauravmm.github.io/autobench/configs/qwen3-6-27b-nvfp4-sglang-mtp/)**. This seems to be due to scheduling decisions in the engine.
 
-### Gemma-4 26B-A4B NVFP4 + MTP
+### Gemma-4 — MTP vs EAGLE3, head to head
 
-**Gemma 4 26B-A4B NVFP4 + MTP [tops the board at 692.1 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-mtp/)**, ahead of Qwen.<!-- TODO(gemma-rerun): 692.1 + "tops the board / ahead of Qwen" being re-measured on the pinned image; see spec/EXPERIMENTS.md -->
+**Gemma-4 26B-A4B NVFP4 + MTP [tops the board at 692.1 tok/s](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-mtp/)**, ahead of Qwen.<!-- TODO(gemma-rerun): 692.1 + "tops the board / ahead of Qwen" being re-measured on the pinned image; see spec/EXPERIMENTS.md -->
 
 Gemma-4 is the only family here with *both* a native assistant-MTP path and grafted EAGLE3 heads, so it exercises the widest spread of the rules. Because the same model also carries a grafted **[EAGLE3 head (541.0)](https://gauravmm.github.io/autobench/configs/gemma-4-26b-a4b-it-vllm-nvfp4-eagle3/)**, this is the one place we can put the two drafters head-to-head — and native MTP wins.<!-- TODO(gemma-rerun): the EAGLE3 541.0 and MTP 692.1 for 26B-A4B are being re-measured; see spec/EXPERIMENTS.md -->
 
@@ -173,7 +173,7 @@ Because it hands us both drafters across four sizes, Gemma-4 is the cleanest ill
 
 The overlap scheduler runs work concurrently instead of sequentially, allowing the drafter (and CPU) overhead to be hidden. This is not available on llama.cpp, and disabled for this model under the current SGLang, hence the poor performance gain.
 
-**[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** Read the table above down its base&rarr;spec columns: the slower dense **31B** out-gains the faster MoE **26B-A4B** on both drafters — **+94% vs +80%** with MTP, **+59% vs +41%** with EAGLE3.<!-- TODO(gemma-rerun): the 26B-A4B gains (+80% MTP, +41% EAGLE3) depend on re-measured base/MTP/EAGLE3; this Rule 4 comparison may shift; see spec/EXPERIMENTS.md -->
+**[Rule 4 — Slower target, bigger relative win](#slower-target-bigger-relative-win).** Read Table 2 down its base&rarr;spec columns: the slower dense **31B** out-gains the faster MoE **26B-A4B** on both drafters — **+94% vs +80%** with MTP, **+59% vs +41%** with EAGLE3.<!-- TODO(gemma-rerun): the 26B-A4B gains (+80% MTP, +41% EAGLE3) depend on re-measured base/MTP/EAGLE3; this Rule 4 comparison may shift; see spec/EXPERIMENTS.md -->
 
 ### gpt-oss — EAGLE3 only, the draft is everything
 
@@ -196,9 +196,9 @@ No native MTP head, so EAGLE3 is the only option — and gpt-oss is where the *d
 
 So far, we have seen DFlash lag behind MTP and EAGLE3, due to its weight and low acceptance. Qwen3-Coder-30B-A3B, for example, only accepts 2.25 of 16 tokens on chat datasets, which is disappointingly low for a high-cost drafter like DFlash.
 
-**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** DFlash is redeemed by the *workload*: on templated, low-entropy code (HumanEval), the same Qwen3-Coder-30B-A3B drafter nails long spans: **[7.96 of 16](https://gauravmm.github.io/autobench/configs/qwen3-coder-30b-a3b-ddtree-humaneval/)**, a 2.7× decode win. This is a substantially better speedup than other drafters can deliver.
+**[Rule 2 — Agreement](#agreement-is-critical-to-performance).** DFlash is redeemed by the *workload*: on templated, low-entropy code (HumanEval), the same Qwen3-Coder-30B-A3B drafter nails long spans: **[7.96 of 16](https://gauravmm.github.io/autobench/configs/qwen3-coder-30b-a3b-ddtree-humaneval/)**, a 2.7× decode win — a bigger *relative* multiplier than any autoregressive drafter here posts, albeit at batch-1 throughput in a research harness.
 
-**[Rule 3 — Drafters are brittle](#drafters-are-brittle)** The workload alone decides whether DFlash is dead weight or the fastest thing on the box. This brittleness is because DFlash bets everything on *one* long draft continuation, the probability of which quickly decays to nothing.
+**[Rule 3 — Drafters are brittle](#drafters-are-brittle).** The workload alone decides whether DFlash is dead weight or the fastest thing on the box. This brittleness is because DFlash bets everything on *one* long draft continuation, the probability of which quickly decays to nothing.
 
 A brand-new technique called [DDTree](https://liranringel.github.io/ddtree/) (arXiv [2604.12989](https://arxiv.org/abs/2604.12989)) is designed to wring more accepted tokens out of the same drafter by building a tree of likely continuations and verifying it in a single pass. They construct a prefix tree like this of (typically) about 64 paths and verify the most likely outcome:
 
@@ -215,7 +215,7 @@ A brand-new technique called [DDTree](https://liranringel.github.io/ddtree/) (ar
 <span class="sub"><span class="ell">…</span> <span class="tok c5">across</span><span class="tok c0">the</span><span class="tok c1">pond</span><span class="tok c2">.</span></span>
 </p>
 
-This allows them to effectively hedge the continuation, improving brittleness. We measured the performance of this setup using the research-grade code on our single DGX Spark and obtained an approximately 2.8× speedup.
+This allows them to effectively hedge the continuation, reducing its brittleness. We measured the performance of this setup using the research-grade code on our single DGX Spark and obtained an approximately 2.8× speedup.
 
 | workload | method | decode tok/s | accept-len | vs base | paper vs base |
 |---|---|--:|--:|--:|--:|
@@ -233,7 +233,7 @@ This allows them to effectively hedge the continuation, improving brittleness. W
 
 Where the workload already suits DFlash (code), DDTree performs about the same. On the chat workload, where DFlash fails, DDTree rescues its performance.
 
-**[Rule 1 — Drafters trade compute for speed.](#drafters-trade-compute-for-speed)** Even with the tree, there's a tradeoff between the tree budget and time. Even though the larger 256 budget has a higher acceptance, it is *slower* than budget 64 both times. The extra acceptance costs more to verify than it saves.
+**[Rule 1 — Drafters trade compute for speed](#drafters-trade-compute-for-speed).** Even with the tree, there's a tradeoff between the tree budget and time. Even though the larger 256 budget has a higher acceptance, it is *slower* than budget 64 both times. The extra acceptance costs more to verify than it saves.
 
 This is new technology, hot off the presses, so it isn't in vLLM or [SGLang](https://github.com/sgl-project/sglang/discussions/24605). Watch this closely; it's likely going to be a huge part of the future.
 
