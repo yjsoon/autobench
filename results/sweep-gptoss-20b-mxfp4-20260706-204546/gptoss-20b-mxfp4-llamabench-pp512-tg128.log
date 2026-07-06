@@ -1,0 +1,11 @@
+==> llama-bench ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-mxfp4.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=500.5MiB  MemAvailable=16.52GiB
+    [sample] container=4.115GiB  MemAvailable=16.77GiB
+----- llama-bench output -----
+| gpt-oss 20B MXFP4 MoE          |  11.27 GiB |    20.91 B | Vulkan     |  99 |           pp512 |      1672.42 ± 13.13 |
+| gpt-oss 20B MXFP4 MoE          |  11.27 GiB |    20.91 B | Vulkan     |  99 |           tg128 |         81.48 ± 0.24 |
+------------------------------
+RESULT file=ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-mxfp4.gguf
+  prefill_toks (pp512) = 1672.42 tok/s
+  decode_toks  (tg128) = 81.48 tok/s
+  mem (system MemAvailable delta) = 0.15 GiB

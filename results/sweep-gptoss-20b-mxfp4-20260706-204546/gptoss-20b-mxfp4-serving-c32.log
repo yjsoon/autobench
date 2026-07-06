@@ -1,0 +1,11 @@
+==> launch llama-server ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-mxfp4.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 5s
+==> run ShareGPT serving benchmark (conc=32 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=32 cap=1000/900.0s
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+RESULT prefill_toks=164.22 decode_toks=179.8 completed=698 errors=15 duration_s=932.9 hit_time_cap=True
+JSON {"completed": 698, "errors": 15, "duration_s": 932.9, "concurrency": 32, "hit_time_cap": true, "prompt_tokens": 153203, "completion_tokens": 167746, "prefill_toks": 164.22, "decode_toks": 179.8, "ttft_median_ms": 1613.1, "tpot_median_ms": 166.9, "req_throughput": 0.748}
+MEM mem_gb=7.97 mem_source="system MemAvailable delta (10s sampling)"
