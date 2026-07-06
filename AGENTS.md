@@ -19,12 +19,18 @@ homepage listing; no separate journal.
 
 - Scripts ported to this machine and smoke-tested; ShareGPT V3 dataset downloaded to
   `benchmark_data/` (gitignored).
-- **Verified working:** `scripts/bench-llamacpp.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf`
-  → Vulkan backend, pp512 **2109 tok/s**, tg128 **61.2 tok/s**.
-- **Two local commits may be unpushed** (`git log origin/main..main`) — pushing to `main` needs
+- **First Strix Halo config pages recorded (2026-07-06):** the 2026-07-04 overnight llama.cpp
+  Vulkan sweep (Gemma 4 E4B + Qwen3.6-35B-A3B Q4_K_M, conc 1/8/32) lives in
+  `_configs/*-strix-c*.md`, tagged `strix-halo`, browsable at `/tags/strix-halo/`
+  (`tags-strix-halo.md`). Raw evidence: `results/overnight-20260704-070027/` (committed;
+  `results/` is otherwise gitignored — `git add -f` curated run dirs). Headline: Gemma E4B c32
+  decode **314.6 tok/s** ≈ 72% of the Spark CUDA number on the identical workload.
+- **Local commits may be unpushed** (`git log origin/main..main`) — pushing to `main` needs
   the user's approval; ask, don't force it.
-- Not yet done: no Strix Halo config pages exist yet; SGLang image not built; vLLM untested;
-  GitHub Pages not enabled on the fork.
+- Not yet done: SGLang image not built; vLLM untested; GitHub Pages not enabled on the fork;
+  gpt-oss-20b MXFP4 not yet benchmarked (Spark's llama.cpp attempt was blocked by the harmony
+  chat-parser 500 on `/v1/chat/completions` — retest on the newer full-vulkan image before
+  assuming it still fails).
 
 ## The machine
 
