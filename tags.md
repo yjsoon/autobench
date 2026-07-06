@@ -20,6 +20,8 @@ homepage. Pick a kind:
 - **[Concurrency]({{ '/tags/concurrency/' | relative_url }})** — parallel serves per run (e.g.
   `conc-32`); the benchmark's fixed-load axis.
 - **[Spark recipe]({{ '/tags/spark-recipe/' | relative_url }})** — models with native DGX Spark support.
+- **[Strix Halo]({{ '/tags/strix-halo/' | relative_url }})** — runs measured on this fork's AMD Strix
+  Halo box (GMKtec EVO X2); untagged configs are the DGX Spark baseline.
 - **[REAP]({{ '/tags/reap/' | relative_url }})** — base checkpoint pruned with REAP (router-weighted
   expert-activation pruning).
 - **[Self-REAP]({{ '/tags/self-reap/' | relative_url }})** — models we REAP-pruned ourselves; the page
@@ -35,6 +37,7 @@ homepage. Pick a kind:
   <a class="tag" href="{{ '/tags/size/' | relative_url }}">Size</a>
   <a class="tag" href="{{ '/tags/concurrency/' | relative_url }}">Concurrency</a>
   <a class="tag" href="{{ '/tags/spark-recipe/' | relative_url }}">Spark recipe</a>
+  <a class="tag" href="{{ '/tags/strix-halo/' | relative_url }}">Strix Halo</a>
   <a class="tag" href="{{ '/tags/reap/' | relative_url }}">REAP</a>
   <a class="tag" href="{{ '/tags/self-reap/' | relative_url }}">Self-REAP</a>
   <a class="tag" href="{{ '/tags/self-quantized/' | relative_url }}">Self-Quantized</a>
