@@ -27,10 +27,11 @@ homepage listing; no separate journal.
   decode **314.6 tok/s** ≈ 72% of the Spark CUDA number on the identical workload.
 - **Local commits may be unpushed** (`git log origin/main..main`) — pushing to `main` needs
   the user's approval; ask, don't force it.
-- Not yet done: SGLang image not built; vLLM untested; GitHub Pages not enabled on the fork;
-  gpt-oss-20b MXFP4 not yet benchmarked (Spark's llama.cpp attempt was blocked by the harmony
-  chat-parser 500 on `/v1/chat/completions` — retest on the newer full-vulkan image before
-  assuming it still fails).
+- **gpt-oss-20b MXFP4 benchmarked (2026-07-06):** the Spark's harmony chat-parser blocker is
+  fixed in llama.cpp b9859 — `_configs/gpt-oss-20b-llamacpp-mxfp4-strix-c*.md` are done
+  (c1 decode 68.5 tok/s beats the Spark vLLM c1's 45.6; c32 is ~34% of Spark vLLM batch).
+  `scripts/sweep-gguf.sh <gguf> <label>` now runs the standard sweep for any single GGUF.
+- Not yet done: SGLang image not built; vLLM untested; GitHub Pages not enabled on the fork.
 
 ## The machine
 

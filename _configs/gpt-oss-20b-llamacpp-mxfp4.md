@@ -44,3 +44,11 @@ This is consistent with the Spark guidance: **gpt-oss's recommended engines are 
 gpt-oss-20b will be produced on **vLLM / SGLang** (see the `gpt-oss-20b · vLLM · MXFP4`
 config) once that engine is stood up. Revisit llama.cpp if a later build fixes harmony chat
 parsing (raw `/completion` is a fallback but isn't OpenAI-chat-comparable and omits usage tokens).
+
+**Update (2026-07-06, Strix Halo fork):** the harmony chat-parser failure is **fixed in
+llama.cpp b9859** — `/v1/chat/completions` serves gpt-oss cleanly on the `full-vulkan` image.
+Measured numbers now exist on this fork's AMD Strix Halo box:
+[`-strix-c1`](gpt-oss-20b-llamacpp-mxfp4-strix-c1) ·
+[`-strix-c8`](gpt-oss-20b-llamacpp-mxfp4-strix-c8) ·
+[`-strix-c32`](gpt-oss-20b-llamacpp-mxfp4-strix-c32). A Spark llama.cpp rerun on ≥b9859 should
+unblock this page too.
