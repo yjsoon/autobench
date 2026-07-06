@@ -1,0 +1,20 @@
+started_at	2026-07-04 07:00:27 +0800
+llamacpp_image	ghcr.io/ggml-org/llama.cpp@sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41
+outdir	results/overnight-20260704-070027
+[2026-07-04 07:00:27 +0800] START gemma-e4b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf 512 128 99
+[2026-07-04 07:00:50 +0800] END gemma-e4b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf vram_peak=4.35GiB delta=2.97GiB
+[2026-07-04 07:00:50 +0800] START qwen3p6-35b-a3b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf 512 128 99
+[2026-07-04 07:01:23 +0800] END qwen3p6-35b-a3b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf vram_peak=20.98GiB delta=19.56GiB
+[2026-07-04 07:01:23 +0800] START gemma-e4b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-04 07:16:31 +0800] END gemma-e4b-q4km-serving-c1 status=0 result=RESULT prefill_toks=71.57 decode_toks=54.97 completed=195 errors=0 duration_s=901.2 hit_time_cap=True vram_peak=5.77GiB delta=4.39GiB
+[2026-07-04 07:16:31 +0800] START gemma-e4b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-04 07:31:42 +0800] END gemma-e4b-q4km-serving-c8 status=0 result=RESULT prefill_toks=197.13 decode_toks=204.44 completed=737 errors=1 duration_s=906.7 hit_time_cap=True vram_peak=5.98GiB delta=4.25GiB
+[2026-07-04 07:31:42 +0800] START gemma-e4b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh lmstudio-community/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-04 07:44:48 +0800] END gemma-e4b-q4km-serving-c32 status=0 result=RESULT prefill_toks=237.33 decode_toks=314.58 completed=980 errors=20 duration_s=780.8 hit_time_cap=False vram_peak=6.91GiB delta=5.18GiB
+[2026-07-04 07:44:48 +0800] START qwen3p6-35b-a3b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-04 08:00:02 +0800] END qwen3p6-35b-a3b-q4km-serving-c1 status=0 result=RESULT prefill_toks=69.51 decode_toks=56.08 completed=198 errors=0 duration_s=902.0 hit_time_cap=True vram_peak=22.61GiB delta=20.88GiB
+[2026-07-04 08:00:02 +0800] START qwen3p6-35b-a3b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-04 08:15:22 +0800] END qwen3p6-35b-a3b-q4km-serving-c8 status=0 result=RESULT prefill_toks=109.91 decode_toks=97.25 completed=346 errors=0 duration_s=908.8 hit_time_cap=True vram_peak=23.01GiB delta=21.28GiB
+[2026-07-04 08:15:22 +0800] START qwen3p6-35b-a3b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-04 08:31:00 +0800] END qwen3p6-35b-a3b-q4km-serving-c32 status=0 result=RESULT prefill_toks=79.9 decode_toks=96.86 completed=355 errors=10 duration_s=928.8 hit_time_cap=True vram_peak=24.59GiB delta=22.86GiB
+finished_at	2026-07-04 08:31:00 +0800

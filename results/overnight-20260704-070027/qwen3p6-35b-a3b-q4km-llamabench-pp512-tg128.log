@@ -1,0 +1,12 @@
+==> llama-bench lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=2.94GiB  MemAvailable=21.18GiB
+    [sample] container=8.543GiB  MemAvailable=23.70GiB
+    [sample] container=8.611GiB  MemAvailable=23.74GiB
+----- llama-bench output -----
+| qwen35moe 35B.A3B Q4_K - Medium |  19.70 GiB |    34.66 B | Vulkan     |  99 |           pp512 |      1115.54 ± 14.98 |
+| qwen35moe 35B.A3B Q4_K - Medium |  19.70 GiB |    34.66 B | Vulkan     |  99 |           tg128 |         76.18 ± 0.58 |
+------------------------------
+RESULT file=lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf
+  prefill_toks (pp512) = 1115.54 tok/s
+  decode_toks  (tg128) = 76.18 tok/s
+  mem (system MemAvailable delta) = 0.05 GiB

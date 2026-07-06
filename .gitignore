@@ -26,3 +26,6 @@ __pycache__/
 
 # Benchmark workload dataset — never commit
 benchmark_data/
+
+# Raw benchmark outputs — untracked by default; curated run dirs are committed with `git add -f`
+results/

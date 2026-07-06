@@ -1,0 +1,8 @@
+==> launch llama-server lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 9s
+==> run ShareGPT serving benchmark (conc=8 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=8 cap=1000/900.0s
+RESULT prefill_toks=109.91 decode_toks=97.25 completed=346 errors=0 duration_s=908.8 hit_time_cap=True
+JSON {"completed": 346, "errors": 0, "duration_s": 908.8, "concurrency": 8, "hit_time_cap": true, "prompt_tokens": 99895, "completion_tokens": 88386, "prefill_toks": 109.91, "decode_toks": 97.25, "ttft_median_ms": 2857.9, "tpot_median_ms": 67.8, "req_throughput": 0.381}
+MEM mem_gb=8.62 mem_source="system MemAvailable delta (10s sampling)"
