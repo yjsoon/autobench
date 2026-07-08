@@ -12,7 +12,8 @@
   </thead>
   <tbody>
   {% for c in _ordered %}
-    <tr class="machine-{% if c.tags contains 'strix-halo' %}strix{% else %}spark{% endif %}">
+    <tr class="machine-{% if c.tags contains 'strix-halo' %}strix{% else %}spark{% endif %}"
+        data-model="{{ c.tags | first }}" data-conc="{{ c.concurrency | default: '' }}">
       <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a>
         {%- if c.tags contains 'strix-halo' %} <span class="machine-badge mb-strix">Strix Halo</span>
         {%- else %} <span class="machine-badge mb-spark">DGX Spark</span>{% endif %}</td>

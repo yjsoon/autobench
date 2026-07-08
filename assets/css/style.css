@@ -303,3 +303,8 @@ html:not(.hide-spark) table.listing tr.machine-spark {
   color: #4e7a00;
   border: 1px solid rgba(118, 185, 0, 0.4);
 }
+
+/* Compare mode groups rows by model; mark each model boundary. */
+html:not(.hide-spark) table.listing tr.group-start > td {
+  border-top: 2px solid var(--border);
+}

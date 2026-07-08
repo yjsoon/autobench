@@ -73,11 +73,58 @@
         });
       }
 
+      // Compare mode re-sorts each table so like sits above like: models with
+      // Strix Halo runs first, then by model → concurrency → machine (Strix
+      // before its Spark counterpart). Solo mode restores the original
+      // newest-first order.
+      var originalRows = [];
+      tables.forEach(function (t, i) {
+        originalRows[i] = Array.prototype.slice.call(t.querySelectorAll('tbody tr'));
+      });
+
+      function reorder(compareMode) {
+        tables.forEach(function (t, i) {
+          var tbody = t.querySelector('tbody');
+          var rows = originalRows[i];
+          rows.forEach(function (r) { r.classList.remove('group-start'); });
+          if (!compareMode) {
+            rows.forEach(function (r) { tbody.appendChild(r); });
+            return;
+          }
+          var strixModels = {};
+          rows.forEach(function (r) {
+            if (r.classList.contains('machine-strix')) strixModels[r.dataset.model] = true;
+          });
+          var sorted = rows.slice().sort(function (a, b) {
+            var am = strixModels[a.dataset.model] ? 0 : 1;
+            var bm = strixModels[b.dataset.model] ? 0 : 1;
+            if (am !== bm) return am - bm;
+            if (a.dataset.model !== b.dataset.model) {
+              return a.dataset.model < b.dataset.model ? -1 : 1;
+            }
+            var ac = parseFloat(a.dataset.conc); if (isNaN(ac)) ac = Infinity;
+            var bc = parseFloat(b.dataset.conc); if (isNaN(bc)) bc = Infinity;
+            if (ac !== bc) return ac - bc;
+            var as = a.classList.contains('machine-strix') ? 0 : 1;
+            var bs = b.classList.contains('machine-strix') ? 0 : 1;
+            if (as !== bs) return as - bs;
+            return rows.indexOf(a) - rows.indexOf(b);
+          });
+          var prevModel = null;
+          sorted.forEach(function (r) {
+            if (prevModel !== null && r.dataset.model !== prevModel) r.classList.add('group-start');
+            prevModel = r.dataset.model;
+            tbody.appendChild(r);
+          });
+        });
+      }
+
       function setMode(compareMode) {
         document.documentElement.classList.toggle('hide-spark', !compareMode);
         solo.setAttribute('aria-pressed', String(!compareMode));
         compare.setAttribute('aria-pressed', String(compareMode));
         try { localStorage.setItem('autobench-show-spark', compareMode ? '1' : '0'); } catch (e) {}
+        reorder(compareMode);
         updateCounts();
       }
       solo.addEventListener('click', function () { setMode(false); });
