@@ -3,10 +3,13 @@ layout: default
 title: About
 ---
 
-# DGX Spark Autobench
+# Strix Halo Autobench
 
-Benchmarks of open-weight LLMs running on a single **NVIDIA DGX Spark** (GB10
-Grace-Blackwell, 121 GB unified memory, ARM64, CUDA 13).
+Benchmarks of open-weight LLMs running on an **AMD Strix Halo** mini-PC — a GMKtec EVO X2
+(Ryzen AI Max+ 395, Radeon 8060S iGPU, 96 GiB unified VRAM, x86_64, Vulkan/ROCm) — forked
+from [gauravmm/autobench](https://github.com/gauravmm/autobench), whose **NVIDIA DGX Spark**
+(GB10 Grace-Blackwell, 121 GB unified memory, CUDA 13) results are kept here as the
+comparison baseline.
 
 The goal: take a list of models and, **one at a time**, download each, run it across
 several engine / quantization / context configurations, and record the attributes that
@@ -15,14 +18,17 @@ and tok/s (prefill + decode)**, plus peak memory.
 
 ## How it's organized
 
+- **Two machines share this listing.** Runs measured on the Strix Halo box carry the
+  [`strix-halo` tag]({{ '/tags/strix-halo/' | relative_url }}); everything else is the DGX
+  Spark baseline from upstream. Where the same model/quant/workload exists on both, the
+  config pages cross-link the comparison.
 - **Each page in the listing below is one configuration** — a specific model × engine ×
-  quantization. Pages are tagged in six kinds — model, lab, model family, quant, size bucket, and a
+  quantization. Pages are tagged by model, lab, model family, quant, size bucket, machine, and a
   `Spark recipe` flag — each with its own page, so you can [browse by tag]({{ '/tags/' | relative_url }}).
-- Engines are run as NVIDIA NGC / official containers: **llama.cpp**, **vLLM**, **SGLang**,
-  **TensorRT-LLM** (and **NIM** where available). The engine shown on a *pending* row is a
-  starting guess — the actual server is chosen per model at benchmark time (whichever is fastest
-  for that model on the Spark), so a model often ends up with **several configs that compound
-  across engines, quants, and speculative-decoding variants**.
+- Engines run as official containers: **llama.cpp** (Vulkan) and **SGLang** / **vLLM** (ROCm)
+  on the Strix Halo box; the Spark baseline used NVIDIA NGC builds of the same engines plus
+  **TensorRT-LLM**/**NIM**. A model often ends up with **several configs that compound across
+  engines, quants, and speculative-decoding variants**.
 - Completed runs sort to the top by completion time; pending configurations follow, with
   blocked (needs-review) ones last.
 
