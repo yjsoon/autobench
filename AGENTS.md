@@ -31,7 +31,12 @@ homepage listing; no separate journal.
   fixed in llama.cpp b9859 — `_configs/gpt-oss-20b-llamacpp-mxfp4-strix-c*.md` are done
   (c1 decode 68.5 tok/s beats the Spark vLLM c1's 45.6; c32 is ~34% of Spark vLLM batch).
   `scripts/sweep-gguf.sh <gguf> <label>` now runs the standard sweep for any single GGUF.
-- Not yet done: SGLang image not built; vLLM untested; GitHub Pages not enabled on the fork.
+- **Site is live (2026-07-08):** https://yjsoon.github.io/autobench (Pages via Actions,
+  `build_type=workflow`). The listing shows Strix Halo runs by default; the DGX Spark baseline
+  is behind an "Include DGX Spark baseline" toggle (persisted in localStorage). NOTE: pushes
+  have not been auto-triggering the deploy workflow on this fork — if a push produces no run,
+  `gh workflow run 'Build & deploy site' -R yjsoon/autobench`.
+- Not yet done: SGLang image not built; vLLM untested.
 
 ## The machine
 
