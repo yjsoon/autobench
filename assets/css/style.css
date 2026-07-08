@@ -194,3 +194,29 @@ pre code {
   background: #f8d7da;
   color: #721c24;
 }
+/* Machine filter: Strix Halo runs by default, DGX Spark baseline opt-in.
+   html.hide-spark is set before first paint by the head script. */
+.machine-filter {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  font-size: 0.9rem;
+}
+
+.machine-filter label {
+  cursor: pointer;
+}
+
+.machine-filter input {
+  accent-color: var(--accent);
+  margin-right: 0.35rem;
+  vertical-align: -2px;
+}
+
+html.hide-spark table.listing tr.machine-spark,
+html.hide-spark table.listing.spark-only,
+html.hide-spark .spark-only-heading {
+  display: none;
+}

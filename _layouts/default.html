@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if page.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <script>
+    // Apply the machine filter before first paint to avoid a flash of Spark rows.
+    // Default: Strix Halo runs only; the DGX Spark baseline is opt-in (persisted).
+    (function () {
+      var s; try { s = localStorage.getItem('autobench-show-spark'); } catch (e) {}
+      if (s !== '1') document.documentElement.classList.add('hide-spark');
+    })();
+  </script>
   {%- feed_meta -%}
 </head>
 <body>
@@ -16,10 +24,58 @@
     </nav>
   </header>
   <main class="content">
+    <div class="machine-filter" id="machine-filter" hidden>
+      <label>
+        <input type="checkbox" id="show-spark">
+        Include <strong>DGX Spark</strong> baseline for comparison
+      </label>
+      <span class="muted">— unticked, the listing shows only runs measured on this AMD Strix Halo box</span>
+    </div>
     {{ content }}
   </main>
   <footer class="site-footer">
     <p>{{ site.description }}</p>
   </footer>
+  <script>
+    (function () {
+      var tables = document.querySelectorAll('table.listing');
+      if (!tables.length) return;
+      var bar = document.getElementById('machine-filter');
+      var box = document.getElementById('show-spark');
+      bar.hidden = false;
+
+      // Tag tables that contain no Strix Halo rows so the filter can hide the
+      // whole group (and its heading) instead of leaving an empty table.
+      tables.forEach(function (t) {
+        if (!t.querySelector('tr.machine-strix')) {
+          t.classList.add('spark-only');
+          var h = t.previousElementSibling;
+          if (h && /^H[23]$/.test(h.tagName)) h.classList.add('spark-only-heading');
+        }
+      });
+
+      // Keep the "(N)" counts on tag-page headings in sync with visible rows.
+      function updateCounts() {
+        var filtered = document.documentElement.classList.contains('hide-spark');
+        tables.forEach(function (t) {
+          var h = t.previousElementSibling;
+          var span = h && h.querySelector ? h.querySelector('.muted') : null;
+          if (!span) return;
+          if (!span.dataset.total) span.dataset.total = span.textContent;
+          span.textContent = filtered
+            ? '(' + t.querySelectorAll('tbody tr.machine-strix').length + ')'
+            : span.dataset.total;
+        });
+      }
+
+      box.checked = !document.documentElement.classList.contains('hide-spark');
+      box.addEventListener('change', function () {
+        document.documentElement.classList.toggle('hide-spark', !box.checked);
+        try { localStorage.setItem('autobench-show-spark', box.checked ? '1' : '0'); } catch (e) {}
+        updateCounts();
+      });
+      updateCounts();
+    })();
+  </script>
 </body>
 </html>

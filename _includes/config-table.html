@@ -12,7 +12,7 @@
   </thead>
   <tbody>
   {% for c in _ordered %}
-    <tr>
+    <tr class="machine-{% if c.tags contains 'strix-halo' %}strix{% else %}spark{% endif %}">
       <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a></td>
       <td>{{ c.engine | default: "—" }}{% if c.speculative %} + {{ c.speculative }}{% endif %}</td>
       <td>{{ c.quant | default: "—" }}</td>
