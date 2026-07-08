@@ -18,10 +18,11 @@ and tok/s (prefill + decode)**, plus peak memory.
 
 ## How it's organized
 
-- **The listing shows this machine's runs by default.** Tick *Include DGX Spark baseline*
-  above to add the upstream Spark numbers for comparison (this machine's runs also have
-  [their own tag page]({{ '/tags/strix-halo/' | relative_url }})). Where the same
-  model/quant/workload exists on both machines, the config pages cross-link the comparison.
+- **The listing shows this machine's runs by default.** Switch to *Compare vs DGX Spark*
+  above to interleave the upstream Spark numbers — rows are then colour-coded
+  <span class="machine-badge mb-strix">Strix Halo</span> vs
+  <span class="machine-badge mb-spark">DGX Spark</span>. Where the same model/quant/workload
+  exists on both machines, the config pages cross-link the comparison.
 - **Each page in the listing below is one configuration** — a specific model × engine ×
   quantization. Pages are tagged by model, lab, model family, quant, size bucket, machine, and a
   `Spark recipe` flag — each with its own page, so you can [browse by tag]({{ '/tags/' | relative_url }}).

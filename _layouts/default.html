@@ -25,11 +25,15 @@
   </header>
   <main class="content">
     <div class="machine-filter" id="machine-filter" hidden>
-      <label>
-        <input type="checkbox" id="show-spark">
-        Include <strong>DGX Spark</strong> baseline for comparison
-      </label>
-      <span class="muted">— unticked, the listing shows only runs measured on this AMD Strix Halo box</span>
+      <span class="mf-label">Showing:</span>
+      <div class="mf-seg" role="group" aria-label="Machine filter">
+        <button type="button" class="mf-btn" id="mf-solo">Strix Halo only</button>
+        <button type="button" class="mf-btn" id="mf-compare">Compare vs DGX Spark</button>
+      </div>
+      <span class="mf-legend">
+        <span class="dot dot-strix"></span>this box (AMD Strix Halo)
+        <span class="dot dot-spark"></span>DGX Spark baseline
+      </span>
     </div>
     {{ content }}
   </main>
@@ -41,7 +45,8 @@
       var tables = document.querySelectorAll('table.listing');
       if (!tables.length) return;
       var bar = document.getElementById('machine-filter');
-      var box = document.getElementById('show-spark');
+      var solo = document.getElementById('mf-solo');
+      var compare = document.getElementById('mf-compare');
       bar.hidden = false;
 
       // Tag tables that contain no Strix Halo rows so the filter can hide the
@@ -68,13 +73,16 @@
         });
       }
 
-      box.checked = !document.documentElement.classList.contains('hide-spark');
-      box.addEventListener('change', function () {
-        document.documentElement.classList.toggle('hide-spark', !box.checked);
-        try { localStorage.setItem('autobench-show-spark', box.checked ? '1' : '0'); } catch (e) {}
+      function setMode(compareMode) {
+        document.documentElement.classList.toggle('hide-spark', !compareMode);
+        solo.setAttribute('aria-pressed', String(!compareMode));
+        compare.setAttribute('aria-pressed', String(compareMode));
+        try { localStorage.setItem('autobench-show-spark', compareMode ? '1' : '0'); } catch (e) {}
         updateCounts();
-      });
-      updateCounts();
+      }
+      solo.addEventListener('click', function () { setMode(false); });
+      compare.addEventListener('click', function () { setMode(true); });
+      setMode(!document.documentElement.classList.contains('hide-spark'));
     })();
   </script>
 </body>

@@ -2,8 +2,10 @@
   --fg: #1a1a1a;
   --muted: #666;
   --bg: #fff;
-  --accent: #76b900;
-  /* NVIDIA green */
+  --accent: #d6252d;
+  /* AMD red — this box's colour; Spark baseline keeps NVIDIA green */
+  --amd: #d6252d;
+  --spark: #76b900;
   --border: #e2e2e2;
   --code-bg: #f6f8fa;
 }
@@ -194,29 +196,110 @@ pre code {
   background: #f8d7da;
   color: #721c24;
 }
-/* Machine filter: Strix Halo runs by default, DGX Spark baseline opt-in.
-   html.hide-spark is set before first paint by the head script. */
+/* Machine filter: Strix Halo runs by default, DGX Spark baseline opt-in via a
+   segmented control. html.hide-spark is set before first paint by the head script. */
 .machine-filter {
-  margin: 0 0 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--code-bg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
   font-size: 0.9rem;
 }
 
-.machine-filter label {
+.mf-label {
+  color: var(--muted);
+}
+
+.mf-seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mf-btn {
+  border: 0;
+  background: var(--bg);
+  padding: 0.35rem 0.8rem;
+  font: inherit;
+  font-size: 0.85rem;
   cursor: pointer;
+  color: var(--muted);
 }
 
-.machine-filter input {
-  accent-color: var(--accent);
-  margin-right: 0.35rem;
-  vertical-align: -2px;
+.mf-btn + .mf-btn {
+  border-left: 1px solid var(--border);
 }
 
+.mf-btn[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mf-legend {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  margin: 0 0.3em 0 0.9em;
+}
+
+.dot:first-child {
+  margin-left: 0;
+}
+
+.dot-strix { background: var(--amd); }
+.dot-spark { background: var(--spark); }
+
+html.hide-spark .mf-legend {
+  display: none;
+}
+
+/* Solo view: baseline rows, spark-only groups, and machine badges disappear. */
 html.hide-spark table.listing tr.machine-spark,
 html.hide-spark table.listing.spark-only,
-html.hide-spark .spark-only-heading {
+html.hide-spark .spark-only-heading,
+html.hide-spark table.listing .machine-badge {
   display: none;
+}
+
+/* Compare view: colour-code every row by machine. */
+html:not(.hide-spark) table.listing tr.machine-strix > td:first-child {
+  box-shadow: inset 3px 0 var(--amd);
+}
+
+html:not(.hide-spark) table.listing tr.machine-spark > td:first-child {
+  box-shadow: inset 3px 0 var(--spark);
+}
+
+html:not(.hide-spark) table.listing tr.machine-spark {
+  background: rgba(118, 185, 0, 0.05);
+}
+
+.machine-badge {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+.mb-strix {
+  background: rgba(214, 37, 45, 0.08);
+  color: var(--amd);
+  border: 1px solid rgba(214, 37, 45, 0.35);
+}
+
+.mb-spark {
+  background: rgba(118, 185, 0, 0.12);
+  color: #4e7a00;
+  border: 1px solid rgba(118, 185, 0, 0.4);
 }

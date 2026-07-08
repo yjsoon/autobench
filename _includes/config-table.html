@@ -13,7 +13,9 @@
   <tbody>
   {% for c in _ordered %}
     <tr class="machine-{% if c.tags contains 'strix-halo' %}strix{% else %}spark{% endif %}">
-      <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a></td>
+      <td><a href="{{ c.url | relative_url }}">{{ c.title }}</a>
+        {%- if c.tags contains 'strix-halo' %} <span class="machine-badge mb-strix">Strix Halo</span>
+        {%- else %} <span class="machine-badge mb-spark">DGX Spark</span>{% endif %}</td>
       <td>{{ c.engine | default: "—" }}{% if c.speculative %} + {{ c.speculative }}{% endif %}</td>
       <td>{{ c.quant | default: "—" }}</td>
       <td>{{ c.context | default: "—" }}</td>
