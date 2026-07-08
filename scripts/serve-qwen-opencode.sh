@@ -4,7 +4,7 @@ set -euo pipefail
 PORT="${PORT:-8080}"
 HOST="${HOST:-0.0.0.0}"
 PARALLEL="${PARALLEL:-1}"
-CONTEXT="${CONTEXT:-65536}"
+CONTEXT="${CONTEXT:-131072}"
 N_GPU_LAYERS="${N_GPU_LAYERS:-99}"
 MODEL_ROOT="${MODEL_ROOT:-$HOME/.lmstudio/models}"
 MODEL_REL="${MODEL_REL:-lmstudio-community/Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-Q4_K_M.gguf}"
