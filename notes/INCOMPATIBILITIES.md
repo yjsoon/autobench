@@ -287,3 +287,23 @@ caching**, so #38754 does not explain it. Prefix caching adds a *secondary* depr
 (conc-2: ~5% on → ~14% off; conc-16 unchanged at ~44%). Root cause is the concurrency/batch-size path itself
 (CUDA-graph padding or aux-hidden-state capture at batch 1–8), still unconfirmed. Draft issue write-up for the
 user to file: `spec/vllm-issue-draft-eagle3-lowbatch.md`.
+
+## Strix Halo (this fork, gfx1151)
+
+### vLLM sees only GTT (15.5 GiB), not the 96 GiB VRAM — big models can't load
+This box's BIOS allocates the 96 GiB UMA as **dedicated VRAM**, leaving **~15.5 GiB GTT**
+(`/sys/class/drm/card*/device/mem_info_gtt_total`). vLLM 0.19.2 (kyuz0/vllm-therock-gfx1151)
+sizes its GPU budget from `torch.cuda.get_device_properties().total_memory`, which on this
+ROCm/gfx1151 setup returns the **GTT (15.49 GiB)** — so it refuses any model whose weights exceed
+~15 GiB (e.g. the 23 GiB Qwen3.5-35B-A3B-AWQ dies in `determine_available_memory` with
+`Free memory (7.22/15.49 GiB) < desired`). Note `torch.cuda.mem_get_info()` **free** correctly
+returns 95.78 GiB — vLLM just queries the wrong API. **llama.cpp (Vulkan) and SGLang use the full
+96 GiB pool; only vLLM is capped.** Workarounds: (a) BIOS — shrink the dedicated-VRAM UMA split so
+GTT is large (what ROCm/vLLM expect on Strix Halo; hurts nothing for Vulkan which uses VRAM but is
+a reboot + trade-off), or (b) patch vLLM to detect total via `mem_get_info`. Until then, run vLLM
+only on ≤~15 GiB models here; use llama.cpp Vulkan or SGLang for the 20B+ tier.
+
+### vLLM needs `--enforce-eager` on gfx1151
+Default CUDA-graph / torch.compile capture GPU-faults during `profile_run` (crash in
+`cuda_graph.py`/inductor with an AOTAutograd "can't pickle launcher" warning first). `--enforce-eager`
+skips it and the server comes up — the analogue of SGLang's `--disable-cuda-graph`.
