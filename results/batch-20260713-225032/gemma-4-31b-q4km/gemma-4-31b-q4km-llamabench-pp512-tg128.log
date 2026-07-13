@@ -1,0 +1,16 @@
+==> llama-bench unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=2.963GiB  MemAvailable=20.86GiB
+    [sample] container=17.29GiB  MemAvailable=20.82GiB
+    [sample] container=17.29GiB  MemAvailable=20.83GiB
+    [sample] container=17.29GiB  MemAvailable=20.89GiB
+    [sample] container=17.29GiB  MemAvailable=20.89GiB
+    [sample] container=17.29GiB  MemAvailable=20.91GiB
+    [sample] container=17.29GiB  MemAvailable=20.90GiB
+----- llama-bench output -----
+| gemma4 31B Q4_K - Medium       |  17.05 GiB |    30.70 B | Vulkan     |  99 |           pp512 |        300.11 ± 3.34 |
+| gemma4 31B Q4_K - Medium       |  17.05 GiB |    30.70 B | Vulkan     |  99 |           tg128 |         11.68 ± 0.00 |
+------------------------------
+RESULT file=unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf
+  prefill_toks (pp512) = 300.11 tok/s
+  decode_toks  (tg128) = 11.68 tok/s
+  mem (system MemAvailable delta) = 0.26 GiB

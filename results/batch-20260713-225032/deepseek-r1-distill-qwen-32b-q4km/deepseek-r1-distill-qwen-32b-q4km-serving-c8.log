@@ -1,0 +1,8 @@
+==> launch llama-server bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 10s
+==> run ShareGPT serving benchmark (conc=8 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=8 cap=1000/900.0s
+RESULT prefill_toks=52.95 decode_toks=41.63 completed=170 errors=0 duration_s=981.4 hit_time_cap=True
+JSON {"completed": 170, "errors": 0, "duration_s": 981.4, "concurrency": 8, "hit_time_cap": true, "prompt_tokens": 51964, "completion_tokens": 40856, "prefill_toks": 52.95, "decode_toks": 41.63, "ttft_median_ms": 2604.7, "tpot_median_ms": 147.4, "req_throughput": 0.173}
+MEM mem_gb=8.47 mem_source="system MemAvailable delta (10s sampling)"

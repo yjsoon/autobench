@@ -1,0 +1,11 @@
+==> launch llama-server unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 12s
+==> run ShareGPT serving benchmark (conc=32 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=32 cap=1000/900.0s
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+RESULT prefill_toks=40.21 decode_toks=49.29 completed=194 errors=10 duration_s=988.9 hit_time_cap=True
+JSON {"completed": 194, "errors": 10, "duration_s": 988.9, "concurrency": 32, "hit_time_cap": true, "prompt_tokens": 39767, "completion_tokens": 48738, "prefill_toks": 40.21, "decode_toks": 49.29, "ttft_median_ms": 44674.3, "tpot_median_ms": 409.7, "req_throughput": 0.196}
+MEM mem_gb=10.54 mem_source="system MemAvailable delta (10s sampling)"

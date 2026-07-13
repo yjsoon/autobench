@@ -1,0 +1,101 @@
+batch start 2026-07-13 22:50:32 +0800
+== [22:50:32] START smollm3-3b-q4km
+[2026-07-13 22:50:32 +0800] START smollm3-3b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf 512 128 99
+[2026-07-13 22:50:43 +0800] END smollm3-3b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf vram_peak=24.15GiB delta=0.00GiB
+[2026-07-13 22:50:43 +0800] START smollm3-3b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-13 23:05:48 +0800] END smollm3-3b-q4km-serving-c1 status=0 result=RESULT prefill_toks=153.39 decode_toks=68.06 completed=240 errors=0 duration_s=900.0 hit_time_cap=True vram_peak=30.56GiB delta=6.42GiB
+[2026-07-13 23:05:48 +0800] START smollm3-3b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-13 23:21:01 +0800] END smollm3-3b-q4km-serving-c8 status=0 result=RESULT prefill_toks=479.06 decode_toks=269.54 completed=966 errors=2 duration_s=907.6 hit_time_cap=True vram_peak=30.51GiB delta=6.36GiB
+[2026-07-13 23:21:01 +0800] START smollm3-3b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-13 23:31:27 +0800] END smollm3-3b-q4km-serving-c32 status=0 result=RESULT prefill_toks=629.82 decode_toks=394.15 completed=974 errors=26 duration_s=621.6 hit_time_cap=False vram_peak=30.50GiB delta=6.36GiB
+DONE: results/batch-20260713-225032/smollm3-3b-q4km
+== [23:31:27] END smollm3-3b-q4km
+== [23:31:27] START llama-3p1-8b-q4km
+[2026-07-13 23:31:27 +0800] START llama-3p1-8b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf 512 128 99
+[2026-07-13 23:31:50 +0800] END llama-3p1-8b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf vram_peak=28.54GiB delta=4.40GiB
+[2026-07-13 23:31:50 +0800] START llama-3p1-8b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-13 23:47:02 +0800] END llama-3p1-8b-q4km-serving-c1 status=0 result=RESULT prefill_toks=53.08 decode_toks=40.5 completed=166 errors=0 duration_s=906.4 hit_time_cap=True vram_peak=36.61GiB delta=12.47GiB
+[2026-07-13 23:47:02 +0800] START llama-3p1-8b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 00:02:15 +0800] END llama-3p1-8b-q4km-serving-c8 status=0 result=RESULT prefill_toks=169.15 decode_toks=150.5 completed=629 errors=1 duration_s=907.3 hit_time_cap=True vram_peak=36.56GiB delta=12.41GiB
+[2026-07-14 00:02:15 +0800] START llama-3p1-8b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 00:17:58 +0800] END llama-3p1-8b-q4km-serving-c32 status=0 result=RESULT prefill_toks=201.14 decode_toks=221.17 completed=956 errors=15 duration_s=937.6 hit_time_cap=True vram_peak=36.55GiB delta=12.41GiB
+DONE: results/batch-20260713-225032/llama-3p1-8b-q4km
+== [00:17:58] END llama-3p1-8b-q4km
+== [00:17:58] START phi-4-reasoning-plus-q4km
+[2026-07-14 00:17:58 +0800] START phi-4-reasoning-plus-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 512 128 99
+[2026-07-14 00:18:31 +0800] END phi-4-reasoning-plus-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf vram_peak=32.41GiB delta=8.26GiB
+[2026-07-14 00:18:31 +0800] START phi-4-reasoning-plus-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 00:33:46 +0800] END phi-4-reasoning-plus-q4km-serving-c1 status=0 result=RESULT prefill_toks=51.71 decode_toks=21.42 completed=76 errors=0 duration_s=908.2 hit_time_cap=True vram_peak=44.99GiB delta=20.85GiB
+[2026-07-14 00:33:46 +0800] START phi-4-reasoning-plus-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 00:48:59 +0800] END phi-4-reasoning-plus-q4km-serving-c8 status=0 result=RESULT prefill_toks=167.92 decode_toks=81.47 completed=289 errors=0 duration_s=905.2 hit_time_cap=True vram_peak=44.94GiB delta=20.79GiB
+[2026-07-14 00:48:59 +0800] START phi-4-reasoning-plus-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 01:05:22 +0800] END phi-4-reasoning-plus-q4km-serving-c32 status=0 result=RESULT prefill_toks=198.47 decode_toks=131.38 completed=508 errors=12 duration_s=974.7 hit_time_cap=True vram_peak=44.93GiB delta=20.79GiB
+DONE: results/batch-20260713-225032/phi-4-reasoning-plus-q4km
+== [01:05:22] END phi-4-reasoning-plus-q4km
+== [01:05:22] START deepseek-r1-distill-qwen-14b-q4km
+[2026-07-14 01:05:22 +0800] START deepseek-r1-distill-qwen-14b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf 512 128 99
+[2026-07-14 01:05:55 +0800] END deepseek-r1-distill-qwen-14b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf vram_peak=32.23GiB delta=8.08GiB
+[2026-07-14 01:05:55 +0800] START deepseek-r1-distill-qwen-14b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 01:21:12 +0800] END deepseek-r1-distill-qwen-14b-q4km-serving-c1 status=0 result=RESULT prefill_toks=36.26 decode_toks=21.83 completed=80 errors=0 duration_s=909.9 hit_time_cap=True vram_peak=44.26GiB delta=20.12GiB
+[2026-07-14 01:21:12 +0800] START deepseek-r1-distill-qwen-14b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 01:36:44 +0800] END deepseek-r1-distill-qwen-14b-q4km-serving-c8 status=0 result=RESULT prefill_toks=100.93 decode_toks=84.52 completed=322 errors=0 duration_s=924.1 hit_time_cap=True vram_peak=44.06GiB delta=20.07GiB
+[2026-07-14 01:36:44 +0800] START deepseek-r1-distill-qwen-14b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 01:52:37 +0800] END deepseek-r1-distill-qwen-14b-q4km-serving-c32 status=0 result=RESULT prefill_toks=106.44 decode_toks=139.11 completed=559 errors=11 duration_s=946.4 hit_time_cap=True vram_peak=44.06GiB delta=20.06GiB
+DONE: results/batch-20260713-225032/deepseek-r1-distill-qwen-14b-q4km
+== [01:52:37] END deepseek-r1-distill-qwen-14b-q4km
+== [01:52:37] START gemma-4-12b-q4km
+[2026-07-14 01:52:37 +0800] START gemma-4-12b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q4_K_M.gguf 512 128 99
+[2026-07-14 01:53:10 +0800] END gemma-4-12b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q4_K_M.gguf vram_peak=30.83GiB delta=6.83GiB
+[2026-07-14 01:53:11 +0800] START gemma-4-12b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 02:08:24 +0800] END gemma-4-12b-q4km-serving-c1 status=0 result=RESULT prefill_toks=38.97 decode_toks=23.81 completed=85 errors=0 duration_s=908.3 hit_time_cap=True vram_peak=32.27GiB delta=8.27GiB
+[2026-07-14 02:08:24 +0800] START gemma-4-12b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 02:23:56 +0800] END gemma-4-12b-q4km-serving-c8 status=0 result=RESULT prefill_toks=97.41 decode_toks=72.32 completed=264 errors=0 duration_s=924.7 hit_time_cap=True vram_peak=35.50GiB delta=11.50GiB
+[2026-07-14 02:23:56 +0800] START gemma-4-12b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 02:39:54 +0800] END gemma-4-12b-q4km-serving-c32 status=0 result=RESULT prefill_toks=91.82 decode_toks=119.68 completed=452 errors=10 duration_s=950.4 hit_time_cap=True vram_peak=46.74GiB delta=22.74GiB
+DONE: results/batch-20260713-225032/gemma-4-12b-q4km
+== [02:39:54] END gemma-4-12b-q4km
+== [02:39:54] START qwen3p6-27b-q4km
+[2026-07-14 02:39:54 +0800] START qwen3p6-27b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf 512 128 99
+[2026-07-14 02:41:01 +0800] END qwen3p6-27b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf vram_peak=39.65GiB delta=15.66GiB
+[2026-07-14 02:41:01 +0800] START qwen3p6-27b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 02:56:12 +0800] END qwen3p6-27b-q4km-serving-c1 status=0 result=RESULT prefill_toks=20.6 decode_toks=10.98 completed=39 errors=0 duration_s=904.6 hit_time_cap=True vram_peak=43.33GiB delta=19.33GiB
+[2026-07-14 02:56:12 +0800] START qwen3p6-27b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 03:11:37 +0800] END qwen3p6-27b-q4km-serving-c8 status=0 result=RESULT prefill_toks=40.24 decode_toks=35.75 completed=128 errors=0 duration_s=915.1 hit_time_cap=True vram_peak=44.35GiB delta=20.35GiB
+[2026-07-14 03:11:37 +0800] START qwen3p6-27b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 03:27:24 +0800] END qwen3p6-27b-q4km-serving-c32 status=0 result=RESULT prefill_toks=25.06 decode_toks=44.17 completed=162 errors=10 duration_s=936.6 hit_time_cap=True vram_peak=48.03GiB delta=24.03GiB
+DONE: results/batch-20260713-225032/qwen3p6-27b-q4km
+== [03:27:24] END qwen3p6-27b-q4km
+== [03:27:24] START qwen3-coder-30b-a3b-q4km
+[2026-07-14 03:27:24 +0800] START qwen3-coder-30b-a3b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 512 128 99
+[2026-07-14 03:27:47 +0800] END qwen3-coder-30b-a3b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf vram_peak=41.13GiB delta=17.14GiB
+[2026-07-14 03:27:47 +0800] START qwen3-coder-30b-a3b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 03:42:55 +0800] END qwen3-coder-30b-a3b-q4km-serving-c1 status=0 result=RESULT prefill_toks=102.8 decode_toks=73.67 completed=301 errors=0 duration_s=900.9 hit_time_cap=True vram_peak=47.26GiB delta=23.26GiB
+[2026-07-14 03:42:55 +0800] START qwen3-coder-30b-a3b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 03:58:11 +0800] END qwen3-coder-30b-a3b-q4km-serving-c8 status=0 result=RESULT prefill_toks=136.04 decode_toks=130.49 completed=537 errors=0 duration_s=908.3 hit_time_cap=True vram_peak=47.20GiB delta=22.06GiB
+[2026-07-14 03:58:11 +0800] START qwen3-coder-30b-a3b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 04:13:45 +0800] END qwen3-coder-30b-a3b-q4km-serving-c32 status=0 result=RESULT prefill_toks=113.68 decode_toks=133.61 completed=567 errors=11 duration_s=925.3 hit_time_cap=True vram_peak=47.20GiB delta=23.20GiB
+DONE: results/batch-20260713-225032/qwen3-coder-30b-a3b-q4km
+== [04:13:45] END qwen3-coder-30b-a3b-q4km
+== [04:13:45] START gemma-4-31b-q4km
+[2026-07-14 04:13:45 +0800] START gemma-4-31b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 512 128 99
+[2026-07-14 04:15:03 +0800] END gemma-4-31b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf vram_peak=42.00GiB delta=18.00GiB
+[2026-07-14 04:15:03 +0800] START gemma-4-31b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 04:30:16 +0800] END gemma-4-31b-q4km-serving-c1 status=0 result=RESULT prefill_toks=17.33 decode_toks=9.76 completed=35 errors=0 duration_s=905.0 hit_time_cap=True vram_peak=47.46GiB delta=23.46GiB
+[2026-07-14 04:30:16 +0800] START gemma-4-31b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 04:46:00 +0800] END gemma-4-31b-q4km-serving-c8 status=0 result=RESULT prefill_toks=40.26 decode_toks=33.18 completed=123 errors=0 duration_s=933.4 hit_time_cap=True vram_peak=55.61GiB delta=30.20GiB
+[2026-07-14 04:46:00 +0800] START gemma-4-31b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 05:02:42 +0800] END gemma-4-31b-q4km-serving-c32 status=0 result=RESULT prefill_toks=40.21 decode_toks=49.29 completed=194 errors=10 duration_s=988.9 hit_time_cap=True vram_peak=83.73GiB delta=54.86GiB
+DONE: results/batch-20260713-225032/gemma-4-31b-q4km
+== [05:02:42] END gemma-4-31b-q4km
+== [05:02:42] START deepseek-r1-distill-qwen-32b-q4km
+[2026-07-14 05:02:42 +0800] START deepseek-r1-distill-qwen-32b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf 512 128 99
+[2026-07-14 05:04:00 +0800] END deepseek-r1-distill-qwen-32b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf vram_peak=57.93GiB delta=0.00GiB
+[2026-07-14 05:04:00 +0800] START deepseek-r1-distill-qwen-32b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 05:19:09 +0800] END deepseek-r1-distill-qwen-32b-q4km-serving-c1 status=0 result=RESULT prefill_toks=20.24 decode_toks=10.1 completed=38 errors=0 duration_s=900.1 hit_time_cap=True vram_peak=58.32GiB delta=34.32GiB
+[2026-07-14 05:19:09 +0800] START deepseek-r1-distill-qwen-32b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 05:35:42 +0800] END deepseek-r1-distill-qwen-32b-q4km-serving-c8 status=0 result=RESULT prefill_toks=52.95 decode_toks=41.63 completed=170 errors=0 duration_s=981.4 hit_time_cap=True vram_peak=58.26GiB delta=21.02GiB
+[2026-07-14 05:35:42 +0800] START deepseek-r1-distill-qwen-32b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 05:52:47 +0800] END deepseek-r1-distill-qwen-32b-q4km-serving-c32 status=0 result=RESULT prefill_toks=60.98 decode_toks=63.74 completed=268 errors=8 duration_s=1015.4 hit_time_cap=True vram_peak=58.26GiB delta=22.07GiB
+DONE: results/batch-20260713-225032/deepseek-r1-distill-qwen-32b-q4km
+== [05:52:47] END deepseek-r1-distill-qwen-32b-q4km
+batch done 2026-07-14 05:52:47 +0800

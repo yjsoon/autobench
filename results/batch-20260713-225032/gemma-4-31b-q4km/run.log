@@ -1,0 +1,12 @@
+started_at	2026-07-14 04:13:45 +0800
+llamacpp_image	ghcr.io/ggml-org/llama.cpp@sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41
+outdir	results/batch-20260713-225032/gemma-4-31b-q4km
+[2026-07-14 04:13:45 +0800] START gemma-4-31b-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 512 128 99
+[2026-07-14 04:15:03 +0800] END gemma-4-31b-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf vram_peak=42.00GiB delta=18.00GiB
+[2026-07-14 04:15:03 +0800] START gemma-4-31b-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 04:30:16 +0800] END gemma-4-31b-q4km-serving-c1 status=0 result=RESULT prefill_toks=17.33 decode_toks=9.76 completed=35 errors=0 duration_s=905.0 hit_time_cap=True vram_peak=47.46GiB delta=23.46GiB
+[2026-07-14 04:30:16 +0800] START gemma-4-31b-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 04:46:00 +0800] END gemma-4-31b-q4km-serving-c8 status=0 result=RESULT prefill_toks=40.26 decode_toks=33.18 completed=123 errors=0 duration_s=933.4 hit_time_cap=True vram_peak=55.61GiB delta=30.20GiB
+[2026-07-14 04:46:00 +0800] START gemma-4-31b-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 05:02:42 +0800] END gemma-4-31b-q4km-serving-c32 status=0 result=RESULT prefill_toks=40.21 decode_toks=49.29 completed=194 errors=10 duration_s=988.9 hit_time_cap=True vram_peak=83.73GiB delta=54.86GiB
+finished_at	2026-07-14 05:02:42 +0800

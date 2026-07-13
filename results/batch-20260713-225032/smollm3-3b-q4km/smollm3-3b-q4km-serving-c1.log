@@ -1,0 +1,8 @@
+==> launch llama-server ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 3s
+==> run ShareGPT serving benchmark (conc=1 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=1 cap=1000/900.0s
+RESULT prefill_toks=153.39 decode_toks=68.06 completed=240 errors=0 duration_s=900.0 hit_time_cap=True
+JSON {"completed": 240, "errors": 0, "duration_s": 900.0, "concurrency": 1, "hit_time_cap": true, "prompt_tokens": 138056, "completion_tokens": 61257, "prefill_toks": 153.39, "decode_toks": 68.06, "ttft_median_ms": 345.9, "tpot_median_ms": 10.0, "req_throughput": 0.267}
+MEM mem_gb=15.20 mem_source="system MemAvailable delta (10s sampling)"

@@ -1,0 +1,8 @@
+==> launch llama-server unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 6s
+==> run ShareGPT serving benchmark (conc=8 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=8 cap=1000/900.0s
+RESULT prefill_toks=136.04 decode_toks=130.49 completed=537 errors=0 duration_s=908.3 hit_time_cap=True
+JSON {"completed": 537, "errors": 0, "duration_s": 908.3, "concurrency": 8, "hit_time_cap": true, "prompt_tokens": 123570, "completion_tokens": 118531, "prefill_toks": 136.04, "decode_toks": 130.49, "ttft_median_ms": 390.1, "tpot_median_ms": 54.8, "req_throughput": 0.591}
+MEM mem_gb=8.34 mem_source="system MemAvailable delta (10s sampling)"

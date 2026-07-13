@@ -1,0 +1,12 @@
+started_at	2026-07-14 00:17:58 +0800
+llamacpp_image	ghcr.io/ggml-org/llama.cpp@sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41
+outdir	results/batch-20260713-225032/phi-4-reasoning-plus-q4km
+[2026-07-14 00:17:58 +0800] START phi-4-reasoning-plus-q4km-llamabench-pp512-tg128 :: scripts/bench-llamacpp.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 512 128 99
+[2026-07-14 00:18:31 +0800] END phi-4-reasoning-plus-q4km-llamabench-pp512-tg128 status=0 result=RESULT file=unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf vram_peak=32.41GiB delta=8.26GiB
+[2026-07-14 00:18:31 +0800] START phi-4-reasoning-plus-q4km-serving-c1 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 1 1000 900 256 99
+[2026-07-14 00:33:46 +0800] END phi-4-reasoning-plus-q4km-serving-c1 status=0 result=RESULT prefill_toks=51.71 decode_toks=21.42 completed=76 errors=0 duration_s=908.2 hit_time_cap=True vram_peak=44.99GiB delta=20.85GiB
+[2026-07-14 00:33:46 +0800] START phi-4-reasoning-plus-q4km-serving-c8 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 8 1000 900 256 99
+[2026-07-14 00:48:59 +0800] END phi-4-reasoning-plus-q4km-serving-c8 status=0 result=RESULT prefill_toks=167.92 decode_toks=81.47 completed=289 errors=0 duration_s=905.2 hit_time_cap=True vram_peak=44.94GiB delta=20.79GiB
+[2026-07-14 00:48:59 +0800] START phi-4-reasoning-plus-q4km-serving-c32 :: scripts/bench-llamacpp-serving.sh unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf 65536 32 1000 900 256 99
+[2026-07-14 01:05:22 +0800] END phi-4-reasoning-plus-q4km-serving-c32 status=0 result=RESULT prefill_toks=198.47 decode_toks=131.38 completed=508 errors=12 duration_s=974.7 hit_time_cap=True vram_peak=44.93GiB delta=20.79GiB
+finished_at	2026-07-14 01:05:22 +0800

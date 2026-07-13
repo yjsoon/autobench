@@ -1,0 +1,16 @@
+==> llama-bench bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=4.042GiB  MemAvailable=21.70GiB
+    [sample] container=162.8MiB  MemAvailable=22.03GiB
+    [sample] container=162.7MiB  MemAvailable=22.07GiB
+    [sample] container=162.7MiB  MemAvailable=22.07GiB
+    [sample] container=162.7MiB  MemAvailable=22.08GiB
+    [sample] container=162.3MiB  MemAvailable=22.08GiB
+    [sample] container=162.3MiB  MemAvailable=22.09GiB
+----- llama-bench output -----
+| qwen2 32B Q4_K - Medium        |  18.48 GiB |    32.76 B | Vulkan     |  99 |           pp512 |        321.57 ± 4.59 |
+| qwen2 32B Q4_K - Medium        |  18.48 GiB |    32.76 B | Vulkan     |  99 |           tg128 |         11.40 ± 0.00 |
+------------------------------
+RESULT file=bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf
+  prefill_toks (pp512) = 321.57 tok/s
+  decode_toks  (tg128) = 11.40 tok/s
+  mem (system MemAvailable delta) = 0.19 GiB

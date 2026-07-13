@@ -1,0 +1,11 @@
+==> launch llama-server ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 3s
+==> run ShareGPT serving benchmark (conc=32 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=32 cap=1000/900.0s
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+RESULT prefill_toks=629.82 decode_toks=394.15 completed=974 errors=26 duration_s=621.6 hit_time_cap=False
+JSON {"completed": 974, "errors": 26, "duration_s": 621.6, "concurrency": 32, "hit_time_cap": false, "prompt_tokens": 391505, "completion_tokens": 245008, "prefill_toks": 629.82, "decode_toks": 394.15, "ttft_median_ms": 991.3, "tpot_median_ms": 72.4, "req_throughput": 1.567}
+MEM mem_gb=9.00 mem_source="system MemAvailable delta (10s sampling)"

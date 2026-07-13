@@ -1,0 +1,12 @@
+==> llama-bench unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=4.242GiB  MemAvailable=14.92GiB
+    [sample] container=8.583GiB  MemAvailable=14.91GiB
+    [sample] container=8.582GiB  MemAvailable=14.95GiB
+----- llama-bench output -----
+| phi3 14B Q4_K - Medium         |   8.43 GiB |    14.66 B | Vulkan     |  99 |           pp512 |        770.44 ± 2.08 |
+| phi3 14B Q4_K - Medium         |   8.43 GiB |    14.66 B | Vulkan     |  99 |           tg128 |         24.71 ± 0.02 |
+------------------------------
+RESULT file=unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf
+  prefill_toks (pp512) = 770.44 tok/s
+  decode_toks  (tg128) = 24.71 tok/s
+  mem (system MemAvailable delta) = 0.01 GiB

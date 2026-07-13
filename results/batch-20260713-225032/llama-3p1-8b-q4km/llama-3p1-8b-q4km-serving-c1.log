@@ -1,0 +1,8 @@
+==> launch llama-server bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 4s
+==> run ShareGPT serving benchmark (conc=1 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=1 cap=1000/900.0s
+RESULT prefill_toks=53.08 decode_toks=40.5 completed=166 errors=0 duration_s=906.4 hit_time_cap=True
+JSON {"completed": 166, "errors": 0, "duration_s": 906.4, "concurrency": 1, "hit_time_cap": true, "prompt_tokens": 48111, "completion_tokens": 36711, "prefill_toks": 53.08, "decode_toks": 40.5, "ttft_median_ms": 261.7, "tpot_median_ms": 22.2, "req_throughput": 0.183}
+MEM mem_gb=8.71 mem_source="system MemAvailable delta (10s sampling)"

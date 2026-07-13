@@ -1,0 +1,11 @@
+==> llama-bench unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf  (pp=512 tg=128 ngl=99)
+    [sample] container=3.772GiB  MemAvailable=19.59GiB
+    [sample] container=17.64GiB  MemAvailable=20.12GiB
+----- llama-bench output -----
+| qwen3moe 30B.A3B Q4_K - Medium |  17.28 GiB |    30.53 B | Vulkan     |  99 |           pp512 |       1294.38 ± 7.60 |
+| qwen3moe 30B.A3B Q4_K - Medium |  17.28 GiB |    30.53 B | Vulkan     |  99 |           tg128 |         96.83 ± 0.18 |
+------------------------------
+RESULT file=unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf
+  prefill_toks (pp512) = 1294.38 tok/s
+  decode_toks  (tg128) = 96.83 tok/s
+  mem (system MemAvailable delta) = 0.19 GiB

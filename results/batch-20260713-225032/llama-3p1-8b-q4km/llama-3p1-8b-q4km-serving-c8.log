@@ -1,0 +1,9 @@
+==> launch llama-server bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 4s
+==> run ShareGPT serving benchmark (conc=8 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=8 cap=1000/900.0s
+    [err] HTTPError: HTTP Error 400: Bad Request
+RESULT prefill_toks=169.15 decode_toks=150.5 completed=629 errors=1 duration_s=907.3 hit_time_cap=True
+JSON {"completed": 629, "errors": 1, "duration_s": 907.3, "concurrency": 8, "hit_time_cap": true, "prompt_tokens": 153477, "completion_tokens": 136558, "prefill_toks": 169.15, "decode_toks": 150.5, "ttft_median_ms": 388.2, "tpot_median_ms": 45.7, "req_throughput": 0.693}
+MEM mem_gb=9.10 mem_source="system MemAvailable delta (10s sampling)"

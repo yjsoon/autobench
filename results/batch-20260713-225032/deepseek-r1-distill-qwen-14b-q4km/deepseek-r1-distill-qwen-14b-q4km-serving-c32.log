@@ -1,0 +1,11 @@
+==> launch llama-server bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 5s
+==> run ShareGPT serving benchmark (conc=32 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=32 cap=1000/900.0s
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+    [err] HTTPError: HTTP Error 400: Bad Request
+RESULT prefill_toks=106.44 decode_toks=139.11 completed=559 errors=11 duration_s=946.4 hit_time_cap=True
+JSON {"completed": 559, "errors": 11, "duration_s": 946.4, "concurrency": 32, "hit_time_cap": true, "prompt_tokens": 100727, "completion_tokens": 131646, "prefill_toks": 106.44, "decode_toks": 139.11, "ttft_median_ms": 2589.7, "tpot_median_ms": 199.1, "req_throughput": 0.591}
+MEM mem_gb=9.09 mem_source="system MemAvailable delta (10s sampling)"

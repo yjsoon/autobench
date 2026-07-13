@@ -1,0 +1,8 @@
+==> launch llama-server unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 6s
+==> run ShareGPT serving benchmark (conc=8 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=8 cap=1000/900.0s
+RESULT prefill_toks=167.92 decode_toks=81.47 completed=289 errors=0 duration_s=905.2 hit_time_cap=True
+JSON {"completed": 289, "errors": 0, "duration_s": 905.2, "concurrency": 8, "hit_time_cap": true, "prompt_tokens": 151997, "completion_tokens": 73741, "prefill_toks": 167.92, "decode_toks": 81.47, "ttft_median_ms": 3988.5, "tpot_median_ms": 75.4, "req_throughput": 0.319}
+MEM mem_gb=9.01 mem_source="system MemAvailable delta (10s sampling)"

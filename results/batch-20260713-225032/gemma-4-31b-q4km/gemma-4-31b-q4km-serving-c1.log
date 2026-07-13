@@ -1,0 +1,8 @@
+==> launch llama-server unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-Q4_K_M.gguf (ctx=65536 ngl=99) extra=[]
+==> waiting for /health (timeout 180s) ...
+    ready after 6s
+==> run ShareGPT serving benchmark (conc=1 num=1000 max=900s)
+==> loaded 1000 ShareGPT prompts; concurrency=1 cap=1000/900.0s
+RESULT prefill_toks=17.33 decode_toks=9.76 completed=35 errors=0 duration_s=905.0 hit_time_cap=True
+JSON {"completed": 35, "errors": 0, "duration_s": 905.0, "concurrency": 1, "hit_time_cap": true, "prompt_tokens": 15687, "completion_tokens": 8830, "prefill_toks": 17.33, "decode_toks": 9.76, "ttft_median_ms": 2030.1, "tpot_median_ms": 85.8, "req_throughput": 0.039}
+MEM mem_gb=10.17 mem_source="system MemAvailable delta (10s sampling)"
