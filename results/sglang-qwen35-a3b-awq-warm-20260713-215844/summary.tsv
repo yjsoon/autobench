@@ -1,0 +1,4 @@
+label	conc	result	mem	vram_base_gb	vram_peak_gb	vram_delta_gb
+qwen35-a3b-awq-warm	1	RESULT prefill_toks=31.07 decode_toks=19.03 completed=67 errors=0 duration_s=901.2 hit_time_cap=True	mem_gb=1.57	52.64	52.96	0.31
+qwen35-a3b-awq-warm	8	RESULT prefill_toks=45.29 decode_toks=44.32 completed=160 errors=0 duration_s=920.2 hit_time_cap=True	mem_gb=1.98	52.64	53.89	1.25
+qwen35-a3b-awq-warm	32	RESULT prefill_toks=58.28 decode_toks=46.83 completed=199 errors=0 duration_s=1083.7 hit_time_cap=True	mem_gb=1.45	52.64	55.11	2.47

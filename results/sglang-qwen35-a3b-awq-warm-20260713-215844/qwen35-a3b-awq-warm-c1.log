@@ -1,0 +1,3 @@
+==> loaded 1000 ShareGPT prompts; concurrency=1 cap=1000/900.0s
+RESULT prefill_toks=31.07 decode_toks=19.03 completed=67 errors=0 duration_s=901.2 hit_time_cap=True
+JSON {"completed": 67, "errors": 0, "duration_s": 901.2, "concurrency": 1, "hit_time_cap": true, "prompt_tokens": 28003, "completion_tokens": 17147, "prefill_toks": 31.07, "decode_toks": 19.03, "ttft_median_ms": 260.6, "tpot_median_ms": 40.9, "req_throughput": 0.074}

@@ -1,0 +1,16 @@
+model	cyankiwi/Qwen3.5-35B-A3B-AWQ-4bit
+image	strix-halo-sglang:dev (sha256:2711177e6d563d227e5eddf894a6069c70c31a7d52c4ddcac97912c935233272)
+ctx	8192
+extra	--mem-fraction-static 0.5 --max-total-tokens 32768 --max-mamba-cache-size 64 --attention-backend triton --disable-cuda-graph
+started	2026-07-13 20:59:28 +0800
+==> launch SGLang cyankiwi/Qwen3.5-35B-A3B-AWQ-4bit (ctx=8192) extra=[--mem-fraction-static 0.5 --max-total-tokens 32768 --max-mamba-cache-size 64 --attention-backend triton --disable-cuda-graph]
+==> waiting for /health (download+load can be many minutes) ...
+    ready after 354s
+vram_base_gb=53.39
+==> [21:05:30] serving conc=1
+   c1: RESULT prefill_toks=20.95 decode_toks=11.63 completed=41 errors=0 duration_s=901.9 hit_time_cap=True | vram_peak=53.70 delta=0.31
+==> [21:20:35] serving conc=8
+   c8: RESULT prefill_toks=37.18 decode_toks=22.68 completed=82 errors=0 duration_s=925.0 hit_time_cap=True | vram_peak=53.70 delta=0.31
+==> [21:36:02] serving conc=32
+   c32: RESULT prefill_toks=47.19 decode_toks=37.0 completed=178 errors=0 duration_s=1226.2 hit_time_cap=True | vram_peak=53.76 delta=0.37
+finished	2026-07-13 21:56:31 +0800
