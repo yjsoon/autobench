@@ -1,0 +1,274 @@
+{
+  "schema": "autobench-adaptation-inventory-2026-08-28",
+  "measured_at": "2026-08-28 Asia/Singapore",
+  "accelerator": {
+    "vendor": "AMD",
+    "count": 1,
+    "model": "AMD Radeon 8060S Graphics",
+    "architecture": "gfx1151 / RADV STRIX_HALO",
+    "pci": "1002:1586",
+    "type": "integrated GPU with UMA",
+    "sysfs_memory": {
+      "vram_total_bytes": 103079215104,
+      "vram_total_gib": 96,
+      "vram_used_idle_bytes": 2842021888,
+      "gtt_total_bytes": 16629108736,
+      "gtt_used_bytes": 148938752
+    },
+    "vulkan": {
+      "instance_version": "1.4.357",
+      "api_version": "1.4.354",
+      "driver": "RADV",
+      "mesa": "26.1.7-arch1.1",
+      "device_local_budget_gib": 72.47,
+      "system_heap_budget_gib": 36.23,
+      "shader_float16": true,
+      "shader_int8": true,
+      "explicit_fp8_extension_observed": false
+    },
+    "clocks_idle": {
+      "pp_dpm_sclk": "0: 600Mhz; 1: 608Mhz current; 2: 2900Mhz",
+      "current_clock_hz": 607000000
+    },
+    "telemetry_idle": {
+      "gpu_busy_percent": 0,
+      "temperature_mC": 41000,
+      "power_uW": 39768000
+    },
+    "native_format_probe": {
+      "bf16_matmul": "passed in torch 2.13.0a0+rocm7.13.0a20260422",
+      "float8_e4m3_initialization": "failed: NotImplementedError: normal_kernel_cuda not implemented for Float8_e4m3fn",
+      "conclusion": "BF16 is the narrowest format proven to execute natively; FP8 and vendor-native 4-bit execution are not proven"
+    },
+    "interconnect": "n/a; one device"
+  },
+  "host": {
+    "hostname_redacted": true,
+    "architecture": "x86_64",
+    "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+    "logical_cpus": 32,
+    "physical_cores": 16,
+    "threads_per_core": 2,
+    "sockets": 1,
+    "numa_nodes": 1,
+    "max_mhz": 5187.5,
+    "kernel": "7.1.8-arch1-3",
+    "os": "Omarchy Linux",
+    "mem_total_kb": 32478728,
+    "mem_available_idle_kb_snapshot": 20982668,
+    "swap_total_kb": 64957648,
+    "swap_free_kb_snapshot": 54067340,
+    "container_runtime": {
+      "name": "Docker",
+      "client_version": "29.7.2",
+      "server_version": "29.7.2",
+      "cgroup_version": "2",
+      "daemon_architecture": "x86_64"
+    },
+    "accelerator_devices": [
+      "/dev/kfd",
+      "/dev/dri/renderD128"
+    ],
+    "groups": [
+      "docker",
+      "video",
+      "render"
+    ]
+  },
+  "storage": {
+    "model_cache_filesystem": "/home",
+    "mount": "/dev/nvme0n1p5",
+    "filesystem": "btrfs",
+    "total_bytes": 1045853896704,
+    "used_bytes_at_inventory": 485904478208,
+    "available_bytes_at_inventory": 557687541760,
+    "sequential_direct_read_test": "672837942 bytes in 0.415326 s, 1.6 GB/s"
+  },
+  "software_inside_images": {
+    "sglang": {
+      "image": "strix-halo-sglang:dev",
+      "image_id": "sha256:2711177e6d563d227e5eddf894a6069c70c31a7d52c4ddcac97912c935233272",
+      "digest_pinned": "strix-halo-sglang:dev@sha256:2711177e6d563d227e5eddf894a6069c70c31a7d52c4ddcac97912c935233272",
+      "pullable": false,
+      "architecture": "linux/amd64",
+      "python": "3.12.13",
+      "torch": "2.13.0a0+rocm7.13.0a20260422",
+      "transformers": "5.8.1",
+      "sglang": "0.0.0.dev1+gb0b8436f1.d20260713",
+      "hip": "7.13.26154"
+    },
+    "vllm": {
+      "image": "kyuz0/vllm-therock-gfx1151:stable",
+      "image_id": "sha256:f89c8c689ade28877ade980ba0f29b3142af16c6ebb7f3f285311d38bc81a8a2",
+      "digest_pinned": "kyuz0/vllm-therock-gfx1151:stable@sha256:f89c8c689ade28877ade980ba0f29b3142af16c6ebb7f3f285311d38bc81a8a2",
+      "pullable": false,
+      "architecture": "linux/amd64",
+      "python": "3.12.13",
+      "torch": "2.13.0a0+rocm7.13.0a20260422",
+      "transformers": "5.5.4",
+      "vllm": "0.19.2rc1.dev113+g6aa057c9d.d20260422",
+      "hip": "7.13.26154"
+    },
+    "llama.cpp": {
+      "image": "ghcr.io/ggml-org/llama.cpp:full-vulkan",
+      "image_id": "sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41",
+      "digest_pinned": "ghcr.io/ggml-org/llama.cpp:full-vulkan@sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41",
+      "pullable": true,
+      "architecture": "linux/amd64",
+      "version": "9859 (4fc4ec554)",
+      "compiler": "GNU 15.2.0"
+    }
+  },
+  "target_model": {
+    "model": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "architecture": "Qwen3_5ForConditionalGeneration",
+    "model_type": "qwen3_5",
+    "parameter_count": 27781427952,
+    "parameter_shape": "27B dense",
+    "layers": 64,
+    "full_attention_interval": 4,
+    "full_attention_layers": 16,
+    "gated_deltanet_layers": 48,
+    "attention_heads": 24,
+    "kv_heads": 4,
+    "head_dim": 256,
+    "linear_key_heads": 16,
+    "linear_value_heads": 48,
+    "linear_key_head_dim": 128,
+    "linear_value_head_dim": 128,
+    "linear_conv_kernel": 4,
+    "mamba_ssm_dtype": "float32",
+    "native_context": 262144,
+    "mtp_num_hidden_layers": 1,
+    "vocab_size": 248320,
+    "tie_word_embeddings": false,
+    "modalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "mm_served": false
+  },
+  "dataset": {
+    "path": "benchmark_data/ShareGPT_V3_unfiltered_cleaned_split.json",
+    "size_bytes": 672837942,
+    "sha256": "35f0e213ce091ed9b9af2a1f0755e9d39f9ccec34ab281cd4ca60d70f6479ba4",
+    "expected_sha256_from_task": "d7094af68bb58022696728841937d7285db423eba9d055b3386797b28db2cbdb",
+    "sha256_matches_task_value": false,
+    "conversations": 94145,
+    "conversations_with_first_human": 92812,
+    "sampler": "first human turn of first N conversations in file order; no shuffle or length filter"
+  },
+  "slo": {
+    "median_ttft_ms_max": 2000,
+    "median_tpot_ms_max": 50,
+    "goodput_definition": "requests with TTFT <= 2000 ms and TPOT <= 50 ms divided by completed"
+  },
+  "idle_observations": {
+    "mem_available_kb_samples": [
+      22236004,
+      21852820,
+      22327388,
+      22317012,
+      22145036,
+      20982668
+    ],
+    "vram_used_bytes_samples": [
+      2842021888,
+      2842079232,
+      2842021888,
+      2842021888,
+      2842021888,
+      2842021888
+    ],
+    "note": "Host MemAvailable varies at idle; each run records its own baseline and 2-second minimum."
+  },
+  "over_allocation_probe": {
+    "model": "Qwen3.6-35B-A3B-Q4_K_M.gguf",
+    "attempted_context": [
+      262144,
+      2097152
+    ],
+    "attempted_parallel": [
+      512,
+      256
+    ],
+    "observed_process_error": "E llama_init_from_model: failed to initialize the context: n_seq_max must be <= 256",
+    "observed_followup": "n_slots=256 loaded and listened at n_ctx_slot=1024 and n_ctx_slot=8192; no host hard crash",
+    "crash_regime_evidence": "process-contained failure observed; shared UMA still requires watchdog protection"
+  },
+  "autobench_assumptions": {
+    "memory_regime": "shared",
+    "mem_source_method": "Host MemAvailable delta is the headline shared-memory measure, with amdgpu mem_info_vram_used sampled every 2 seconds as a cross-check; one device summed. Engine static reservations are not a footprint and are recorded from startup logs.",
+    "crash_regime": "process_oom",
+    "watchdog_required": true,
+    "watchdog_floor_gb": 8,
+    "image_arch": "linux/amd64 / x86_64",
+    "autobench_digests_usable": false,
+    "native_narrow_format": "BF16 proven; FP8 and native 4-bit execution unproven on this device",
+    "default_quant_format": "GGUF Q4_K_M for llama.cpp because it is the only selected format with demonstrated memory headroom; BF16 and official FP8 are separate probes, not assumed native",
+    "tensor_parallel_applies": false,
+    "device_count": 1,
+    "interconnect_class": "n/a",
+    "memory_ceiling_gb": 96,
+    "idle_baseline_gb": 20.01,
+    "idle_baseline_definition": "latest idle host MemAvailable snapshot in GiB; not the 96 GiB accelerator ceiling",
+    "gpu_memory_utilization_chosen": 0.8
+  },
+  "benchmark_recipe_sources": {
+    "qwen38_mtp": {
+      "url": "https://github.com/sudoingX/qwen38-mtp",
+      "revision": "431bf8a821d49e6ac919febc7a91fb2434318110",
+      "files_sha256": {
+        "README.md": "47dc7f471af4668159359c6f6b14a04c9dc18fd6aa7f1ab223b0efdca110b44",
+        "serve_mtp.sh": "b2e19c0b0f0b10b8aea9c8601dcc9adeb5dbbe443015895fb5ba698bd7153223",
+        "probe.py": "d9ea0c9fb10435937c774d4b182a6b5ac8481837e8b3d1aa23738eeb178dfd5f"
+      },
+      "adapted_flags": [
+        "--cache-type-k q4_0",
+        "--cache-type-v q4_0",
+        "-fa 1",
+        "--spec-type draft-mtp",
+        "--spec-draft-n-max 2|3|4"
+      ],
+      "headline_harness": "autobench scripts/bench-serving.py; repository probe.py not used for headline metrics"
+    }
+  },
+  "rerun": {
+    "date": "2026-09-01",
+    "context": 65536,
+    "max_seconds": 300,
+    "max_tokens": 256,
+    "thinking": "disabled",
+    "configs": [
+      "qwen3-8-27b-q4-k-m-llama-q4kv-c1",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-c2",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-c4",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-c8",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp2-c1",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp2-c8",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp3-c1",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp4-c1",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp4-c2",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp4-c4",
+      "qwen3-8-27b-q4-k-m-llama-q4kv-mtp4-c8"
+    ]
+  },
+  "pre_existing_services_observed": {
+    "container": "qwen38",
+    "image": "ghcr.io/ggml-org/llama.cpp:full-vulkan@sha256:fb161d9dd132ecc0878ad8e0170114c269355740c66527f227de0c5f862b5e41",
+    "started_at": "2026-08-29T10:26:15.288810343Z",
+    "port": 8082,
+    "model_command": "--server --hf-repo unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_M --alias qwen3.8-27b -ngl 99 -c 65536 --parallel 1 -cb --reasoning off --host 0.0.0.0 --port 8080 --metrics --log-timestamps --no-mmproj",
+    "observed_at": "2026-09-01",
+    "observations": [
+      "docker stats reported 0.00% CPU and 44.28 MiB container memory",
+      "health returned {\"status\":\"ok\"}",
+      "metrics reported requests_processing=0 and requests_deferred=0",
+      "no container log lines appeared in the preceding 10 minutes",
+      "cumulative metrics at inspection were 17 prompt tokens and 2 generated tokens"
+    ],
+    "disposition": "not stopped; treated as an idle background service. Host idle baselines and per-run shared-memory deltas include this background state; no active competing request was observed."
+  }
+}
